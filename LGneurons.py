@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 import pylab
 import nest
-import numpy
+import numpy as np
+import numpy.random as rnd
 import csv
 from math import sqrt, cosh, exp, pi
 
+rnd.seed(17)
 
 #-------------------------------------------------------------------------------
 # Establishes a connexion between two populations, following the results of LG14
 # type : a string 'ex' or 'in', defining whether it is excitatory or inhibitory
 # nameTgt, nameSrc : strings naming the populations, as defined in NUCLEI list
-# srcPop : population emiting the connexions (nest node ID)
-# tgtPop : population receiving the connexions (nest node ID)
+# inDegree : number of neurons from Src project to a single Tgt neuron
+# 
 #-------------------------------------------------------------------------------
-def connect(type,nameSrc,nameTgt):
-  print "*connect() DEBUG: connecting ",nameSrc,"to",nameTgt,"with",type,"connection"
+def connect(type,nameSrc,nameTgt,inDegree,delay=1.):
+  print "* connect() DEBUG: connecting ",nameSrc,"to",nameTgt,"with",type,"connection and",inDegree,"inputs"
   # process receptor types
   if type == 'ex':
     lRecType = ['AMPA','NMDA']
@@ -28,27 +30,34 @@ def connect(type,nameSrc,nameTgt):
   if nameSrc=='CSN' or nameSrc=='PTN':
     nu = alpha[nameSrc+'->'+nameTgt]
     print '\t',nameSrc+' -> '+nameTgt+': unknown number of different input neurons'
-    print '\t',str(nbSim[nameSrc]),"neurons from",nameSrc,"will provide inputs"
+    print '\t',str(inDegree),"neurons from",nameSrc,"will provide inputs"
   else:
     nu = neuronCounts[nameSrc] / neuronCounts[nameTgt] * P[nameSrc+'->'+nameTgt] * alpha[nameSrc+'->'+nameTgt]
     print '\t',nameSrc+' -> '+nameTgt+': avg number of different input neurons: '+str(neuronCounts[nameSrc] / neuronCounts[nameTgt] * P[nameSrc+'->'+nameTgt])
-    print '\tcompare with the effective nb of neurons simulated '+str(nbSim[nameSrc]/float(nbSim[nameTgt])*P[nameSrc+'->'+nameTgt])
+    print '\tcompare with the effective chosen inDegree '+str(inDegree)
 
   # attenuation due to the distance from the receptors to the soma of tgt:
   attenuation = cosh(LX[nameTgt]*(1-p[nameSrc+'->'+nameTgt])) / cosh(LX[nameTgt])
 
-  # final weight computation, modulated by the type of receptor
-  # construction of the NEST connection
-  for r in lRecType:
-    print '\t',nu,nbSim[nameSrc],attenuation,r,recType[r]-1,wPSP # verifier /nbsim(nameTGT)
-    w = nu / float(nbSim[nameSrc]) * attenuation * wPSP[recType[r]-1]
-    nest.Connect(Pop[nameSrc],Pop[nameTgt],syn_spec={'receptor_type':recType[r],'weight':w})
+  # To ensure that for excitatory connections, Tgt neurons receive AMPA and NMDA projections from the same Src neurons, 
+  # we have to handle the "indegree" connectivity ourselves:
+  for nTgt in range(int(nbSim[nameTgt])):
+    inputTable = rnd.choice(int(nbSim[nameSrc]),size=inDegree,replace=False)
 
+    for input in inputTable:
+      # final weight computation, modulated by the type of receptor and
+      # construction of the NEST connection
+      for r in lRecType:
+        #print '\t',nu,inDegree,attenuation,r,recType[r]-1,wPSP # verifier /nbsim(nameTGT)
+        w = nu / float(inDegree) * attenuation * wPSP[recType[r]-1]
+        #print '\t',Pop[nameSrc], Pop[nameTgt]
+        #print '\t',Pop[nameSrc][input], Pop[nameTgt][nTgt],w
+        nest.Connect(pre=(Pop[nameSrc][input],), post=(Pop[nameTgt][nTgt],),syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
 
+#-------------------------------------------------------------------------------
 
-NbNeurons = 1
 dt = 0.01
-simDuration = 1000. # in ms
+simDuration = 10000. # in ms
 
 # imported from Chadoeuf "connexweights"
 # All the parameters needed to replicate Lienard model
@@ -82,7 +91,7 @@ neuronCounts={'MSN': 26448.0E3,
 # Number of neurons that will be simulated
 nbSim = {'MSN': 0.,
          'FSI': 0.,
-         'STN': 1.,
+         'STN': 100.,
          'GPe': 0.,
          'GPi': 0.,
          'CMPf':0.,
@@ -253,12 +262,16 @@ Pop = {}
 
 # creation of STN neurons
 #-------------------------
-Pop['STN'] = nest.Create("iaf_psc_alpha_multisynapse",NbNeurons,params=BGparams['STN'])
+print 'Creating neurons'
+print '* STN:',nbSim['STN'],'neurons with parameters:',BGparams['STN']
 
+Pop['STN'] = nest.Create("iaf_psc_alpha_multisynapse",int(nbSim['STN']),params=BGparams['STN'])
 
 #-------------------------
 # creation of external inputs (ctx, CMPf)
 #-------------------------
+
+rate = {} # the dictionary used to store the desired discharge rates of the various Poisson generators that will be used as external inputs
 
 # CSN
 #-------------------------
@@ -268,72 +281,35 @@ Pop['STN'] = nest.Create("iaf_psc_alpha_multisynapse",NbNeurons,params=BGparams[
 
 # PTN
 #-------------------------
-nbSim['PTN'] = 5
-Pop['PTN']  = nest.Create('poisson_generator',nbSim['PTN'])
-nest.SetStatus(Pop['PTN'],{'rate':15.})
+nbSim['PTN'] = 5*nbSim['STN']
+rate['PTN'] =  15.
+print '* PTN:',nbSim['PTN'],'Poisson generators with avg rate:',rate['PTN']
+Pop['PTN']  = nest.Create('poisson_generator',int(nbSim['PTN']))
+nest.SetStatus(Pop['PTN'],{'rate':rate['PTN']})
 
-connect('ex','PTN','STN')
-
-#r = recType['AMPA']
-#print 'w PTN->STN, attenuation:', attenuate('STN', 0.97)
-#w = 259. / nbPTN * attenuate('STN',0.97) * wPSP[r-1]# a terme, remplacer 259. par la valeur lue dans le fichier
-#print 'w PTN->STN, weight:', w
-#nest.Connect(PTN,STN,syn_spec={'receptor_type':r,'weight':w})
-
-#r = recType['NMDA']
-#w = 259. / nbPTN * attenuate('STN',0.97) * wPSP[r-1]# a terme, remplacer 259. par la valeur lue dans le fichier
-#nest.Connect(PTN,STN,syn_spec={'receptor_type':r,'weight':w})
+connect('ex','PTN','STN', inDegree=5)
 
 # CMPf
 #-------------------------
-nbSim['CMPf']=1.
-Pop['CMPf'] = nest.Create('poisson_generator')
-nest.SetStatus(Pop['CMPf'],{'rate': 4.})
+nbSim['CMPf']=nbSim['STN']
+rate['CMPf']=  4.
+print '* CMPf:',nbSim['CMPf'],'Poisson generators with avg rate:',rate['CMPf']
+Pop['CMPf'] = nest.Create('poisson_generator',int(nbSim['CMPf']))
+nest.SetStatus(Pop['CMPf'],{'rate': rate['CMPf']})
 
-# one STN neuron should receive N_CMPf/N_STN=1.1 inputs from the CMPf
-# thus we simulate 1 CMPf neuron with a weight of 1.1
-
-connect('ex','CMPf','STN')
-
-#r = recType['AMPA']
-#print 'w CMPf->STN, attenuation:', attenuate('STN', 0.46)
-#w = N_CMPf / N_STN * attenuate('STN',0.46) * wPSP[r-1]
-#print 'w CMPf->STN, weight:', w
-#nest.Connect(CMPf,STN,syn_spec={'receptor_type':r,'weight':w})
-
-#r = recType['NMDA']
-#w = N_CMPf / N_STN * attenuate('STN',0.46) * wPSP[r-1]
-#nest.Connect(CMPf,STN,syn_spec={'receptor_type':r,'weight':w})
+connect('ex','CMPf','STN', inDegree=1)
 
 # Fake GPe
 #-------------------------
-nbSim['GPe'] = int(neuronCounts['GPe']/neuronCounts['STN'])
-Pop['GPe'] = nest.Create('poisson_generator',nbSim['GPe'])
-nest.SetStatus(Pop['GPe'],{'rate':62.6})
+nbSim['GPe'] = int(neuronCounts['GPe']/neuronCounts['STN']) * nbSim['STN']
+rate['GPe']= 62.6
+print '* GPe:',nbSim['GPe'],'Poisson generators with avg rate:',rate['GPe']
+Pop['GPe'] = nest.Create('poisson_generator',int(nbSim['GPe']))
+nest.SetStatus(Pop['GPe'],{'rate':rate['GPe']})
 
-connect('in','GPe','STN')
-#r = recType['GABA']
-#w = N_GPe/N_STN/nbFakeGPe * 19. * attenuate('STN',0.58) * wPSP[r-1]
-#print 'w fakeGPe->STN, nb synapses per input neuron:',N_GPe/N_STN/nbFakeGPe * 19.
-#print 'w fakeGPe->STN, attenuation:',attenuate('STN',0.58)
-#print 'w fakeGPe->STN, weight:', w
-#nest.Connect(fakeGPe,STN,syn_spec={'receptor_type':r,'weight':w})
+connect('in','GPe','STN', inDegree= int(neuronCounts['GPe']/neuronCounts['STN'])) 
 
 #-------------------------
-# Stimulator neuron & connection
-#-------------------------
-
-#Stimulator  = nest.Create("iaf_neuron")
-#nest.SetStatus(Stimulator, {'tau_m':20.0})
-#nest.SetStatus(Stimulator, {"I_e": 376.0}) #376.0
-
-# print 'Stimulator param ',nest.GetStatus(Stimulator,'C_m')
-
-# print 'STN param ',nest.GetStatus(STN,'recordables')
-
-#r = recType['AMPA']
-#nest.Connect(Stimulator,STN,syn_spec={'receptor_type':r,'weight':wPSP[r-1]})
-
 # measures
 #-------------------------
 
@@ -353,15 +329,25 @@ nest.Connect(Pop['STN'], spkDetect)
 #-------------------------
 nest.Simulate(simDuration)
 
+print '\n Spike Detector n_events',nest.GetStatus(spkDetect, 'n_events')[0]
+expeRate = nest.GetStatus(spkDetect, 'n_events')[0] / float(nbSim['STN']*simDuration)
+print '\n Rate:',expeRate*1000,'Hz'
+
+
 # Displays
 #-------------------------
 
 showStimV = False
 showSynCurr = False
+showSTNVolt = False
 
 #dmStim = nest.GetStatus(mStim)[0]
 #VmStim = dmStim["events"]["V_m"]
 #tStim = dmStim["events"]["times"]
+
+#print nest.GetStatus(mSTN)
+#print "============================="
+#print nest.GetStatus(mSTN)[0]
 
 dmSTN = nest.GetStatus(mSTN)[0]
 VmSTN = dmSTN["events"]["V_m"]
@@ -375,10 +361,11 @@ ts = dSD["times"]
 pylab.figure('STN spikes')
 pylab.plot(ts, evs, ".")
 
-pylab.figure('STN Voltage')
-if (showStimV):
-  pylab.plot(tStim, VmStim)
-pylab.plot(tSTN, VmSTN)
+if showSTNVolt:
+  pylab.figure('STN Voltage')
+  if (showStimV):
+    pylab.plot(tStim, VmStim)
+  pylab.plot(tSTN, VmSTN)
 
 if (showSynCurr):
   pylab.figure("STN input PSPs")
