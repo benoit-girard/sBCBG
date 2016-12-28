@@ -58,9 +58,9 @@ def connect(type,nameSrc,nameTgt,inDegree,delay=1.,gain=1.):
     print '\t',str(inDegree),"neurons from",nameSrc,"will provide inputs"
   else:
     nu = neuronCounts[nameSrc] / neuronCounts[nameTgt] * P[nameSrc+'->'+nameTgt] * alpha[nameSrc+'->'+nameTgt]
-    print '\tnu',nu
-    print '\t',nameSrc+' -> '+nameTgt+': avg number of different input neurons: '+str(neuronCounts[nameSrc] / neuronCounts[nameTgt] * P[nameSrc+'->'+nameTgt])
-    print '\tcompare with the effective chosen inDegree '+str(inDegree)
+    print '\tMaximal number of distinct input neurons (nu):',nu
+    print '\tMinimal number of distinct input neurons     :',str(neuronCounts[nameSrc] / neuronCounts[nameTgt] * P[nameSrc+'->'+nameTgt])
+    print '\tCompare with the effective chosen inDegree   :'+str(inDegree)
 
   # attenuation due to the distance from the receptors to the soma of tgt:
   attenuation = cosh(LX[nameTgt]*(1-p[nameSrc+'->'+nameTgt])) / cosh(LX[nameTgt])
@@ -312,14 +312,14 @@ STNparams = {'tau_m':         6.0, # as in HSG06 (but they model rats...)
              'C_m':           6.0  # so that R_m=1, C_m=tau_m
             }
 
-GPeparams = {'tau_m':        20.0,
+GPeparams = {'tau_m':        14.0, # 20 -> 14 based on Johnson & McIntyre 2008, JNphy)
              'V_th':         11.0, # value of the LG14 example model, table 9
-             'C_m':          20.0  # so that R_m=1, C_m=tau_m
+             'C_m':          14.0  # so that R_m=1, C_m=tau_m
             }
 
-GPiparams = {'tau_m':        20.0,
+GPiparams = {'tau_m':        14.0, # 20 -> 14 based on Johnson & McIntyre 2008, JNphy)
              'V_th':          6.0, # value of the LG14 example model, table 9
-             'C_m':          20.0  # so that R_m=1, C_m=tau_m
+             'C_m':          14.0  # so that R_m=1, C_m=tau_m
             }
 
 

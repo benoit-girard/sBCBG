@@ -1,6 +1,6 @@
 from LGneurons import *
 
-testedNucleus = 'GPi'
+testedNucleus = 'MSN'
 simDuration = 5000. # ms
 
 if testedNucleus == 'STN':
@@ -51,6 +51,7 @@ elif testedNucleus == 'GPe':
   #-------------------------
   nbSim['GPe']=30.
   create('GPe')
+  nest.SetStatus(Pop['GPe'],{"I_e":13.}) # external current, necessary for tau_m=14 (not 20)
 
   # CMPf
   #-------------------------
@@ -73,6 +74,13 @@ elif testedNucleus == 'GPe':
   #---------------------------
   print 'Connecting neurons\n================'
 
+  print 'My guess'
+  G = 1.3
+  connect('ex','CMPf','GPe', inDegree=min(32/2,nbSim['CMPf']), gain=G)
+  connect('ex','STN','GPe', inDegree=min(107/2,nbSim['STN']), gain=G)
+  connect('in','MSN','GPe', inDegree=min(14723/2,nbSim['MSN']), gain=G)
+  connect('in','GPe','GPe', inDegree=min(32,nbSim['GPe']), gain=G)
+
   '''
   print 'Maximal convergence of excitation, Maximal divergence of inhibition'
   connect('ex','CMPf','GPe', inDegree=1)
@@ -87,14 +95,6 @@ elif testedNucleus == 'GPe':
   connect('in','MSN','GPe', inDegree=min(14723/2,nbSim['MSN']))
   connect('in','GPe','GPe', inDegree=min(32/2,nbSim['GPe']))
   '''
-  
-  print 'My guess'
-  G = 7.
-  connect('ex','CMPf','GPe', inDegree=min(32/2,nbSim['CMPf']), gain=G)
-  connect('ex','STN','GPe', inDegree=min(107/2,nbSim['STN']), gain=G)
-  connect('in','MSN','GPe', inDegree=min(14723/2,nbSim['MSN']), gain=G)
-  connect('in','GPe','GPe', inDegree=min(32,nbSim['GPe']), gain=G)
-
   '''
   print 'Maximal divergence of excitation, Maximal convergence of inhibition'
   connect('ex','CMPf','GPe', inDegree=min(27,nbSim['CMPf']))
@@ -172,6 +172,8 @@ elif testedNucleus == 'GPi':
 
   nbSim['GPi']=50.
   create('GPi')
+  # add a constant input current to the GPi so that event without excitatory inputs, we have activity
+  nest.SetStatus(Pop['GPi'],{"I_e":9.})
   nbSim['MSN']=1000.
   create('MSN',fake=True)
   nbSim['STN']=30.
@@ -182,11 +184,12 @@ elif testedNucleus == 'GPi':
   create('CMPf',fake=True)
 
   print 'Connecting neurons\n================'
-  G = 6.4
+  G = 1.3
+  connect('AMPA','STN','GPi',inDegree=30,gain=G)
+  connect('AMPA','CMPf','GPi',inDegree=30,gain=G)
   connect('in','MSN','GPi',inDegree=50,gain=G)
-  connect('ex','STN','GPi',inDegree=30,gain=G)
   connect('in','GPe','GPi',inDegree=10,gain=G)
-  connect('ex','CMPf','GPi',inDegree=30,gain=G)
+
 
 #-------------------------
 # measures
@@ -216,7 +219,7 @@ print '\n ',testedNucleus,'Rate:',expeRate*1000,'Hz'
 #VmSTN = dmSTN["events"]["V_m"]
 #ImSTN = dmSTN["events"]["currents"]
 #tSTN = dmSTN["events"]["times"]
-  
+'''  
 dSD = nest.GetStatus(spkDetect,keys="events")[0]
 evs = dSD["senders"]
 ts = dSD["times"]
@@ -225,3 +228,4 @@ pylab.figure(testedNucleus+' spikes')
 pylab.plot(ts, evs, ".")
 
 pylab.show()
+'''
