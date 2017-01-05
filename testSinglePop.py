@@ -1,7 +1,9 @@
 from LGneurons import *
+import nest.raster_plot
 
-testedNucleus = 'MSN'
+testedNucleus = 'STN'
 simDuration = 5000. # ms
+nest.SetKernelStatus({"overwrite_files":True})
 
 if testedNucleus == 'STN':
 #==========================
@@ -185,8 +187,8 @@ elif testedNucleus == 'GPi':
 
   print 'Connecting neurons\n================'
   G = 1.3
-  connect('AMPA','STN','GPi',inDegree=30,gain=G)
-  connect('AMPA','CMPf','GPi',inDegree=30,gain=G)
+  connect('ex','STN','GPi',inDegree=30,gain=G)
+  connect('ex','CMPf','GPi',inDegree=30,gain=G)
   connect('in','MSN','GPi',inDegree=50,gain=G)
   connect('in','GPe','GPi',inDegree=10,gain=G)
 
@@ -199,7 +201,7 @@ elif testedNucleus == 'GPi':
 #nest.SetStatus(mSTN, {"withtime":True, "record_from":["V_m","currents"]})
 #nest.Connect(mSTN, Pop['STN'])
   
-spkDetect = nest.Create("spike_detector", params={"withgid": True, "withtime": True})
+spkDetect = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label":testedNucleus, "to_file": True})
 nest.Connect(Pop[testedNucleus], spkDetect)
 
 # Simulation
@@ -229,3 +231,6 @@ pylab.plot(ts, evs, ".")
 
 pylab.show()
 '''
+
+nest.raster_plot.from_device(spkDetect,hist=True,title=testedNucleus)
+nest.raster_plot.show()

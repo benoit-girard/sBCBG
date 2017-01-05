@@ -7,6 +7,8 @@ import csv
 from math import sqrt, cosh, exp, pi
 
 rnd.seed(17)
+#nest.SetKernelStatus({'local_num_threads':2, "data_path": "log/", "overwrite_files":True})
+nest.SetKernelStatus({'local_num_threads':2, "data_path": "log/"})
 
 #-------------------------------------------------------------------------------
 # Creates a population of neurons
@@ -53,14 +55,13 @@ def connect(type,nameSrc,nameTgt,inDegree,delay=1.,gain=1.):
   # nu is the average total synaptic inputs a neuron of tgt receives from different neurons of src
   if nameSrc=='CSN' or nameSrc=='PTN':
     nu = alpha[nameSrc+'->'+nameTgt]
-    print '\tnu',nu
-    print '\t',nameSrc+' -> '+nameTgt+': unknown number of different input neurons'
-    print '\t',str(inDegree),"neurons from",nameSrc,"will provide inputs"
+    print '\tMaximal number of distinct input neurons (nu):',nu
+    print '\tMinimal number of distinct input neurons     : unknown'
   else:
     nu = neuronCounts[nameSrc] / neuronCounts[nameTgt] * P[nameSrc+'->'+nameTgt] * alpha[nameSrc+'->'+nameTgt]
     print '\tMaximal number of distinct input neurons (nu):',nu
     print '\tMinimal number of distinct input neurons     :',str(neuronCounts[nameSrc] / neuronCounts[nameTgt] * P[nameSrc+'->'+nameTgt])
-    print '\tCompare with the effective chosen inDegree   :'+str(inDegree)
+  print '\tCompare with the effective chosen inDegree   :',str(inDegree)
 
   # attenuation due to the distance from the receptors to the soma of tgt:
   attenuation = cosh(LX[nameTgt]*(1-p[nameSrc+'->'+nameTgt])) / cosh(LX[nameTgt])
