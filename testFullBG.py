@@ -2,6 +2,11 @@ from LGneurons import *
 import nest.raster_plot
 import time
 
+# params possible keys:
+# - nb{MSN,FSI,STN,GPi,GPe,CSN,PTN,CMPf} : number of simulated neurons for each population
+# - Ie{GPe,GPi} : constant input current to GPe and GPi
+# - G{MSN,FSI,STN,GPi,GPe} : gain to be applied on LG14 input synaptic weights for each population
+
 def main(showRasters=True,params={}):
 
   simDuration = 3000. # ms
@@ -13,39 +18,39 @@ def main(showRasters=True,params={}):
   #-------------------------
   print '\nCreating neurons\n================'
 
-  nbSim['MSN'] = 2644.
+  nbSim['MSN'] = params['nbMSN'] if ('nbMSN' in params) else 2644.
   create('MSN')
 
-  nbSim['FSI'] = 53.
+  nbSim['FSI'] = params['nbFSI'] if ('nbFSI' in params) else 53.
   create('FSI')
 
-  nbSim['STN'] = 8.
+  nbSim['STN'] = params['nbSTN'] if ('nbSTN' in params) else 8.
   create('STN')
 
-  nbSim['GPe'] = 25.
+  nbSim['GPe'] = params['nbGPe'] if ('nbGPe' in params) else 25.
   create('GPe')
-  nest.SetStatus(Pop['GPe'],{"I_e":13.})
+  nest.SetStatus(Pop['GPe'],{"I_e":params['IeGPe'] if ('IeGPe' in params) else 13.})
 
-  nbSim['GPi'] = 14.
+  nbSim['GPi'] = params['nbGPi'] if ('nbGPi' in params) else 14.
   create('GPi')
-  nest.SetStatus(Pop['GPi'],{"I_e":9.})
+  nest.SetStatus(Pop['GPi'],{"I_e":params['IeGPi'] if ('IeGPi' in params) else 9.})
   
-  nbSim['CSN'] = 3000
+  nbSim['CSN'] = params['nbCSN'] if ('nbCSN' in params) else 3000
   create('CSN', fake=True)
   
-  nbSim['PTN'] = 100.
+  nbSim['PTN'] = params['nbPTN'] if ('nbPTN' in params) else 100.
   create('PTN', fake=True)
 
-  nbSim['CMPf']=9.
+  nbSim['CMPf'] = params['nbCMPf'] if ('nbCMPf' in params) else 9.
   create('CMPf', fake=True)
 
   print "Number of simulated neurons:", nbSim
 
-  G = {'MSN': 3.5, # 3.9
-       'FSI': 1.1,
-       'STN': 1.35,
-       'GPe': 1.3,
-       'GPi': 1.3,
+  G = {'MSN': params['GMSN'] if ('GMSN' in params) else 3.9, # 3.9
+       'FSI': params['GFSI'] if ('GFSI' in params) else 1.1,
+       'STN': params['GSTN'] if ('GSTN' in params) else 1.35,
+       'GPe': params['GGPe'] if ('GGPe' in params) else 1.3,
+       'GPi': params['GGPi'] if ('GGPi' in params) else 1.3,
       }
 
   print "Gains on LG14 syn. strength:", G
@@ -136,4 +141,5 @@ def main(showRasters=True,params={}):
 
 #---------------------------
 if __name__ == '__main__':
-  main()
+  params = {'GMSN':3.8}
+  main(showRasters=False,params=params)
