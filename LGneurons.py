@@ -45,6 +45,7 @@ def create(name,fake=False):
 #-------------------------------------------------------------------------------
 def connect(type,nameSrc,nameTgt,inDegree,delay=1.,gain=1.):
   print "* connecting ",nameSrc,"->",nameTgt,"with",type,"connection and",inDegree,"inputs"
+
   # process receptor types
   if type == 'ex':
     lRecType = ['AMPA','NMDA']
@@ -56,7 +57,7 @@ def connect(type,nameSrc,nameTgt,inDegree,delay=1.,gain=1.):
     lRecType = ['GABA']
   else:
     print "Undefined connexion type:",type
-
+  '''
   # compute connexion strength
   # nu is the average total synaptic inputs a neuron of tgt receives from different neurons of src
   if nameSrc=='CSN' or nameSrc=='PTN':
@@ -71,6 +72,9 @@ def connect(type,nameSrc,nameTgt,inDegree,delay=1.,gain=1.):
 
   # attenuation due to the distance from the receptors to the soma of tgt:
   attenuation = cosh(LX[nameTgt]*(1-p[nameSrc+'->'+nameTgt])) / cosh(LX[nameTgt])
+  '''
+  
+  W = computeW(lRecType,nameSrc,nameTgt,inDegree,gain,verbose=True)
 
   # To ensure that for excitatory connections, Tgt neurons receive AMPA and NMDA projections from the same Src neurons, 
   # we have to handle the "indegree" connectivity ourselves:
@@ -82,21 +86,37 @@ def connect(type,nameSrc,nameTgt,inDegree,delay=1.,gain=1.):
     inputPop = tuple(inputPop)
 
     for r in lRecType:
-      w = nu / float(inDegree) * attenuation * wPSP[recType[r]-1] * gain
+      w = W[r]
+      #w = nu / float(inDegree) * attenuation * wPSP[recType[r]-1] * gain
       nest.Connect(pre=inputPop, post=(Pop[nameTgt][nTgt],),syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
 
-    '''
-    for input in inputTable:
-      # final weight computation, modulated by the type of receptor and
-      # construction of the NEST connection
-      for r in lRecType:
-        #print '\t',nu,inDegree,attenuation,r,recType[r]-1,wPSP # verifier /nbsim(nameTGT)
-        w = nu / float(inDegree) * attenuation * wPSP[recType[r]-1] * gain
-        #print '\t',Pop[nameSrc], Pop[nameTgt]
-        #print '\t',Pop[nameSrc][input], Pop[nameTgt][nTgt],w
-        nest.Connect(pre=(Pop[nameSrc][input],), post=(Pop[nameTgt][nTgt],),syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
-        # traiter toues les connexions d'un coup, en faisant des listes à l'avance
-    '''
+#-------------------------------------------------------------------------------
+# computes the weight of a connection, based on LG14 parameters
+#-------------------------------------------------------------------------------
+def computeW(listRecType,nameSrc,nameTgt,inDegree,gain=1.,verbose=False):
+  # nu is the average total synaptic inputs a neuron of tgt receives from different neurons of src
+  if nameSrc=='CSN' or nameSrc=='PTN':
+    nu = alpha[nameSrc+'->'+nameTgt]
+    if verbose:
+      print '\tMaximal number of distinct input neurons (nu):',nu
+      print '\tMinimal number of distinct input neurons     : unknown'
+  else:
+    nu = neuronCounts[nameSrc] / neuronCounts[nameTgt] * P[nameSrc+'->'+nameTgt] * alpha[nameSrc+'->'+nameTgt]
+    if verbose:
+      print '\tMaximal number of distinct input neurons (nu):',nu
+      print '\tMinimal number of distinct input neurons     :',str(neuronCounts[nameSrc] / neuronCounts[nameTgt] * P[nameSrc+'->'+nameTgt])
+  if verbose:
+    print '\tCompare with the effective chosen inDegree   :',str(inDegree)
+
+  # attenuation due to the distance from the receptors to the soma of tgt:
+  attenuation = cosh(LX[nameTgt]*(1-p[nameSrc+'->'+nameTgt])) / cosh(LX[nameTgt])
+
+  w={}
+  for r in listRecType:
+    w[r] = nu / float(inDegree) * attenuation * wPSP[recType[r]-1] * gain
+
+  return w
+
 #-------------------------------------------------------------------------------
 
 dt = 0.01 # ms
