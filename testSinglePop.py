@@ -1,7 +1,7 @@
 from LGneurons import *
 import nest.raster_plot
 
-testedNucleus = 'STN'
+testedNucleus = 'GPe'
 simDuration = 5000. # ms
 nest.SetKernelStatus({"overwrite_files":True})
 
@@ -204,6 +204,19 @@ elif testedNucleus == 'GPi':
 spkDetect = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label":testedNucleus, "to_file": True})
 nest.Connect(Pop[testedNucleus], spkDetect)
 
+#-------------------------
+# disconnection tests
+#-------------------------
+
+GPeInConn = nest.GetConnections(target=Pop['GPe'])
+GPeInConnSTN = nest.GetConnections(target=Pop['GPe'],source=Pop['STN'])
+GPeInConnCMPf = nest.GetConnections(target=Pop['GPe'],source=Pop['CMPf'])
+print "GPe Exitatory inputs disconnected"
+#print "NB CONNECT",len(GPeInConn),len(GPeInConnSTN)
+print GPeInConnSTN
+#nest.SetStatus(GPeInConnSTN, {'weight':0.0}) # how to be specific to AMPA or NMDA ?
+#nest.SetStatus(GPeInConnCMPf, {'weight':0.0}) # how to be specific to AMPA, NMDA or GABA inputs ?                                                                
+#-------------------------
 # Simulation
 #-------------------------
 #nest.ResetKernel()

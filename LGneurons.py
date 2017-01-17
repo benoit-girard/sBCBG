@@ -1,5 +1,11 @@
+#!/apps/free/python/2.7.10/bin/python
 # -*- coding: utf-8 -*-
-import pylab
+interactive = True # avoid loading X dependent things
+                   # set to False for simulations on Sango
+
+if interactive :
+  import pylab
+
 import nest
 import numpy as np
 import numpy.random as rnd
@@ -70,7 +76,16 @@ def connect(type,nameSrc,nameTgt,inDegree,delay=1.,gain=1.):
   # we have to handle the "indegree" connectivity ourselves:
   for nTgt in range(int(nbSim[nameTgt])):
     inputTable = rnd.choice(int(nbSim[nameSrc]),size=int(inDegree),replace=False)
+    inputPop = []
+    for i in inputTable:
+      inputPop.append(Pop[nameSrc][i])
+    inputPop = tuple(inputPop)
 
+    for r in lRecType:
+      w = nu / float(inDegree) * attenuation * wPSP[recType[r]-1] * gain
+      nest.Connect(pre=inputPop, post=(Pop[nameTgt][nTgt],),syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
+
+    '''
     for input in inputTable:
       # final weight computation, modulated by the type of receptor and
       # construction of the NEST connection
@@ -80,62 +95,33 @@ def connect(type,nameSrc,nameTgt,inDegree,delay=1.,gain=1.):
         #print '\t',Pop[nameSrc], Pop[nameTgt]
         #print '\t',Pop[nameSrc][input], Pop[nameTgt][nTgt],w
         nest.Connect(pre=(Pop[nameSrc][input],), post=(Pop[nameTgt][nTgt],),syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
-
-#-------------------------------------------------------------------------------
-
-#-------------------------------------------------------------------------------
-# Establishes a connexion between two populations, following the results of LG14
-# type : a string 'ex' or 'in', defining whether it is excitatory or inhibitory
-# nameTgt, nameSrc : strings naming the populations, as defined in NUCLEI list
-# outDegree : number of Tgt neurons targeted by one single Src neuron 
-# 
-#-------------------------------------------------------------------------------
-'''
-def connectOut(type,nameSrc,nameTgt,outDegree,delay=1.):
-  print "* connecting ",nameSrc,"->",nameTgt,"with",type,"connection and",inDegree,"inputs"
-  # process receptor types
-  if type == 'ex':
-    lRecType = ['AMPA','NMDA']
-  elif type == 'in':
-    lRecType = ['GABA']
-  else:
-    print "Undefined connexion type:",type
-
-  # compute connexion strength
-  # nu is the average total synaptic inputs a neuron of tgt receives from different neurons of src
-  if nameSrc=='CSN' or nameSrc=='PTN':
-    nu = alpha[nameSrc+'->'+nameTgt]
-    print '\tnu',nu
-    print '\t',nameSrc+' -> '+nameTgt+': unknown number of different input neurons'
-    print '\t',str(inDegree),"neurons from",nameSrc,"will provide inputs"
-  else:
-    nu = neuronCounts[nameSrc] / neuronCounts[nameTgt] * P[nameSrc+'->'+nameTgt] * alpha[nameSrc+'->'+nameTgt]
-    print '\tnu',nu
-    print '\t',nameSrc+' -> '+nameTgt+': avg number of different input neurons: '+str(neuronCounts[nameSrc] / neuronCounts[nameTgt] * P[nameSrc+'->'+nameTgt])
-    print '\tcompare with the effective chosen inDegree '+str(inDegree)
-
-  # attenuation due to the distance from the receptors to the soma of tgt:
-  attenuation = cosh(LX[nameTgt]*(1-p[nameSrc+'->'+nameTgt])) / cosh(LX[nameTgt])
-
-  # To ensure that for excitatory connections, Tgt neurons receive AMPA and NMDA projections from the same Src neurons, 
-  # we have to handle the "indegree" connectivity ourselves:
-  for nTgt in range(int(nbSim[nameTgt])):
-    inputTable = rnd.choice(int(nbSim[nameSrc]),size=inDegree,replace=False)
-
-    for input in inputTable:
-      # final weight computation, modulated by the type of receptor and
-      # construction of the NEST connection
-      for r in lRecType:
-        #print '\t',nu,inDegree,attenuation,r,recType[r]-1,wPSP # verifier /nbsim(nameTGT)
-        w = nu / float(inDegree) * attenuation * wPSP[recType[r]-1]
-        #print '\t',Pop[nameSrc], Pop[nameTgt]
-        #print '\t',Pop[nameSrc][input], Pop[nameTgt][nTgt],w
-        nest.Connect(pre=(Pop[nameSrc][input],), post=(Pop[nameTgt][nTgt],),syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
-'''
+        # traiter toues les connexions d'un coup, en faisant des listes à l'avance
+    '''
 #-------------------------------------------------------------------------------
 
 dt = 0.01 # ms
 simDuration = 10000. # in ms
+
+# Acceptable firing rate ranges (FRR) in normal and deactivation experiments
+# extracted from LG14 Table 5
+
+FRRNormal = {'MSN': [0,1],
+             'FSI': [0,20],
+             'STN': [15.2,22.8],
+             'GPe': [55.7,74.5],
+             'GPi': [59.1,79.5],
+             }
+FRRGPi = {'All':[53.4,96.8],
+          'NMDA':[27.2451,78.6255],
+          'NMDA+AMPA':[6.811275,52.364583],
+          'AMPA':[5.7327,66.0645],
+          'GABAA':[44.1477,245.8935],
+          }
+FRRGPe = {'AMPA':[4.2889,58.7805],
+          'AMPA+GABAA':[10.0017148,137.076126],
+          'NMDA':[29.5767,61.1645],
+          'GABAA':[74.8051,221.4885],
+          }
 
 # imported from Chadoeuf "connexweights"
 # All the parameters needed to replicate Lienard model
@@ -180,6 +166,7 @@ nbSim = {'MSN': 0.,
 # P(X->Y): probability that a given neuron from X projects to at least neuron of Y
 P = {'MSN->GPe': 0.82,
      'MSN->GPi': 1.,
+     'MSN->MSN': 1.,
      'FSI->MSN': 1.,
      'FSI->FSI': 1.,
      'STN->GPe': 0.83,
@@ -207,6 +194,7 @@ P = {'MSN->GPe': 0.82,
 # for the moment set from one specific parameterization, should be read from Jean's solution file 
 alpha = {'MSN->GPe':   171,
          'MSN->GPi':   210,
+         'MSN->MSN':   210,
          'FSI->MSN':  4362,
          'FSI->FSI':   116,
          'STN->GPe':   428,
@@ -220,8 +208,8 @@ alpha = {'MSN->GPe':   171,
          'GPe->FSI':   353,
          'CSN->MSN':   342, # here, represents directly \nu
          'CSN->FSI':   250, # here, represents directly \nu
-         'PTN->MSN':     5, # here, represents directly \nu ; TO BE CHECKED
-         'PTN->FSI':     5, # here, represents directly \nu ; TO BE CHECKED
+         'PTN->MSN':     5, # here, represents directly \nu
+         'PTN->FSI':     5, # here, represents directly \nu 
          'PTN->STN':   259, # here, represents directly \nu
          'CMPf->MSN': 4965,
          'CMPf->FSI': 1053,
@@ -234,6 +222,7 @@ alpha = {'MSN->GPe':   171,
 # Warning: p is not P!
 p = {'MSN->GPe':  0.48,
      'MSN->GPi':  0.59,
+     'MSN->MSN':  0.77,
      'FSI->MSN':  0.19,
      'FSI->FSI':  0.16,
      'STN->GPe':  0.30,
@@ -442,18 +431,19 @@ def main():
   evs = dSD["senders"]
   ts = dSD["times"]
 
-  pylab.figure('STN spikes')
-  pylab.plot(ts, evs, ".")
+  if interactive:
+    pylab.figure('STN spikes')
+    pylab.plot(ts, evs, ".")
 
-  if showSTNVolt:
-    pylab.figure('STN Voltage')
-    pylab.plot(tSTN, VmSTN)
+    if showSTNVolt:
+      pylab.figure('STN Voltage')
+      pylab.plot(tSTN, VmSTN)
 
-  if (showSynCurr):
-    pylab.figure("STN input PSPs")
-    pylab.plot(tSTN, ImSTN)
+    if (showSynCurr):
+      pylab.figure("STN input PSPs")
+      pylab.plot(tSTN, ImSTN)
 
-  pylab.show()
+    pylab.show()
 
 #---------------------------
 if __name__ == '__main__':
