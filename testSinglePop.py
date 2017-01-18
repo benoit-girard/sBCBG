@@ -1,7 +1,7 @@
 from LGneurons import *
 import nest.raster_plot
 
-testedNucleus = 'GPe'
+testedNucleus = 'MSN'
 simDuration = 5000. # ms
 nest.SetKernelStatus({"overwrite_files":True})
 
@@ -76,34 +76,11 @@ elif testedNucleus == 'GPe':
   #---------------------------
   print 'Connecting neurons\n================'
 
-  print 'My guess'
   G = 1.3
   connect('ex','CMPf','GPe', inDegree=min(32/2,nbSim['CMPf']), gain=G)
   connect('ex','STN','GPe', inDegree=min(107/2,nbSim['STN']), gain=G)
   connect('in','MSN','GPe', inDegree=min(14723/2,nbSim['MSN']), gain=G)
   connect('in','GPe','GPe', inDegree=min(32,nbSim['GPe']), gain=G)
-
-  '''
-  print 'Maximal convergence of excitation, Maximal divergence of inhibition'
-  connect('ex','CMPf','GPe', inDegree=1)
-  connect('ex','STN','GPe', inDegree=1)
-  connect('in','MSN','GPe', inDegree=min(14723,nbSim['MSN']))
-  connect('in','GPe','GPe', inDegree=min(32,nbSim['GPe']))
-  '''
-  '''
-  print 'Somewhere in the middle'
-  connect('ex','CMPf','GPe', inDegree=min(32/2,nbSim['CMPf']))
-  connect('ex','STN','GPe', inDegree=min(107/2,nbSim['STN']))
-  connect('in','MSN','GPe', inDegree=min(14723/2,nbSim['MSN']))
-  connect('in','GPe','GPe', inDegree=min(32/2,nbSim['GPe']))
-  '''
-  '''
-  print 'Maximal divergence of excitation, Maximal convergence of inhibition'
-  connect('ex','CMPf','GPe', inDegree=min(27,nbSim['CMPf']))
-  connect('ex','STN','GPe', inDegree=min(107,nbSim['STN']))
-  connect('in','MSN','GPe', inDegree=min(86,nbSim['MSN']))
-  connect('in','GPe','GPe', inDegree=min(1,nbSim['GPe']))
-  '''
 
 elif testedNucleus == 'MSN':
 #==========================
@@ -208,12 +185,12 @@ nest.Connect(Pop[testedNucleus], spkDetect)
 # disconnection tests
 #-------------------------
 
-GPeInConn = nest.GetConnections(target=Pop['GPe'])
-GPeInConnSTN = nest.GetConnections(target=Pop['GPe'],source=Pop['STN'])
-GPeInConnCMPf = nest.GetConnections(target=Pop['GPe'],source=Pop['CMPf'])
-print "GPe Exitatory inputs disconnected"
+#GPeInConn = nest.GetConnections(target=Pop['GPe'])
+#GPeInConnSTN = nest.GetConnections(target=Pop['GPe'],source=Pop['STN'])
+#GPeInConnCMPf = nest.GetConnections(target=Pop['GPe'],source=Pop['CMPf'])
+#print "GPe Exitatory inputs disconnected"
 #print "NB CONNECT",len(GPeInConn),len(GPeInConnSTN)
-print GPeInConnSTN
+#print GPeInConnSTN
 #nest.SetStatus(GPeInConnSTN, {'weight':0.0}) # how to be specific to AMPA or NMDA ?
 #nest.SetStatus(GPeInConnCMPf, {'weight':0.0}) # how to be specific to AMPA, NMDA or GABA inputs ?                                                                
 #-------------------------

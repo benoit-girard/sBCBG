@@ -12,9 +12,13 @@ import numpy.random as rnd
 import csv
 from math import sqrt, cosh, exp, pi
 
-rnd.seed(17)
-#nest.SetKernelStatus({'local_num_threads':2, "data_path": "log/", "overwrite_files":True})
-nest.SetKernelStatus({'local_num_threads':2, "data_path": "log/"})
+#-------------------------------------------------------------------------------
+# Changes the default of the iaf_psc_alpha_multisynapse neurons 
+# Very important because it defines the 3 types of receptors (AMPA, NMDA, GABA) that will be needed
+# Has to be called after any KernelReset
+#-------------------------------------------------------------------------------
+def initNeurons():
+  nest.SetDefaults("iaf_psc_alpha_multisynapse", CommonParams)
 
 #-------------------------------------------------------------------------------
 # Creates a population of neurons
@@ -119,6 +123,10 @@ def computeW(listRecType,nameSrc,nameTgt,inDegree,gain=1.,verbose=False):
 
 #-------------------------------------------------------------------------------
 
+rnd.seed(17)
+#nest.SetKernelStatus({'local_num_threads':2, "data_path": "log/", "overwrite_files":True})
+nest.SetKernelStatus({'local_num_threads':2, "data_path": "log/"})
+
 dt = 0.01 # ms
 simDuration = 10000. # in ms
 
@@ -142,6 +150,7 @@ FRRGPe = {'AMPA':[4.2889,58.7805],
           'NMDA':[29.5767,61.1645],
           'GABAA':[74.8051,221.4885],
           }
+FRRAnt = {'GPe':FRRGPe,'GPi':FRRGPi}
 
 # imported from Chadoeuf "connexweights"
 # All the parameters needed to replicate Lienard model
@@ -305,7 +314,7 @@ CommonParams = {'t_ref':         2.0,
                 'V_min':       -20.0, # as in HSG06
                 'tau_syn':   tau_syn
                }
-nest.SetDefaults("iaf_psc_alpha_multisynapse", CommonParams)
+initNeurons() # sets the default params of iaf_alpha_psc_mutisynapse neurons to CommonParams
 
 MSNparams = {'tau_m':        13.0, # according to SBE12
              'V_th':         30.0, # value of the LG14 example model, table 9
