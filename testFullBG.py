@@ -1,13 +1,14 @@
 from LGneurons import *
 import nest.raster_plot
 import time
+import sys
 
 # params possible keys:
 # - nb{MSN,FSI,STN,GPi,GPe,CSN,PTN,CMPf} : number of simulated neurons for each population
 # - Ie{GPe,GPi} : constant input current to GPe and GPi
 # - G{MSN,FSI,STN,GPi,GPe} : gain to be applied on LG14 input synaptic weights for each population
 
-def checkAvgFR(showRasters=True,params={},antagInjectionSite='none',antag=''):
+def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag=''):
   nest.ResetKernel()
   nest.SetKernelStatus({'local_num_threads':2, "data_path": "log/"})
   initNeurons()
@@ -185,7 +186,7 @@ def checkAvgFR(showRasters=True,params={},antagInjectionSite='none',antag=''):
           # if the measured rate is within acceptable values
           strTestPassed = 'OK'
           score += 1
-          print '*',N,'with',antag,'antagonist(s):', expeRate[N],'Hz ->',strTestPassed
+        print '*',N,'with',antag,'antagonist(s):', expeRate[N],'Hz ->',strTestPassed
       else:
         print '*',N,'- Rate:',expeRate[N],'Hz'
 
@@ -204,13 +205,13 @@ def checkAvgFR(showRasters=True,params={},antagInjectionSite='none',antag=''):
 #-----------------------------------------------------------------------
 def main(showRasters=True,params={}):
   score = np.zeros((2))
-  score += checkAvgFR(showRasters=True,params=params,antagInjectionSite='none',antag='')
+  score += checkAvgFR(params=params,antagInjectionSite='none',antag='')
 
   for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
-    score += checkAvgFR(showRasters=True,params=params,antagInjectionSite='GPe',antag=a)
+    score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
 
   for a in ['All','AMPA','AMPA+NMDA','NMDA','GABAA']:
-    score += checkAvgFR(showRasters=True,params=params,antagInjectionSite='GPi',antag=a)
+    score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
 
   # GPe inactivations:
   #score += checkAvgFR(showRasters=True,params=params,antagInjectionSite='GPe',antag='AMPA')
@@ -232,6 +233,7 @@ def main(showRasters=True,params={}):
 
 #---------------------------
 if __name__ == '__main__':
+
   params = {'GMSN':4.37,
             'GFSI':1.3,
             'GSTN':1.35,
@@ -242,4 +244,9 @@ if __name__ == '__main__':
             'inDegFSIFSI':15, # according to Humphries et al., 2010, 13-63 FSIs->FSI
             'inDegGPeGPi':23
             } 
+
+  if len(sys.argv) >= 2:
+    print "Command Line Parameters"
+    pass
+
   main(showRasters=True,params=params)
