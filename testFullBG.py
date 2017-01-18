@@ -210,7 +210,7 @@ def main(showRasters=True,params={}):
   for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
     score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
 
-  for a in ['All','AMPA','AMPA+NMDA','NMDA','GABAA']:
+  for a in ['All','AMPA','NMDA+AMPA','NMDA','GABAA']:
     score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
 
   # GPe inactivations:
