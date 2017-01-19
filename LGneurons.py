@@ -352,6 +352,7 @@ BGparams = {'MSN':MSNparams,
             'GPi':GPiparams}
 
 Pop = {}
+Fake= {} # Fake contains the Poisson Generators, that will feed the parrot_neurons, stored in Pop
 
 # the dictionary used to store the desired discharge rates of the various Poisson generators that will be used as external inputs
 rate = {'CSN':   2.  ,

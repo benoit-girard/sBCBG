@@ -8,7 +8,7 @@ import sys
 # - Ie{GPe,GPi} : constant input current to GPe and GPi
 # - G{MSN,FSI,STN,GPi,GPe} : gain to be applied on LG14 input synaptic weights for each population
 
-def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag=''):
+def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',logFileName=''):
   nest.ResetKernel()
   nest.SetKernelStatus({'local_num_threads':2, "data_path": "log/"})
   initNeurons()
@@ -150,15 +150,17 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag=''):
   spkDetect={} # spike detectors used to record the experiment
   expeRate={}
 
-  execTime = time.localtime()
-  timeStr = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
+  if logFileName == '':
+    execTime = time.localtime()
+    logFileName = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
+
   antagStr = ''
   if antagInjectionSite != 'none':
     antagStr = antagInjectionSite+'_'+antag+'_'
 
   for N in NUCLEI:
     # 500ms offset period for network stabilization
-    spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": timeStr+'_'+antagStr+N, "to_file": True, 'start':500.,'stop':500.+simDuration})
+    spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": logFileName+'_'+antagStr+N, "to_file": True, 'start':500.,'stop':500.+simDuration})
     nest.Connect(Pop[N], spkDetect[N])
 
   #-------------------------
@@ -168,6 +170,10 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag=''):
 
   score = 0
 
+  text=[]
+  s = '----- RESULTS -----'
+  print s
+  text.append(s)
   if antagInjectionSite == 'none':
     for N in NUCLEI:
       strTestPassed = 'NO!'
@@ -176,7 +182,9 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag=''):
         # if the measured rate is within acceptable values
         strTestPassed = 'OK'
         score += 1
-      print '*',N,'- Rate:',expeRate[N],'Hz -> '+strTestPassed
+      s = '* '+N+' - Rate: '+str(expeRate[N])+' Hz -> '+strTestPassed+' ('+str(FRRNormal[N][0]+' , '+str(FRRNormal[N][1])+')'
+      print s
+      text.append(s)
   else:
     for N in NUCLEI:
       expeRate[N] = nest.GetStatus(spkDetect[N], 'n_events')[0] / float(nbSim[N]*simDuration) * 1000
@@ -186,9 +194,20 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag=''):
           # if the measured rate is within acceptable values
           strTestPassed = 'OK'
           score += 1
-        print '*',N,'with',antag,'antagonist(s):', expeRate[N],'Hz ->',strTestPassed
+        s = '* '+N+' with '+antag+' antagonist(s): '+str(expeRate[N])+' Hz -> '+strTestPassed+' ('+str(FRRAnt[N][antag][0]+' , '+str(FRRAnt[N][antag][1])+')'
+        print s
+        text.append(s)
       else:
-        print '*',N,'- Rate:',expeRate[N],'Hz'
+        s = '* '+N+' - Rate: '+str(expeRate[N])+' Hz'
+        print s
+        text.append(s)
+  s = '-------------------'
+  print s
+  text.append(s)
+
+  res = open('OutSummary_'+logFileName+'.txt','a')
+  res.writelines(text)
+  res.close()
 
   #-------------------------
   # Displays
@@ -203,50 +222,79 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag=''):
   return score, 5 if antagInjectionSite == 'none' else 1
 
 #-----------------------------------------------------------------------
-def main(showRasters=True,params={}):
-  score = np.zeros((2))
-  score += checkAvgFR(params=params,antagInjectionSite='none',antag='')
+def main(params={}):
 
+  execTime = time.localtime()
+  timeStr = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
+
+  score = np.zeros((2))
+  score += checkAvgFR(params=params,antagInjectionSite='none',antag='',logFileName=timeStr)
+
+  
   for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
-    score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
+    score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a,logFileName=timeStr)
 
   for a in ['All','AMPA','NMDA+AMPA','NMDA','GABAA']:
-    score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
-
-  # GPe inactivations:
-  #score += checkAvgFR(showRasters=True,params=params,antagInjectionSite='GPe',antag='AMPA')
-  #score += checkAvgFR(showRasters=True,params=params,antagInjectionSite='GPe',antag='AMPA+GABAA')
-  #score += checkAvgFR(showRasters=True,params=params,antagInjectionSite='GPe',antag='NMDA')
-  #score += checkAvgFR(showRasters=True,params=params,antagInjectionSite='GPe',antag='GABAA')
-  # GPi inactivations:
-  #score += checkAvgFR(showRasters=True,params=params,antagInjectionSite='GPi',antag='All')
-  #score += checkAvgFR(showRasters=True,params=params,antagInjectionSite='GPi',antag='NMDA')
-  #score += checkAvgFR(showRasters=True,params=params,antagInjectionSite='GPi',antag='NMDA+AMPA')
-  #score += checkAvgFR(showRasters=True,params=params,antagInjectionSite='GPi',antag='AMPA')
-  #score += checkAvgFR(showRasters=True,params=params,antagInjectionSite='GPi',antag='GABAA')
-
-
+    score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a,logFileName=timeStr)
+  
   #-------------------------
   print "******************"
   print "* Score:",score[0],'/',score[1]
   print "******************"
 
+  #-------------------------
+  # log the results in a file
+  #-------------------------
+  res = open('OutSummary_'+timeStr+'.txt','w')
+  for k,v in params.iteritems():
+    res.writelines(k+' , '+str(v)+'\n')
+  res.writelines("Score: "+str(score[0])+' , '+str(score[1]))
+  res.close()
+
 #---------------------------
 if __name__ == '__main__':
 
-  params = {'GMSN':4.37,
-            'GFSI':1.3,
-            'GSTN':1.35,
-            'GGPe':1.3,
-            'GGPi':1.3,
-            'inDegFSIMSN':30, # according to Humphries et al. 2010, 30-150 FSIs->MSN
-            'inDegMSNMSN':70, # according to Koos et al. 2004, cited by Humphries et al., 2010, on avg 3 synpase per MSN-MSN connection
-            'inDegFSIFSI':15, # according to Humphries et al., 2010, 13-63 FSIs->FSI
-            'inDegGPeGPi':23
+  params = {'nbMSN': 2644.,
+            'nbFSI':   53.,
+            'nbSTN':    8.,
+            'nbGPe':   25.,
+            'nbGPi':   14.,
+            'nbCSN': 3000.,
+            'nbPTN':  100.,
+            'nbCMPf':   9.,
+            'GMSN':     4.37,
+            'GFSI':     1.3,
+            'GSTN':     1.35,
+            'GGPe':     1.3,
+            'GGPi':     1.3,
+            'IeGPe':   13.,
+            'IeGPi':   13.,
+            'inDegCSNMSN': 100.,
+            'inDegPTNMSN':   1.,
+            'inDegCMPfMSN':  1.,
+            'inDegFSIMSN':  30., # according to Humphries et al. 2010, 30-150 FSIs->MSN
+            'inDegMSNMSN':  70., # according to Koos et al. 2004, cited by Humphries et al., 2010, on avg 3 synpase per MSN-MSN connection
+            'inDegCSNFSI':  50.,
+            'inDegPTNFSI':   1.,
+            'inDegSTNFSI':   2.,
+            'inDegGPeFSI':  25.,
+            'inDegCMPfFSI':  9.,
+            'inDegFSIFSI':  15., # according to Humphries et al., 2010, 13-63 FSIs->FSI
+            'inDegPTNSTN':  25.,
+            'inDegCMPfSTN':  9.,
+            'inDegGPeSTN':  25.,
+            'inDegCMPfGPe':  9.,
+            'inDegSTNGPe':   8.,
+            'inDegMSNGPe':2644.,
+            'inDegGPeGPe':  25.,
+            'inDegMSNGPi':2644.,
+            'inDegSTNGPi':   8.,
+            'inDegGPeGPi':  23.,
+            'inDegCMPfGPi':  9.,
             } 
 
   if len(sys.argv) >= 2:
     print "Command Line Parameters"
     pass
 
-  main(showRasters=True,params=params)
+  main(params=params)
