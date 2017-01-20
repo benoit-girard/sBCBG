@@ -230,15 +230,16 @@ def main(params={}):
   timeStr = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
 
   score = np.zeros((2))
-  score += checkAvgFR(params=params,antagInjectionSite='none',antag='',logFileName=timeStr)
+  score += checkAvgFR(params=params,antagInjectionSite='none',antag='',logFileName=timeStr,showRasters=True)
 
-  
+
   for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
     score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a,logFileName=timeStr)
 
   for a in ['All','AMPA','NMDA+AMPA','NMDA','GABAA']:
     score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a,logFileName=timeStr)
-  
+
+
   #-------------------------
   print "******************"
   print "* Score:",score[0],'/',score[1]
@@ -297,6 +298,51 @@ if __name__ == '__main__':
 
   if len(sys.argv) >= 2:
     print "Command Line Parameters"
-    pass
+    paramKeys = ['nbMSN',
+                 'nbFSI',
+                 'nbSTN',
+                 'nbGPe',
+                 'nbGPi',
+                 'nbCSN',
+                 'nbPTN',
+                 'nbCMPf',
+                 'GMSN',
+                 'GFSI',
+                 'GSTN',
+                 'GGPe',
+                 'GGPi', 
+                 'IeGPe',
+                 'IeGPi',
+                 'inDegCSNMSN',
+                 'inDegPTNMSN',
+                 'inDegCMPfMSN',
+                 'inDegFSIMSN',
+                 'inDegMSNMSN', 
+                 'inDegCSNFSI',
+                 'inDegPTNFSI',
+                 'inDegSTNFSI',
+                 'inDegGPeFSI',
+                 'inDegCMPfFSI',
+                 'inDegFSIFSI',
+                 'inDegPTNSTN',
+                 'inDegCMPfSTN',
+                 'inDegGPeSTN',
+                 'inDegCMPfGPe',
+                 'inDegSTNGPe',
+                 'inDegMSNGPe',
+                 'inDegGPeGPe',
+                 'inDegMSNGPi',
+                 'inDegSTNGPi',
+                 'inDegGPeGPi',
+                 'inDegCMPfGPi',
+                 ]
+    if len(sys.argv) == len(paramKeys)+1:
+      print "Using command line parameters"
+      i = 0
+      for k in paramKeys:
+        i+=1
+        params[k] = float(sys.argv[i])
+    else :
+      print "Incorrect number of parameters:",len(sys.argv),"-",len(paramKeys),"expected"
 
   main(params=params)

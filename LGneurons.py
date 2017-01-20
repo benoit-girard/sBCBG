@@ -174,6 +174,7 @@ Rm=20000.E-4 # Ohms.m^2
 NUCLEI=['MSN','FSI','STN','GPe','GPi']
 
 # Number of neurons in the real macaque brain
+# one hemisphere only, based on Hardman et al. 2002 paper, except for striatum & CM/Pf
 neuronCounts={'MSN': 26448.0E3,
               'FSI':   532.0E3,
               'STN':    77.0E3,
