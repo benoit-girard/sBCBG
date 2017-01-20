@@ -10,10 +10,12 @@ import sys
 
 def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',logFileName=''):
   nest.ResetKernel()
-  nest.SetKernelStatus({'local_num_threads':2, "data_path": "log/"})
+  dataPath='log/'
+  nest.SetKernelStatus({'local_num_threads':2, "data_path": dataPath})
   initNeurons()
 
-  simDuration = 3000. # ms
+  offsetDuration = 1000.
+  simDuration = 5000. # ms
   # nest.SetKernelStatus({"overwrite_files":True}) # Thanks to use of timestamps, file names should now 
                                                    # be different as long as they are not created during the same second
 
@@ -65,7 +67,6 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   print '\nConnecting neurons\n================'
   print "**",antag,"antagonist injection in",antagInjectionSite,"**"
   print '* MSN Inputs'
-  print 'DEBUG',nbSim['CSN'], min(params['inDegCSNMSN'],nbSim['CSN']) if ('inDegCSNMSN' in params) else min(100,nbSim['CSN']), G['MSN']
   connect('ex','CSN','MSN', inDegree= min(params['inDegCSNMSN'],nbSim['CSN']) if ('inDegCSNMSN' in params) else min(100,nbSim['CSN']),gain=G['MSN'])
   connect('ex','PTN','MSN', inDegree= min(params['inDegPTNMSN'],nbSim['PTN']) if ('inDegPTNMSN' in params) else 1,gain=G['MSN'])
   connect('ex','CMPf','MSN',inDegree= min(params['inDegCMPfMSN'],nbSim['CMPf']) if ('inDegCMPfMSN' in params) else 1,gain=G['MSN'])
@@ -159,21 +160,21 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
     antagStr = antagInjectionSite+'_'+antag+'_'
 
   for N in NUCLEI:
-    # 500ms offset period for network stabilization
-    spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": logFileName+'_'+antagStr+N, "to_file": True, 'start':500.,'stop':500.+simDuration})
+    # 1000ms offset period for network stabilization
+    spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": logFileName+'_'+antagStr+N, "to_file": True, 'start':offsetDuration,'stop':offsetDuration+simDuration})
     nest.Connect(Pop[N], spkDetect[N])
 
   #-------------------------
   # Simulation
   #-------------------------
-  nest.Simulate(simDuration+500.)
+  nest.Simulate(simDuration+offsetDuration)
 
   score = 0
 
   text=[]
   s = '----- RESULTS -----'
   print s
-  text.append(s)
+  text.append(s+'\n')
   if antagInjectionSite == 'none':
     for N in NUCLEI:
       strTestPassed = 'NO!'
@@ -182,9 +183,9 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
         # if the measured rate is within acceptable values
         strTestPassed = 'OK'
         score += 1
-      s = '* '+N+' - Rate: '+str(expeRate[N])+' Hz -> '+strTestPassed+' ('+str(FRRNormal[N][0]+' , '+str(FRRNormal[N][1])+')'
+      s = '* '+N+' - Rate: '+str(expeRate[N])+' Hz -> '+strTestPassed+' ('+str(FRRNormal[N][0])+' , '+str(FRRNormal[N][1])+')'
       print s
-      text.append(s)
+      text.append(s+'\n')
   else:
     for N in NUCLEI:
       expeRate[N] = nest.GetStatus(spkDetect[N], 'n_events')[0] / float(nbSim[N]*simDuration) * 1000
@@ -194,18 +195,19 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
           # if the measured rate is within acceptable values
           strTestPassed = 'OK'
           score += 1
-        s = '* '+N+' with '+antag+' antagonist(s): '+str(expeRate[N])+' Hz -> '+strTestPassed+' ('+str(FRRAnt[N][antag][0]+' , '+str(FRRAnt[N][antag][1])+')'
+        s = '* '+N+' with '+antag+' antagonist(s): '+str(expeRate[N])+' Hz -> '+strTestPassed+' ('+str(FRRAnt[N][antag][0])+' , '+str(FRRAnt[N][antag][1])+')'
         print s
-        text.append(s)
+        text.append(s+'\n')
       else:
         s = '* '+N+' - Rate: '+str(expeRate[N])+' Hz'
         print s
-        text.append(s)
+        text.append(s+'\n')
   s = '-------------------'
   print s
-  text.append(s)
+  text.append(s+'\n')
 
-  res = open('OutSummary_'+logFileName+'.txt','a')
+  #print "************************************** file writing",text
+  res = open(dataPath+'OutSummary_'+logFileName+'.txt','a')
   res.writelines(text)
   res.close()
 
@@ -245,7 +247,7 @@ def main(params={}):
   #-------------------------
   # log the results in a file
   #-------------------------
-  res = open('OutSummary_'+timeStr+'.txt','w')
+  res = open('log/OutSummary_'+timeStr+'.txt','a')
   for k,v in params.iteritems():
     res.writelines(k+' , '+str(v)+'\n')
   res.writelines("Score: "+str(score[0])+' , '+str(score[1]))
@@ -264,11 +266,11 @@ if __name__ == '__main__':
             'nbCMPf':   9.,
             'GMSN':     4.37,
             'GFSI':     1.3,
-            'GSTN':     1.35,
+            'GSTN':     1.38,
             'GGPe':     1.3,
-            'GGPi':     1.3,
+            'GGPi':     1., # 1. not tried yet !
             'IeGPe':   13.,
-            'IeGPi':   13.,
+            'IeGPi':   11.,
             'inDegCSNMSN': 100.,
             'inDegPTNMSN':   1.,
             'inDegCMPfMSN':  1.,

@@ -1,0 +1,108 @@
+----- RESULTS -----
+* MSN - Rate: 0.25552193646 Hz -> OK (0 , 1)
+* FSI - Rate: 16.5622641509 Hz -> OK (0 , 20)
+* STN - Rate: 16.3 Hz -> OK (15.2 , 22.8)
+* GPe - Rate: 70.8 Hz -> OK (55.7 , 74.5)
+* GPi - Rate: 73.8 Hz -> OK (59.1 , 79.5)
+-------------------
+----- RESULTS -----
+* MSN - Rate: 0.202118003026 Hz
+* FSI - Rate: 18.3660377358 Hz
+* STN - Rate: 21.325 Hz
+* GPe with AMPA antagonist(s): 47.4 Hz -> OK (4.2889 , 58.7805)
+* GPi - Rate: 89.4 Hz
+-------------------
+----- RESULTS -----
+* MSN - Rate: 0.237594553707 Hz
+* FSI - Rate: 17.1433962264 Hz
+* STN - Rate: 17.7 Hz
+* GPe with AMPA+GABAA antagonist(s): 64.6 Hz -> OK (10.0017148 , 137.076126)
+* GPi - Rate: 77.8 Hz
+-------------------
+----- RESULTS -----
+* MSN - Rate: 0.232829046899 Hz
+* FSI - Rate: 17.5283018868 Hz
+* STN - Rate: 19.0 Hz
+* GPe with NMDA antagonist(s): 58.6 Hz -> OK (29.5767 , 61.1645)
+* GPi - Rate: 82.2 Hz
+-------------------
+----- RESULTS -----
+* MSN - Rate: 0.294780635401 Hz
+* FSI - Rate: 14.4830188679 Hz
+* STN - Rate: 12.6 Hz
+* GPe with GABAA antagonist(s): 87.2 Hz -> OK (74.8051 , 221.4885)
+* GPi - Rate: 61.0 Hz
+-------------------
+----- RESULTS -----
+* MSN - Rate: 0.25552193646 Hz
+* FSI - Rate: 16.5622641509 Hz
+* STN - Rate: 16.3 Hz
+* GPe - Rate: 70.8 Hz
+* GPi with All antagonist(s): 76.4 Hz -> OK (53.4 , 96.8)
+-------------------
+----- RESULTS -----
+* MSN - Rate: 0.25552193646 Hz
+* FSI - Rate: 16.5622641509 Hz
+* STN - Rate: 16.3 Hz
+* GPe - Rate: 70.8 Hz
+* GPi with AMPA antagonist(s): 49.6 Hz -> OK (5.7327 , 66.0645)
+-------------------
+----- RESULTS -----
+* MSN - Rate: 0.25552193646 Hz
+* FSI - Rate: 16.5622641509 Hz
+* STN - Rate: 16.3 Hz
+* GPe - Rate: 70.8 Hz
+* GPi with NMDA+AMPA antagonist(s): 36.0 Hz -> OK (6.811275 , 52.364583)
+-------------------
+----- RESULTS -----
+* MSN - Rate: 0.25552193646 Hz
+* FSI - Rate: 16.5622641509 Hz
+* STN - Rate: 16.3 Hz
+* GPe - Rate: 70.8 Hz
+* GPi with NMDA antagonist(s): 61.0 Hz -> OK (27.2451 , 78.6255)
+-------------------
+----- RESULTS -----
+* MSN - Rate: 0.25552193646 Hz
+* FSI - Rate: 16.5622641509 Hz
+* STN - Rate: 16.3 Hz
+* GPe - Rate: 70.8 Hz
+* GPi with GABAA antagonist(s): 112.2 Hz -> OK (44.1477 , 245.8935)
+-------------------
+inDegPTNMSN , 1.0
+inDegFSIMSN , 30.0
+inDegCMPfSTN , 9.0
+inDegPTNSTN , 25.0
+inDegGPeFSI , 25.0
+inDegSTNFSI , 2.0
+nbCMPf , 9.0
+inDegCSNMSN , 100.0
+nbPTN , 100.0
+inDegMSNMSN , 70.0
+inDegMSNGPe , 2644.0
+GGPe , 1.3
+inDegMSNGPi , 2644.0
+IeGPe , 13.0
+GSTN , 1.38
+IeGPi , 11.0
+inDegGPeGPe , 25.0
+GMSN , 4.37
+inDegGPeGPi , 23.0
+inDegCMPfFSI , 9.0
+inDegCMPfGPi , 9.0
+GGPi , 1.0
+inDegFSIFSI , 15.0
+nbGPe , 25.0
+nbGPi , 14.0
+nbCSN , 3000.0
+nbMSN , 2644.0
+inDegPTNFSI , 1.0
+inDegCMPfGPe , 9.0
+GFSI , 1.3
+nbSTN , 8.0
+inDegSTNGPi , 8.0
+inDegCSNFSI , 50.0
+nbFSI , 53.0
+inDegSTNGPe , 8.0
+inDegGPeSTN , 25.0
+inDegCMPfMSN , 1.0
+Score: 14.0 , 14.0

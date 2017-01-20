@@ -34,8 +34,11 @@ def create(name,fake=False):
     if rate[name] == 0:
       print 'ERROR: create(): rate['+name+'] = 0 Hz'
     print '* '+name+'(fake):',nbSim[name],'Poisson generators with avg rate:',rate[name]
-    Pop[name]  = nest.Create('poisson_generator',int(nbSim[name]))
-    nest.SetStatus(Pop[name],{'rate':rate[name]})
+#    Pop[name]  = nest.Create('poisson_generator',int(nbSim[name]))
+    Fake[name]  = nest.Create('poisson_generator',int(nbSim[name]))
+    nest.SetStatus(Fake[name],{'rate':rate[name]})
+    Pop[name]  = nest.Create('parrot_neuron',int(nbSim[name]))
+    nest.Connect(pre=Fake[name],post=Pop[name],conn_spec={'rule':'one_to_one'})
   else:
     print '* '+name+':',nbSim[name],'neurons with parameters:',BGparams[name]
     Pop[name] = nest.Create("iaf_psc_alpha_multisynapse",int(nbSim[name]),params=BGparams[name])
@@ -61,33 +64,31 @@ def connect(type,nameSrc,nameTgt,inDegree,delay=1.,gain=1.):
     lRecType = ['GABA']
   else:
     print "Undefined connexion type:",type
-  '''
-  # compute connexion strength
-  # nu is the average total synaptic inputs a neuron of tgt receives from different neurons of src
-  if nameSrc=='CSN' or nameSrc=='PTN':
-    nu = alpha[nameSrc+'->'+nameTgt]
-    print '\tMaximal number of distinct input neurons (nu):',nu
-    print '\tMinimal number of distinct input neurons     : unknown'
-  else:
-    nu = neuronCounts[nameSrc] / neuronCounts[nameTgt] * P[nameSrc+'->'+nameTgt] * alpha[nameSrc+'->'+nameTgt]
-    print '\tMaximal number of distinct input neurons (nu):',nu
-    print '\tMinimal number of distinct input neurons     :',str(neuronCounts[nameSrc] / neuronCounts[nameTgt] * P[nameSrc+'->'+nameTgt])
-  print '\tCompare with the effective chosen inDegree   :',str(inDegree)
-
-  # attenuation due to the distance from the receptors to the soma of tgt:
-  attenuation = cosh(LX[nameTgt]*(1-p[nameSrc+'->'+nameTgt])) / cosh(LX[nameTgt])
-  '''
   
   W = computeW(lRecType,nameSrc,nameTgt,inDegree,gain,verbose=True)
+
+  if nameSrc+'->'+nameTgt in ConnectMap:
+    loadConnectMap = True
+  else:
+    loadConnectMap = False
+    ConnectMap[nameSrc+'->'+nameTgt] = []
 
   # To ensure that for excitatory connections, Tgt neurons receive AMPA and NMDA projections from the same Src neurons, 
   # we have to handle the "indegree" connectivity ourselves:
   for nTgt in range(int(nbSim[nameTgt])):
-    inputTable = rnd.choice(int(nbSim[nameSrc]),size=int(inDegree),replace=False)
-    inputPop = []
-    for i in inputTable:
-      inputPop.append(Pop[nameSrc][i])
-    inputPop = tuple(inputPop)
+    if not loadConnectMap:
+    # if no connectivity map exists between the two populations, let's create one
+      inputTable = rnd.choice(int(nbSim[nameSrc]),size=int(inDegree),replace=False)
+      inputPop = []
+      for i in inputTable:
+        inputPop.append(Pop[nameSrc][i])
+      inputPop = tuple(inputPop)
+
+      ConnectMap[nameSrc+'->'+nameTgt].append(inputPop)
+    else:
+    #otherwise, use the existing one
+      #print nameSrc,"->",nameTgt,"using previously defined connection map"
+      inputPop = ConnectMap[nameSrc+'->'+nameTgt][nTgt]
 
     for r in lRecType:
       w = W[r]
@@ -353,6 +354,7 @@ BGparams = {'MSN':MSNparams,
 
 Pop = {}
 Fake= {} # Fake contains the Poisson Generators, that will feed the parrot_neurons, stored in Pop
+ConnectMap = {} # when connections are drawn, in "create()", they are stored here so as to be re-usable
 
 # the dictionary used to store the desired discharge rates of the various Poisson generators that will be used as external inputs
 rate = {'CSN':   2.  ,
