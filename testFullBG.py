@@ -1,5 +1,6 @@
 #!/apps/free/python/2.7.10/bin/python
 from LGneurons import *
+from modelParams import *
 import nest.raster_plot
 import time
 import sys
@@ -226,45 +227,6 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
 
 #-----------------------------------------------------------------------
 def main():
-  params = {'nbMSN': 2644.,
-            'nbFSI':   53.,
-            'nbSTN':    8.,
-            'nbGPe':   25.,
-            'nbGPi':   14.,
-            'nbCSN': 3000.,
-            'nbPTN':  100.,
-            'nbCMPf':   9.,
-            'GMSN':     4.37,
-            'GFSI':     1.3,
-            'GSTN':     1.38,
-            'GGPe':     1.3,
-            'GGPi':     1., # 1. not tried yet !
-            'IeGPe':   13.,
-            'IeGPi':   11.,
-            'inDegCSNMSN': 100.,
-            'inDegPTNMSN':   1.,
-            'inDegCMPfMSN':  1.,
-            'inDegFSIMSN':  30., # according to Humphries et al. 2010, 30-150 FSIs->MSN
-            'inDegMSNMSN':  70., # according to Koos et al. 2004, cited by Humphries et al., 2010, on avg 3 synpase per MSN-MSN connection
-            'inDegCSNFSI':  50.,
-            'inDegPTNFSI':   1.,
-            'inDegSTNFSI':   2.,
-            'inDegGPeFSI':  25.,
-            'inDegCMPfFSI':  9.,
-            'inDegFSIFSI':  15., # according to Humphries et al., 2010, 13-63 FSIs->FSI
-            'inDegPTNSTN':  25.,
-            'inDegCMPfSTN':  9.,
-            'inDegGPeSTN':  25.,
-            'inDegCMPfGPe':  9.,
-            'inDegSTNGPe':   8.,
-            'inDegMSNGPe':2644.,
-            'inDegGPeGPe':  25.,
-            'inDegMSNGPi':2644.,
-            'inDegSTNGPi':   8.,
-            'inDegGPeGPi':  23.,
-            'inDegCMPfGPi':  9.,
-            } 
-
   if len(sys.argv) >= 2:
     print "Command Line Parameters"
     paramKeys = ['nbMSN',
@@ -315,13 +277,10 @@ def main():
     else :
       print "Incorrect number of parameters:",len(sys.argv),"-",len(paramKeys),"expected"
 
-  print 'A'
   nest.set_verbosity("M_WARNING")
   
   execTime = time.localtime()
   timeStr = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
-
-  print 'B',timeStr
 
   score = np.zeros((2))
   score += checkAvgFR(params=params,antagInjectionSite='none',antag='',logFileName=timeStr,showRasters=True)
