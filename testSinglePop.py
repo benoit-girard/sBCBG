@@ -1,3 +1,4 @@
+#!/apps/free/python/2.7.10/bin/python
 from LGneurons import *
 import nest.raster_plot
 

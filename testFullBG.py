@@ -1,3 +1,4 @@
+#!/apps/free/python/2.7.10/bin/python
 from LGneurons import *
 import nest.raster_plot
 import time
@@ -224,39 +225,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   return score, 5 if antagInjectionSite == 'none' else 1
 
 #-----------------------------------------------------------------------
-def main(params={}):
-
-  execTime = time.localtime()
-  timeStr = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
-
-  score = np.zeros((2))
-  score += checkAvgFR(params=params,antagInjectionSite='none',antag='',logFileName=timeStr,showRasters=True)
-
-
-  for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
-    score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a,logFileName=timeStr)
-
-  for a in ['All','AMPA','NMDA+AMPA','NMDA','GABAA']:
-    score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a,logFileName=timeStr)
-
-
-  #-------------------------
-  print "******************"
-  print "* Score:",score[0],'/',score[1]
-  print "******************"
-
-  #-------------------------
-  # log the results in a file
-  #-------------------------
-  res = open('log/OutSummary_'+timeStr+'.txt','a')
-  for k,v in params.iteritems():
-    res.writelines(k+' , '+str(v)+'\n')
-  res.writelines("Score: "+str(score[0])+' , '+str(score[1]))
-  res.close()
-
-#---------------------------
-if __name__ == '__main__':
-
+def main():
   params = {'nbMSN': 2644.,
             'nbFSI':   53.,
             'nbSTN':    8.,
@@ -338,6 +307,7 @@ if __name__ == '__main__':
                  ]
     if len(sys.argv) == len(paramKeys)+1:
       print "Using command line parameters"
+      print sys.argv
       i = 0
       for k in paramKeys:
         i+=1
@@ -345,4 +315,39 @@ if __name__ == '__main__':
     else :
       print "Incorrect number of parameters:",len(sys.argv),"-",len(paramKeys),"expected"
 
-  main(params=params)
+  print 'A'
+  nest.set_verbosity("M_WARNING")
+  
+  execTime = time.localtime()
+  timeStr = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
+
+  print 'B',timeStr
+
+  score = np.zeros((2))
+  score += checkAvgFR(params=params,antagInjectionSite='none',antag='',logFileName=timeStr,showRasters=True)
+
+
+  for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
+    score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a,logFileName=timeStr)
+
+  for a in ['All','AMPA','NMDA+AMPA','NMDA','GABAA']:
+    score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a,logFileName=timeStr)
+
+
+  #-------------------------
+  print "******************"
+  print "* Score:",score[0],'/',score[1]
+  print "******************"
+
+  #-------------------------
+  # log the results in a file
+  #-------------------------
+  res = open('log/OutSummary_'+timeStr+'.txt','a')
+  for k,v in params.iteritems():
+    res.writelines(k+' , '+str(v)+'\n')
+  res.writelines("Score: "+str(score[0])+' , '+str(score[1]))
+  res.close()
+
+#---------------------------
+if __name__ == '__main__':
+  main()
