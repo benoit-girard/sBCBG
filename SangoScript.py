@@ -27,10 +27,30 @@ ggpi=1.
 iegpe=13.
 iegpi=11.
 
+nbQueuedJobs = 0
 
 # processes for one parameterization test:
 #----------------------------------------- 
 def launchOneParameterizedRun(i):
+  # checks that there are ot too many jobs launched, otherwise waits
+  readyToGo = False
+  while not readyToGo:
+    qf = open('squeueStatus.txt','w')
+    subprocess.call(['squeue','-u','benoit-girard'],stdout=qf)
+    qf.close()
+
+    qf = open('squeueStatus.txt','r')
+    nbQueuedJobs = len(qf.readlines())-1
+    qf.close()
+  
+    if nbQueuedJobs < 500:
+      readyToGo = True
+      print nbQueuedJobs,"jobs -- Ready to launch job",i
+    else:
+      print nbQueuedJobs,"jobs -- Wait"
+      time.sleep(60)
+
+  # ready to launch a new job:
   IDstring = timeString+'_%05d' %(i)
 
   print 'Create subdirectory:',IDstring
@@ -126,12 +146,13 @@ params = {'nbMSN': 2644.,
   os.chdir('..')
 
 #===============================
-'''
+
 for iegpi in [10.,11.,12.]:
   launchOneParameterizedRun(i)
   i+=1
 
-'''                                                                                                                                                                           
+                                                                                                                                                                           
+'''
 for gmsn in [4., 4.2, 4.3, 4.5]:
   for gfsi in [1., 1.1, 1.2, 1.3]:
     for gstn in [1., 1.1, 1.2, 1.3, 1.4]:
@@ -141,3 +162,4 @@ for gmsn in [4., 4.2, 4.3, 4.5]:
             for iegpi in [10.,11.,12.]:
               launchOneParameterizedRun(i)
               i+=1
+'''
