@@ -15,7 +15,7 @@ params = {'nbMSN': 2644.,
           'GFSI':     1.3,
           'GSTN':     1.38,
           'GGPe':     1.3,
-          'GGPi':     1., # 1. not tried yet !                                                                                                                                 
+          'GGPi':     1.,
           'IeGPe':   13.,
           'IeGPi':   11.,
           'inDegCSNMSN': 100.,

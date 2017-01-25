@@ -37,6 +37,7 @@ def launchOneParameterizedRun(i):
   subprocess.call(['mkdir',IDstring])
   subprocess.call(['cp','LGneurons.py',IDstring+'/'])
   subprocess.call(['cp','testFullBG.py',IDstring+'/'])
+  subprocess.call(['cp','__init__.py',IDstring+'/'])
   os.chdir(IDstring)
   subprocess.call(['mkdir','log'])
 
@@ -93,6 +94,7 @@ params = {'nbMSN': 2644.,
   paramsFile.writelines(mltstr)
   paramsFile.close()
 
+  # #SBATCH --mem-per-cpu=1G changed for #SBATCH --mem-per-cpu=200M
   slurmOptions = ['#SBATCH --time=00:06:00 \n',
                   '#SBATCH --partition=compute \n',
                   '#SBATCH --mem-per-cpu=1G \n',

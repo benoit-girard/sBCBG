@@ -2,7 +2,7 @@
 from LGneurons import *
 from modelParams import *
 import nest.raster_plot
-import time
+#import time
 import sys
 
 # params possible keys:
@@ -153,9 +153,9 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   spkDetect={} # spike detectors used to record the experiment
   expeRate={}
 
-  if logFileName == '':
-    execTime = time.localtime()
-    logFileName = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
+  #if logFileName == '':
+  #  execTime = time.localtime()
+  #  logFileName = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
 
   antagStr = ''
   if antagInjectionSite != 'none':
@@ -163,7 +163,8 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
 
   for N in NUCLEI:
     # 1000ms offset period for network stabilization
-    spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": logFileName+'_'+antagStr+N, "to_file": True, 'start':offsetDuration,'stop':offsetDuration+simDuration})
+    #spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": logFileName+'_'+antagStr+N, "to_file": True, 'start':offsetDuration,'stop':offsetDuration+simDuration})
+    spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": antagStr+N, "to_file": True, 'start':offsetDuration,'stop':offsetDuration+simDuration})
     nest.Connect(Pop[N], spkDetect[N])
 
   #-------------------------
@@ -209,7 +210,8 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   text.append(s+'\n')
 
   #print "************************************** file writing",text
-  res = open(dataPath+'OutSummary_'+logFileName+'.txt','a')
+  #res = open(dataPath+'OutSummary_'+logFileName+'.txt','a')
+  res = open(dataPath+'OutSummary.txt','a')
   res.writelines(text)
   res.close()
 
@@ -279,18 +281,18 @@ def main():
 
   nest.set_verbosity("M_WARNING")
   
-  execTime = time.localtime()
-  timeStr = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
+  #execTime = time.localtime()
+  #timeStr = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
 
   score = np.zeros((2))
-  score += checkAvgFR(params=params,antagInjectionSite='none',antag='',logFileName=timeStr,showRasters=True)
+  score += checkAvgFR(params=params,antagInjectionSite='none',antag='',showRasters=True)
 
 
   for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
-    score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a,logFileName=timeStr)
+    score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
 
   for a in ['All','AMPA','NMDA+AMPA','NMDA','GABAA']:
-    score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a,logFileName=timeStr)
+    score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
 
 
   #-------------------------
@@ -301,10 +303,15 @@ def main():
   #-------------------------
   # log the results in a file
   #-------------------------
-  res = open('log/OutSummary_'+timeStr+'.txt','a')
+  #res = open('log/OutSummary_'+timeStr+'.txt','a')
+  res = open('log/OutSummary.txt','a')
   for k,v in params.iteritems():
     res.writelines(k+' , '+str(v)+'\n')
   res.writelines("Score: "+str(score[0])+' , '+str(score[1]))
+  res.close()
+
+  res = open('score.txt','w')
+  res.writelines(str(score[0])+'\n')
   res.close()
 
 #---------------------------
