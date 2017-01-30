@@ -159,7 +159,7 @@ FRRAnt = {'GPe':FRRGPe,'GPi':FRRGPi}
 #-------------------------
 
 # Load the file with the Lienard solutions:
-# solutions = csv.DictReader(open("solutions_simple.csv"))
+LG14Solutions = csv.DictReader(open("solutions_simple_unique.csv"))
 
 # fixed parameters
 A_GABA=-0.25 # mV

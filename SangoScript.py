@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import shlex
-import subprocess
+#import shlex
+# import subprocess
 import os
 import time
 
@@ -35,15 +35,17 @@ def launchOneParameterizedRun(i):
   # checks that there are ot too many jobs launched, otherwise waits
   readyToGo = False
   while not readyToGo:
+    os.system('squeue -u benoit-girard > squeueStatus.txt')
+    '''
     qf = open('squeueStatus.txt','w')
     subprocess.call(['squeue','-u','benoit-girard'],stdout=qf)
     qf.close()
-
+    '''
     qf = open('squeueStatus.txt','r')
     nbQueuedJobs = len(qf.readlines())-1
     qf.close()
-  
-    if nbQueuedJobs < 500:
+    
+    if nbQueuedJobs < 1000:
       readyToGo = True
       print nbQueuedJobs,"jobs -- Ready to launch job",i
     else:
@@ -54,12 +56,21 @@ def launchOneParameterizedRun(i):
   IDstring = timeString+'_%05d' %(i)
 
   print 'Create subdirectory:',IDstring
+  os.system('mkdir '+IDstring)
+  os.system('cp LGneurons.py '+IDstring+'/')
+  os.system('cp testFullBG.py '+IDstring+'/')
+  os.system('cp __init__.py '+IDstring+'/')
+  os.chdir(IDstring)
+  os.system('mkdir log')
+
+'''
   subprocess.call(['mkdir',IDstring])
   subprocess.call(['cp','LGneurons.py',IDstring+'/'])
   subprocess.call(['cp','testFullBG.py',IDstring+'/'])
   subprocess.call(['cp','__init__.py',IDstring+'/'])
   os.chdir(IDstring)
   subprocess.call(['mkdir','log'])
+'''
 
   # creation of the modelParams.py file that will correspond to the run at hand
   mltstr = '''#!/apps/free/python/2.7.10/bin/python
@@ -141,7 +152,8 @@ params = {'nbMSN': 2644.,
 
   # execute the script file
   command = 'sbatch go.slurm'
-  p.append(subprocess.Popen(shlex.split(command)))
+  os.system(command)
+  #p.append(subprocess.Popen(shlex.split(command)))
 
   os.chdir('..')
 
