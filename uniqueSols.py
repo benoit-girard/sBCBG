@@ -13,7 +13,7 @@ def unique_nested_arrays(ar):
   unique_ar = np.unique(ar.view([('', origin_dtype)]*np.prod(origin_shape[1:])))
   return unique_ar.view(origin_dtype).reshape((unique_ar.shape[0], ) + origin_shape[1:])
 
-soltab = np.loadtxt(open("solutions_simple.csv","r"),delimiter=",",skiprows=1)
+soltab = np.loadtxt(open("solutions_simple.csv","r"),delimiter=";",skiprows=1)
 unisols = unique_nested_arrays(soltab)
 header = open("solutions_simple.csv","r").readline()
 np.savetxt('solutions_simple_unique.csv',unisols,delimiter=' , ',header=header)

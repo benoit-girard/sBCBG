@@ -159,7 +159,16 @@ FRRAnt = {'GPe':FRRGPe,'GPi':FRRGPi}
 #-------------------------
 
 # Load the file with the Lienard solutions:
-LG14Solutions = csv.DictReader(open("solutions_simple_unique.csv"))
+loadLGParamsFromFile = True
+rowOfInterest = 9
+LG14SolutionsReader = csv.DictReader(open("solutions_simple_unique.csv"),delimiter=';')
+LG14Solutions = []
+for row in LG14SolutionsReader:
+  LG14Solutions.append(row)
+
+#print LG14Solutions[rowOfInterest]['ALPHA_GPe_MSN']
+#print LG14Solutions[rowOfInterest]
+
 
 # fixed parameters
 A_GABA=-0.25 # mV
@@ -249,7 +258,12 @@ alpha = {'MSN->GPe':   171,
          'CMPf->GPi':  131
         }
 
-# p(X->Y): probability that a given neuron from X projects to at least neuron of Y
+if loadLGParamsFromFile:
+  for k,v in alpha.iteritems():
+    #print k,v,round(float(LG14Solutions[rowOfInterest]['ALPHA_'+k.replace('->','_')]),0)
+    alpha[k] = round(float(LG14Solutions[rowOfInterest]['ALPHA_'+k.replace('->','_')]),0)
+
+# p(X->Y): relative distance on the dendrite from the soma, where neurons rom X projects to neurons of Y
 # Warning: p is not P!
 p = {'MSN->GPe':  0.48,
      'MSN->GPi':  0.59,
@@ -276,6 +290,12 @@ p = {'MSN->GPe':  0.48,
      'CMPf->GPe': 0.0,
      'CMPf->GPi': 0.48
     }
+
+if loadLGParamsFromFile:
+  for k,v in p.iteritems():
+    print 'dist:',k,v,round(float(LG14Solutions[rowOfInterest]['DIST_'+k.replace('->','_')]),2)
+    #alpha[k] = round(float(LG14Solutions[rowOfInterest]['ALPHA_'+k.replace('->','_')]),0)
+
 
 # electrotonic constant L computation:
 dx={'MSN':1.E-6,'FSI':1.5E-6,'STN':1.5E-6,'GPe':1.7E-6,'GPi':1.2E-6}
