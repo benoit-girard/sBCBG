@@ -55,6 +55,7 @@ def launchOneParameterizedRun(i):
   os.system('mkdir '+IDstring)
   os.system('cp LGneurons.py '+IDstring+'/')
   os.system('cp testFullBG.py '+IDstring+'/')
+  os.system('cp solutions_simple_unique.csv '+IDstring+'/')
   os.system('cp __init__.py '+IDstring+'/')
   os.chdir(IDstring)
   os.system('mkdir log')
