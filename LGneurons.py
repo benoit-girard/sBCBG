@@ -160,11 +160,13 @@ FRRAnt = {'GPe':FRRGPe,'GPi':FRRGPi}
 
 # Load the file with the Lienard solutions:
 loadLGParamsFromFile = True
-rowOfInterest = 9
+rowOfInterest = 2 # the hard coded parameters below correspond to row #9 and to the solution presented in Table 9 of the LG14 paper
 LG14SolutionsReader = csv.DictReader(open("solutions_simple_unique.csv"),delimiter=';')
 LG14Solutions = []
 for row in LG14SolutionsReader:
   LG14Solutions.append(row)
+
+print '### Parameterization #'+str(rowOfInterest)+' from (Lienard & Girard, 2014) is used. ###'
 
 #print LG14Solutions[rowOfInterest]['ALPHA_GPe_MSN']
 #print LG14Solutions[rowOfInterest]
@@ -293,8 +295,8 @@ p = {'MSN->GPe':  0.48,
 
 if loadLGParamsFromFile:
   for k,v in p.iteritems():
-    print 'dist:',k,v,round(float(LG14Solutions[rowOfInterest]['DIST_'+k.replace('->','_')]),2)
-    #alpha[k] = round(float(LG14Solutions[rowOfInterest]['ALPHA_'+k.replace('->','_')]),0)
+    #print 'dist:',k,v,round(float(LG14Solutions[rowOfInterest]['DIST_'+k.replace('->','_')]),2)
+    p[k] = round(float(LG14Solutions[rowOfInterest]['DIST_'+k.replace('->','_')]),2)
 
 
 # electrotonic constant L computation:
