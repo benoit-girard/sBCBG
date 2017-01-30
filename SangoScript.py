@@ -36,11 +36,7 @@ def launchOneParameterizedRun(i):
   readyToGo = False
   while not readyToGo:
     os.system('squeue -u benoit-girard > squeueStatus.txt')
-    '''
-    qf = open('squeueStatus.txt','w')
-    subprocess.call(['squeue','-u','benoit-girard'],stdout=qf)
-    qf.close()
-    '''
+
     qf = open('squeueStatus.txt','r')
     nbQueuedJobs = len(qf.readlines())-1
     qf.close()
@@ -62,15 +58,6 @@ def launchOneParameterizedRun(i):
   os.system('cp __init__.py '+IDstring+'/')
   os.chdir(IDstring)
   os.system('mkdir log')
-
-'''
-  subprocess.call(['mkdir',IDstring])
-  subprocess.call(['cp','LGneurons.py',IDstring+'/'])
-  subprocess.call(['cp','testFullBG.py',IDstring+'/'])
-  subprocess.call(['cp','__init__.py',IDstring+'/'])
-  os.chdir(IDstring)
-  subprocess.call(['mkdir','log'])
-'''
 
   # creation of the modelParams.py file that will correspond to the run at hand
   mltstr = '''#!/apps/free/python/2.7.10/bin/python
@@ -159,19 +146,24 @@ params = {'nbMSN': 2644.,
 
 #===============================
 
+'''
 for iegpi in [10.,11.,12.]:
   launchOneParameterizedRun(i)
   i+=1
-
-                                                                                                                                                                           
 '''
-for gmsn in [4., 4.2, 4.3, 4.5]:
-  for gfsi in [1., 1.1, 1.2, 1.3]:
+                                                                                                                                                                           
+# which LG14 parameterization to use?
+rowOfInterest = 2
+
+# with which additional parameters?
+
+for gmsn in [2.,3.,4.]:
+  for gfsi in [1., 1.1, 1.2]:
     for gstn in [1., 1.1, 1.2, 1.3, 1.4]:
-      for ggpe in [1., 1.1, 1.2, 1.3]:
+      for ggpe in [1., 1.1, 1.2]:
         for ggpi in [1., 1.1, 1.2]:
-          for iegpe in [11.,12.,13.,14.]:
+          for iegpe in [11.,12.,13.]:
             for iegpi in [10.,11.,12.]:
               launchOneParameterizedRun(i)
               i+=1
-'''
+
