@@ -16,7 +16,7 @@ nbMax = 0
 
 # header of the wrap-up file :
 #-----------------------------
-outStr = 'score'
+outStr = 'LG14ID, score'
 for k in paramKeys:
   outStr += ', '+k
 outStr+=' \n'
@@ -87,7 +87,7 @@ for d in dirs:
     
     # write the score and the parameters in the wrap up file
     #-----------------------------
-    outStr = str(score)
+    outStr = d['LG14modelID']+', '+str(score)
     for k in paramKeys:
       outStr += ', %4.2f' %d[k]
     outStr += ' \n'

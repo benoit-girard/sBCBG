@@ -13,6 +13,28 @@ import csv
 from math import sqrt, cosh, exp, pi
 
 #-------------------------------------------------------------------------------
+# Loads a given LG14 model parameterization
+# ID must be in [0,14]
+#-------------------------------------------------------------------------------
+def loadLG14params(ID):
+  # Load the file with the Lienard solutions:
+  LG14SolutionsReader = csv.DictReader(open("solutions_simple_unique.csv"),delimiter=';')
+  LG14Solutions = []
+  for row in LG14SolutionsReader:
+    LG14Solutions.append(row)
+
+  print '### Parameterization #'+str(ID)+' from (Lienard & Girard, 2014) is used. ###'
+  #print LG14Solutions[ID]['ALPHA_GPe_MSN']
+
+  for k,v in alpha.iteritems():
+    #print k,v,round(float(LG14Solutions[ID]['ALPHA_'+k.replace('->','_')]),0)
+    alpha[k] = round(float(LG14Solutions[ID]['ALPHA_'+k.replace('->','_')]),0)
+
+  for k,v in p.iteritems():
+    #print 'dist:',k,v,round(float(LG14Solutions[ID]['DIST_'+k.replace('->','_')]),2)
+    p[k] = round(float(LG14Solutions[ID]['DIST_'+k.replace('->','_')]),2)
+
+#-------------------------------------------------------------------------------
 # Changes the default of the iaf_psc_alpha_multisynapse neurons 
 # Very important because it defines the 3 types of receptors (AMPA, NMDA, GABA) that will be needed
 # Has to be called after any KernelReset
@@ -106,10 +128,10 @@ def computeW(listRecType,nameSrc,nameTgt,inDegree,gain=1.,verbose=False):
       print '\tMaximal number of distinct input neurons (nu):',nu
       print '\tMinimal number of distinct input neurons     : unknown'
   else:
-    nu = neuronCounts[nameSrc] / neuronCounts[nameTgt] * P[nameSrc+'->'+nameTgt] * alpha[nameSrc+'->'+nameTgt]
+    nu = neuronCounts[nameSrc] / float(neuronCounts[nameTgt]) * P[nameSrc+'->'+nameTgt] * alpha[nameSrc+'->'+nameTgt]
     if verbose:
       print '\tMaximal number of distinct input neurons (nu):',nu
-      print '\tMinimal number of distinct input neurons     :',str(neuronCounts[nameSrc] / neuronCounts[nameTgt] * P[nameSrc+'->'+nameTgt])
+      print '\tMinimal number of distinct input neurons     :',str(neuronCounts[nameSrc] / float(neuronCounts[nameTgt]) * P[nameSrc+'->'+nameTgt])
   if verbose:
     print '\tCompare with the effective chosen inDegree   :',str(inDegree)
 
@@ -157,19 +179,6 @@ FRRAnt = {'GPe':FRRGPe,'GPi':FRRGPi}
 # All the parameters needed to replicate Lienard model
 #
 #-------------------------
-
-# Load the file with the Lienard solutions:
-loadLGParamsFromFile = True
-rowOfInterest = 2 # the hard coded parameters below correspond to row #9 and to the solution presented in Table 9 of the LG14 paper
-LG14SolutionsReader = csv.DictReader(open("solutions_simple_unique.csv"),delimiter=';')
-LG14Solutions = []
-for row in LG14SolutionsReader:
-  LG14Solutions.append(row)
-
-print '### Parameterization #'+str(rowOfInterest)+' from (Lienard & Girard, 2014) is used. ###'
-
-#print LG14Solutions[rowOfInterest]['ALPHA_GPe_MSN']
-#print LG14Solutions[rowOfInterest]
 
 
 # fixed parameters
@@ -260,11 +269,6 @@ alpha = {'MSN->GPe':   171,
          'CMPf->GPi':  131
         }
 
-if loadLGParamsFromFile:
-  for k,v in alpha.iteritems():
-    #print k,v,round(float(LG14Solutions[rowOfInterest]['ALPHA_'+k.replace('->','_')]),0)
-    alpha[k] = round(float(LG14Solutions[rowOfInterest]['ALPHA_'+k.replace('->','_')]),0)
-
 # p(X->Y): relative distance on the dendrite from the soma, where neurons rom X projects to neurons of Y
 # Warning: p is not P!
 p = {'MSN->GPe':  0.48,
@@ -292,12 +296,6 @@ p = {'MSN->GPe':  0.48,
      'CMPf->GPe': 0.0,
      'CMPf->GPi': 0.48
     }
-
-if loadLGParamsFromFile:
-  for k,v in p.iteritems():
-    #print 'dist:',k,v,round(float(LG14Solutions[rowOfInterest]['DIST_'+k.replace('->','_')]),2)
-    p[k] = round(float(LG14Solutions[rowOfInterest]['DIST_'+k.replace('->','_')]),2)
-
 
 # electrotonic constant L computation:
 dx={'MSN':1.E-6,'FSI':1.5E-6,'STN':1.5E-6,'GPe':1.7E-6,'GPi':1.2E-6}

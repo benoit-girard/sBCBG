@@ -21,6 +21,9 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   # nest.SetKernelStatus({"overwrite_files":True}) # Thanks to use of timestamps, file names should now 
                                                    # be different as long as they are not created during the same second
 
+  print '/!\ Using the following LG14 parameterization',params['LG14modelID']
+  loadLG14params(params['LG14modelID'])
+
   #==========================
   # Creation of neurons
   #-------------------------
@@ -76,14 +79,17 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   connect('in','FSI','MSN', inDegree= min(params['inDegFSIMSN'],nbSim['FSI']) if ('inDegFSIMSN' in params) else 1,gain=G['MSN'])
   # some parameterizations from LG14 have no STN->MSN or GPe->MSN synaptic contacts
   if alpha['STN->MSN'] != 0:
+    print "alpha['STN->MSN']",alpha['STN->MSN']
     connect('ex','STN','MSN', inDegree= min(params['inDegSTNMSN'],nbSim['STN']) if ('inDegSTNMSN' in params) else 1,gain=G['MSN'])
   if alpha['GPe->MSN'] != 0:
+    print "alpha['GPe->MSN']",alpha['GPe->MSN']
     connect('in','GPe','MSN', inDegree= min(params['inDegGPeMSN'],nbSim['GPe']) if ('inDegGPeMSN' in params) else 1,gain=G['MSN'])
 
   print '* FSI Inputs'
   connect('ex','CSN','FSI', inDegree= min(params['inDegCSNFSI'],nbSim['CSN']) if ('inDegCSNFSI' in params) else 50,gain=G['FSI'])
   connect('ex','PTN','FSI', inDegree= min(params['inDegPTNFSI'],nbSim['PTN']) if ('inDegPTNFSI' in params) else 1,gain=G['FSI'])
-  connect('ex','STN','FSI', inDegree= min(params['inDegSTNFSI'],nbSim['STN']) if ('inDegSTNFSI' in params) else 2,gain=G['FSI'])
+  if alpha['STN->FSI'] != 0:
+    connect('ex','STN','FSI', inDegree= min(params['inDegSTNFSI'],nbSim['STN']) if ('inDegSTNFSI' in params) else 2,gain=G['FSI'])
   connect('in','GPe','FSI', inDegree= min(params['inDegGPeFSI'],nbSim['GPe']) if ('inDegGPeFSI' in params) else nbSim['GPe'],gain=G['FSI'])
   connect('ex','CMPf','FSI',inDegree= min(params['inDegCMPfFSI'],nbSim['CMPf']) if ('inDegCMPfFSI' in params) else nbSim['CMPf'],gain=G['FSI'])
   connect('in','FSI','FSI', inDegree= min(params['inDegFSIFSI'],nbSim['FSI']) if ('inDegFSIFSI' in params) else min(25,nbSim['FSI']),gain=G['FSI'])
@@ -231,7 +237,8 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
 def main():
   if len(sys.argv) >= 2:
     print "Command Line Parameters"
-    paramKeys = ['nbMSN',
+    paramKeys = ['LG14modelID',
+                 'nbMSN',
                  'nbFSI',
                  'nbSTN',
                  'nbGPe',
@@ -287,13 +294,13 @@ def main():
   score = np.zeros((2))
   score += checkAvgFR(params=params,antagInjectionSite='none',antag='',showRasters=True)
 
-
+  '''
   for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
     score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
 
   for a in ['All','AMPA','NMDA+AMPA','NMDA','GABAA']:
     score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
-
+  '''
 
   #-------------------------
   print "******************"
