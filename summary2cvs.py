@@ -27,8 +27,12 @@ fBestOut.writelines(outStr)
 #-----------------------------
 dirs = os.listdir('.')
 
+nbFailures = 0
+nbParameterizations = 0
+
 for d in dirs:
   if '2017' in d: # filters out files & directories that do not comply with the data format, including this .py file!
+    nbParameterizations += 1
     # retrieve the score
     #-----------------------------
     score = -1.
@@ -47,15 +51,25 @@ for d in dirs:
               print d,score
           else:
             print d,'Execution problem',scoreLine
+            nbFailures += 1
           sf.close()
       os.chdir('..') # goes back from log subdirectory to 2017* dir
 
     # get the score with new way of handling results:
     else:
       os.chdir(d)
-      sf = open('score.txt','r')
-      score = float(sf.readlines())
-      print d,score
+      filez = os.listdir('.')
+      scoreFileFound = False
+      for f in filez:
+        if 'score.txt' in f:
+          scoreFileFound = True
+      if scoreFileFound:
+        sf = open('score.txt','r')
+        score = float(sf.readlines()[0])
+        print d,score
+      else:
+        nbFailures += 1
+        print d,'score.txt file not found'
 
     # retrieve the parameters from modelParams.py
     #-----------------------------
@@ -85,4 +99,5 @@ for d in dirs:
 
 fOut.close()
 fBestOut.close()
-print "Found",nbMax,"good parameterizations"
+print "Found",nbMax,"good parameterizations, over",nbParameterizations,"tested."
+print nbFailures,'failures to load score data.'
