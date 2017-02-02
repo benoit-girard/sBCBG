@@ -16,20 +16,9 @@ timeString = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(
 
 print 'Time:', timeString
 
-i = 0
-p= []
-
-lg14modelid = 9
-
-gmsn=4.37
-gfsi=1.3
-gstn=1.38
-ggpe=1.3
-ggpi=1.
-iegpe=13.
-iegpi=11.
-
-nbQueuedJobs = 0
+global i
+i = 0 # total number of jobs launched
+nbQueuedJobs = 0 # number of jobs currently in the queue
 
 # processes for one parameterization test:
 #----------------------------------------- 
@@ -109,7 +98,7 @@ params = {'LG14modelID': %2d,
           'inDegGPeGPi':  23.,
           'inDegCMPfGPi':  9.,
           }
-''' %(lg14modelid,gmsn,gfsi,gstn,ggpe,ggpi,iegpe,iegpi)
+''' %(testedParameters['lg14modelid'],testedParameters['gmsn'],testedParameters['gfsi'],testedParameters['gstn'],testedParameters['ggpe'],testedParameters['ggpi'],testedParameters['iegpe'],testedParameters['iegpi'])
 
   print 'Write modelParams.py'
   paramsFile = open('modelParams.py','w')
@@ -144,23 +133,68 @@ params = {'LG14modelID': %2d,
   # execute the script file
   command = 'sbatch go.slurm'
   os.system(command)
-  #p.append(subprocess.Popen(shlex.split(command)))
 
   os.chdir('..')
 
 #===============================
 
-'''
-for iegpi in [10.,11.,12.]:
-  launchOneParameterizedRun(i)
-  i+=1
-'''
-                                                                                                                                                                           
-# which LG14 parameterization to use?
-lg14modelid = 9
-
 # with which additional parameters?
+testedParameters={'lg14modelid': 9,
+                  'gmsn':4.37,
+                  'gfsi':1.3,
+                  'gstn':1.38,
+                  'ggpe':1.3,
+                  'ggpi':1.,
+                  'iegpe':13.,
+                  'iegpi':11.,
+                  }
 
+testedParametersIntervals = {}
+
+testedParametersIntervals['lg14modelid']=[9.]
+testedParametersIntervals['gmsn']=[3.5,4.,4.5,5.]
+testedParametersIntervals['gfsi']=[1.]
+testedParametersIntervals['gstn']=[1., 1.1, 1.2,1.3,1.4]
+testedParametersIntervals['ggpe']=[1.]
+testedParametersIntervals['ggpi']=[1.]
+testedParametersIntervals['iegpe']=[10.,11.,12.,13.]
+testedParametersIntervals['iegpi']=[9.,10.,11.,12.]
+
+'''
+testedParametersIntervals['gmsn']=[2.,3.,4.]
+testedParametersIntervals['gfsi']=[1., 1.1, 1.2]
+testedParametersIntervals['gstn']=[1., 1.1, 1.2,1.3,1.4]
+testedParametersIntervals['ggpe']=[1., 1.1, 1.2]
+testedParametersIntervals['ggpi']=[1., 1.1, 1.2]
+testedParametersIntervals['iegpe']=[11.,12.,13.]
+testedParametersIntervals['iegpi']=[10.,11.,12.]
+'''
+
+ftp = open(timeString+'_testedParameter.txt','w')
+for k,vlist in testedParametersIntervals.iteritems():
+  ftp.writelines(str(k)+' '+str(vlist)+'\n')
+ftp.close()
+
+#------------------------------
+# recursive exploration of all parameter combinations defined in pdict dictionary
+#------------------------------
+def recParamExplo(pdict):
+  if len(pdict)>0:
+    paramK = pdict.keys()[0]
+    calldict = pdict.copy()
+    del calldict[paramK]
+    for v in pdict[paramK]:
+      testedParameters[paramK]=v
+      recParamExplo(calldict)
+  else:
+    global i
+    launchOneParameterizedRun(i)
+    #print i,"->",testedParameters
+    i+= 1
+
+recParamExplo(testedParametersIntervals)
+
+'''
 for gmsn in [2.,3.,4.]:
   for gfsi in [1., 1.1, 1.2]:
     for gstn in [1., 1.1, 1.2, 1.3, 1.4]:
@@ -170,4 +204,4 @@ for gmsn in [2.,3.,4.]:
             for iegpi in [10.,11.,12.]:
               launchOneParameterizedRun(i)
               i+=1
-
+'''

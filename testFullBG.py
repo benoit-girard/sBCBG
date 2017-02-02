@@ -46,14 +46,16 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   create('GPi')
   nest.SetStatus(Pop['GPi'],{"I_e":params['IeGPi'] if ('IeGPi' in params) else 9.})
   
+  parrot = True # switch to False at your risks & perils...
+
   nbSim['CSN'] = params['nbCSN'] if ('nbCSN' in params) else 3000
-  create('CSN', fake=True)
+  create('CSN', fake=True, parrot=parrot)
   
   nbSim['PTN'] = params['nbPTN'] if ('nbPTN' in params) else 100.
-  create('PTN', fake=True)
+  create('PTN', fake=True, parrot=parrot)
 
   nbSim['CMPf'] = params['nbCMPf'] if ('nbCMPf' in params) else 9.
-  create('CMPf', fake=True)
+  create('CMPf', fake=True, parrot=parrot)
 
   print "Number of simulated neurons:", nbSim
 
