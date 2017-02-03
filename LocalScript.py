@@ -115,8 +115,8 @@ lg14modelid = 9
 
 # with which additional parameters?
 
-nbcsn=6000.
-nbptn=200.
+nbcsn=12000.
+nbptn=400.
 launchOneParameterizedRun(i)
 i+=1
 

@@ -47,8 +47,9 @@ def initNeurons():
 # name: string naming the population, as defined in NUCLEI list
 # fake: if fake is True, the neurons will be replaced by Poisson generators, firing 
 #       at the rate indicated in the "rate" dictionary
+# parrot: do we use parrot neurons or not? If not, there will be no correlations in the inputs, and a waste of computation power...
 #-------------------------------------------------------------------------------
-def create(name,fake=False):
+def create(name,fake=False,parrot=True):
   if nbSim[name] == 0:
     print 'ERROR: create(): nbSim['+name+'] = 0'
     exit()
@@ -56,11 +57,16 @@ def create(name,fake=False):
     if rate[name] == 0:
       print 'ERROR: create(): rate['+name+'] = 0 Hz'
     print '* '+name+'(fake):',nbSim[name],'Poisson generators with avg rate:',rate[name]
-#    Pop[name]  = nest.Create('poisson_generator',int(nbSim[name]))
-    Fake[name]  = nest.Create('poisson_generator',int(nbSim[name]))
-    nest.SetStatus(Fake[name],{'rate':rate[name]})
-    Pop[name]  = nest.Create('parrot_neuron',int(nbSim[name]))
-    nest.Connect(pre=Fake[name],post=Pop[name],conn_spec={'rule':'one_to_one'})
+    if not parrot:
+      print "/!\ /!\ /!\ /!\ \nWARNING: parrot neurons not used, no correlations in inputs\n"
+      Pop[name]  = nest.Create('poisson_generator',int(nbSim[name]))
+      nest.SetStatus(Pop[name],{'rate':rate[name]})
+    else:
+      Fake[name]  = nest.Create('poisson_generator',int(nbSim[name]))
+      nest.SetStatus(Fake[name],{'rate':rate[name]})
+      Pop[name]  = nest.Create('parrot_neuron',int(nbSim[name]))
+      nest.Connect(pre=Fake[name],post=Pop[name],conn_spec={'rule':'one_to_one'})
+    
   else:
     print '* '+name+':',nbSim[name],'neurons with parameters:',BGparams[name]
     Pop[name] = nest.Create("iaf_psc_alpha_multisynapse",int(nbSim[name]),params=BGparams[name])

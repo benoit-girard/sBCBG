@@ -183,6 +183,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   score = 0
 
   text=[]
+  frstr = antagInjectionSite + ', '
   s = '----- RESULTS -----'
   print s
   text.append(s+'\n')
@@ -194,6 +195,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
         # if the measured rate is within acceptable values
         strTestPassed = 'OK'
         score += 1
+      frstr += '%f , ' %(expeRate[N])
       s = '* '+N+' - Rate: '+str(expeRate[N])+' Hz -> '+strTestPassed+' ('+str(FRRNormal[N][0])+' , '+str(FRRNormal[N][1])+')'
       print s
       text.append(s+'\n')
@@ -213,9 +215,16 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
         s = '* '+N+' - Rate: '+str(expeRate[N])+' Hz'
         print s
         text.append(s+'\n')
+      frstr += '%f , ' %(expeRate[N])
+
   s = '-------------------'
   print s
   text.append(s+'\n')
+
+  frstr+='\n'
+  firingRatesFile=open(dataPath+'firingRates.csv','a')
+  firingRatesFile.writelines(frstr)
+  firingRatesFile.close()
 
   #print "************************************** file writing",text
   #res = open(dataPath+'OutSummary_'+logFileName+'.txt','a')

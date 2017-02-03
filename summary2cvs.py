@@ -31,7 +31,7 @@ nbFailures = 0
 nbParameterizations = 0
 
 for d in dirs:
-  if '2017' in d: # filters out files & directories that do not comply with the data format, including this .py file!
+  if '2017' in d and 'testedParameters' not in d: # filters out files & directories that do not comply with the data format, including this .py file!
     nbParameterizations += 1
     # retrieve the score
     #-----------------------------
@@ -87,7 +87,7 @@ for d in dirs:
     
     # write the score and the parameters in the wrap up file
     #-----------------------------
-    outStr = d['LG14modelID']+', '+str(score)
+    outStr = str(d['LG14modelID'])+', '+str(score)
     for k in paramKeys:
       outStr += ', %4.2f' %d[k]
     outStr += ' \n'
