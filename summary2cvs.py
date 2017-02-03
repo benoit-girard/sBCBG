@@ -31,7 +31,7 @@ nbFailures = 0
 nbParameterizations = 0
 
 for d in dirs:
-  if '2017' in d and 'testedParameters' not in d: # filters out files & directories that do not comply with the data format, including this .py file!
+  if ('2017' in d) and ('.txt' not in d): # filters out files & directories that do not comply with the data format, including this .py file!
     nbParameterizations += 1
     # retrieve the score
     #-----------------------------

@@ -11,21 +11,6 @@ timeString = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(
 
 print 'Time:', timeString
 
-i = 0
-
-lg14modelid = 9
-
-nbcsn = 3000.
-nbptn = 100.
-
-gmsn=4.
-gfsi=1.
-gstn=1.4
-ggpe=1.
-ggpi=1.
-iegpe=11.
-iegpi=10.
-
 # job for one parameterization test:
 #----------------------------------------- 
 def launchOneParameterizedRun(i):
@@ -109,14 +94,35 @@ for iegpi in [10.,11.,12.]:
   launchOneParameterizedRun(i)
   i+=1
 '''
-                                                                                                                                                                           
+
+i = 0                                                                                                                                                                           
 # which LG14 parameterization to use?
-lg14modelid = 9
+lg14modelid = 2
 
 # with which additional parameters?
+nbcsn = 3000.
+nbptn = 100.
 
-nbcsn=12000.
-nbptn=400.
+gmsn=4.
+gfsi=1.
+gstn=1.4
+ggpe=1.
+ggpi=1.
+iegpe=9.
+iegpi=8.
+
+'''
+gmsn=4.
+gfsi=1.
+gstn=1.4
+ggpe=1.
+ggpi=1.
+iegpe=11.
+iegpi=10.
+'''
+
+#nbcsn=12000.
+#nbptn=400.
 launchOneParameterizedRun(i)
 i+=1
 

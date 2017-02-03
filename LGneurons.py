@@ -34,6 +34,10 @@ def loadLG14params(ID):
     #print 'dist:',k,v,round(float(LG14Solutions[ID]['DIST_'+k.replace('->','_')]),2)
     p[k] = round(float(LG14Solutions[ID]['DIST_'+k.replace('->','_')]),2)
 
+  # here have been forgotten the firing thresholds (theta) parameter!
+  for k,v in BGparams.iteritems():
+    BGparams[k]['V_th'] = round(float(LG14Solutions[ID]['THETA_'+k]),1)
+
 #-------------------------------------------------------------------------------
 # Changes the default of the iaf_psc_alpha_multisynapse neurons 
 # Very important because it defines the 3 types of receptors (AMPA, NMDA, GABA) that will be needed
