@@ -60,14 +60,14 @@ def launchOneParameterizedRun(i):
 interactive = False
 
 params = {'LG14modelID': %2d,
-          'nbMSN': 2644.,
-          'nbFSI':   53.,
-          'nbSTN':    8.,
-          'nbGPe':   25.,
-          'nbGPi':   14.,
-          'nbCSN': 3000.,
-          'nbPTN':  100.,
-          'nbCMPf':   9.,
+          'nbMSN':    %f,
+          'nbFSI':    %f,
+          'nbSTN':    %f,
+          'nbGPe':    %f,
+          'nbGPi':    %f,
+          'nbCSN':    %f,
+          'nbPTN':    %f,
+          'nbCMPf':   %f,
           'GMSN':     %4.2f,
           'GFSI':     %4.2f,
           'GSTN':     %4.2f,
@@ -98,7 +98,7 @@ params = {'LG14modelID': %2d,
           'inDegGPeGPi':  23.,
           'inDegCMPfGPi':  9.,
           }
-''' %(testedParameters['lg14modelid'],testedParameters['gmsn'],testedParameters['gfsi'],testedParameters['gstn'],testedParameters['ggpe'],testedParameters['ggpi'],testedParameters['iegpe'],testedParameters['iegpi'])
+''' %(testedParameters['lg14modelid'],testedParameters['nbmsn'],testedParameters['nbfsi'],testedParameters['nbstn'],testedParameters['nbgpe'],testedParameters['nbgpi'],testedParameters['nbcsn'],testedParameters['nbptn'],testedParameters['nbcmpf'],testedParameters['gmsn'],testedParameters['gfsi'],testedParameters['gstn'],testedParameters['ggpe'],testedParameters['ggpi'],testedParameters['iegpe'],testedParameters['iegpi'])
 
   print 'Write modelParams.py'
   paramsFile = open('modelParams.py','w')
@@ -140,25 +140,41 @@ params = {'LG14modelID': %2d,
 
 # with which additional parameters?
 testedParameters={'lg14modelid': 9,
-                  'gmsn':4.37,
-                  'gfsi':1.3,
-                  'gstn':1.38,
-                  'ggpe':1.3,
-                  'ggpi':1.,
-                  'iegpe':13.,
-                  'iegpi':11.,
+                  'nbmsn':2644.,
+                  'nbfsi':  53.,
+                  'nbstn':   8.,
+                  'nbgpe':  25.,
+                  'nbgpi':  14.,
+                  'nbcsn':3000.,
+                  'nbptn': 100.,
+                  'nbcmpf':  9.,
+                  'gmsn':    4.37,
+                  'gfsi':    1.3,
+                  'gstn':    1.38,
+                  'ggpe':    1.3,
+                  'ggpi':    1.,
+                  'iegpe':  13.,
+                  'iegpi':  11.,
                   }
 
 testedParametersIntervals = {}
 
 testedParametersIntervals['lg14modelid']=[9.]
-testedParametersIntervals['gmsn']=[3.5,4.,4.5,5.]
+testedParametersIntervals['nbmsn']=[2644.*10]
+testedParametersIntervals['nbfsi']=[  53.*10]
+testedParametersIntervals['nbstn']=[   8.*10]
+testedParametersIntervals['nbgpe']=[  25.*10]
+testedParametersIntervals['nbgpi']=[  14.*10]
+testedParametersIntervals['nbcsn']=[3000.*10]
+testedParametersIntervals['nbptn']=[ 100.*10]
+testedParametersIntervals['nbcmpf']=[  9.*10]
+testedParametersIntervals['gmsn']=[4.]
 testedParametersIntervals['gfsi']=[1.]
-testedParametersIntervals['gstn']=[1., 1.1, 1.2,1.3,1.4]
+testedParametersIntervals['gstn']=[1.4]
 testedParametersIntervals['ggpe']=[1.]
 testedParametersIntervals['ggpi']=[1.]
-testedParametersIntervals['iegpe']=[10.,11.,12.,13.]
-testedParametersIntervals['iegpi']=[9.,10.,11.,12.]
+testedParametersIntervals['iegpe']=[11.]
+testedParametersIntervals['iegpi']=[10.]
 
 '''
 testedParametersIntervals['gmsn']=[2.,3.,4.]
@@ -194,14 +210,3 @@ def recParamExplo(pdict):
 
 recParamExplo(testedParametersIntervals)
 
-'''
-for gmsn in [2.,3.,4.]:
-  for gfsi in [1., 1.1, 1.2]:
-    for gstn in [1., 1.1, 1.2, 1.3, 1.4]:
-      for ggpe in [1., 1.1, 1.2]:
-        for ggpi in [1., 1.1, 1.2]:
-          for iegpe in [11.,12.,13.]:
-            for iegpi in [10.,11.,12.]:
-              launchOneParameterizedRun(i)
-              i+=1
-'''
