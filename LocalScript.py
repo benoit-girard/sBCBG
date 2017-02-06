@@ -105,11 +105,11 @@ nbptn = 100.
 
 gmsn=4.
 gfsi=1.
-gstn=1.4
+gstn=1.3
 ggpe=1.
 ggpi=1.
-iegpe=9.
-iegpi=8.
+iegpe=10.
+iegpi=9.
 
 '''
 gmsn=4.
