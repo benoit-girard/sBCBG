@@ -13,7 +13,7 @@ import sys
 def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',logFileName=''):
   nest.ResetKernel()
   dataPath='log/'
-  nest.SetKernelStatus({'local_num_threads':2, "data_path": dataPath})
+  nest.SetKernelStatus({'local_num_threads': params['nbcpu'] if ('nbcpu' in params) else 2, "data_path": dataPath})
   initNeurons()
 
   offsetDuration = 1000.

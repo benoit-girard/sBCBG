@@ -59,7 +59,8 @@ def launchOneParameterizedRun(i):
 
 interactive = False
 
-params = {'LG14modelID': %2d,
+params = {'nbcpu':    %s,
+          'LG14modelID': %2d,
           'nbMSN':    %f,
           'nbFSI':    %f,
           'nbSTN':    %f,
@@ -98,7 +99,7 @@ params = {'LG14modelID': %2d,
           'inDegGPeGPi':  23.,
           'inDegCMPfGPi':  9.,
           }
-''' %(testedParameters['lg14modelid'],testedParameters['nbmsn'],testedParameters['nbfsi'],testedParameters['nbstn'],testedParameters['nbgpe'],testedParameters['nbgpi'],testedParameters['nbcsn'],testedParameters['nbptn'],testedParameters['nbcmpf'],testedParameters['gmsn'],testedParameters['gfsi'],testedParameters['gstn'],testedParameters['ggpe'],testedParameters['ggpi'],testedParameters['iegpe'],testedParameters['iegpi'])
+''' %(testedParameters['nbcpu'],testedParameters['lg14modelid'],testedParameters['nbmsn'],testedParameters['nbfsi'],testedParameters['nbstn'],testedParameters['nbgpe'],testedParameters['nbgpi'],testedParameters['nbcsn'],testedParameters['nbptn'],testedParameters['nbcmpf'],testedParameters['gmsn'],testedParameters['gfsi'],testedParameters['gstn'],testedParameters['ggpe'],testedParameters['ggpi'],testedParameters['iegpe'],testedParameters['iegpi'])
 
   print 'Write modelParams.py'
   paramsFile = open('modelParams.py','w')
@@ -106,11 +107,11 @@ params = {'LG14modelID': %2d,
   paramsFile.close()
 
   # #SBATCH --mem-per-cpu=1G changed for #SBATCH --mem-per-cpu=200M
-  slurmOptions = ['#SBATCH --time=00:06:00 \n',
+  slurmOptions = ['#SBATCH --time=00:'+testedParameters['duration']+':00 \n',
                   '#SBATCH --partition=compute \n',
                   '#SBATCH --mem-per-cpu=1G \n',
                   '#SBATCH --ntasks=1 \n',
-                  '#SBATCH --cpus-per-task=2 \n',
+                  '#SBATCH --cpus-per-task='+testedParameters['nbcpu']+' \n',
                   '#SBATCH --job-name=sBCBG_'+IDstring+'\n',
                   '#SBATCH --input=none\n',
                   '#SBATCH --output="'+IDstring+'.out" \n',
@@ -139,7 +140,9 @@ params = {'LG14modelID': %2d,
 #===============================
 
 # with which additional parameters?
-testedParameters={'lg14modelid': 9,
+testedParameters={'duration':  '60',
+                  'nbcpu':     '10',
+                  'lg14modelid':  9,
                   'nbmsn':2644.,
                   'nbfsi':  53.,
                   'nbstn':   8.,
