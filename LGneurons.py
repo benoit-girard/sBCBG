@@ -76,6 +76,44 @@ def create(name,fake=False,parrot=True):
     Pop[name] = nest.Create("iaf_psc_alpha_multisynapse",int(nbSim[name]),params=BGparams[name])
 
 #-------------------------------------------------------------------------------
+# Creates a popolation of neurons subdivided in Multiple Channels
+#
+# name: string naming the population, as defined in NUCLEI list
+# nbCh: integer stating the number of channels to be created
+# fake: if fake is True, the neurons will be replaced by Poisson generators, firing
+#       at the rate indicated in the "rate" dictionary
+# parrot: do we use parrot neurons or not? If not, there will be no correlations in the inputs, and a waste of computation power...
+#-------------------------------------------------------------------------------
+def createMC(name,nbCh,fake=False,parrot=True):
+  if nbSim[name] == 0:
+    print 'ERROR: create(): nbSim['+name+'] = 0'
+    exit()
+
+  Pop[name]=[]
+
+  if fake:
+    Fake[name]=[]
+    if rate[name] == 0:
+      print 'ERROR: create(): rate['+name+'] = 0 Hz'
+    print '* '+name+'(fake):',nbSim[name],'Poisson generators with avg rate:',rate[name]
+    if not parrot:
+      print "/!\ /!\ /!\ /!\ \nWARNING: parrot neurons not used, no correlations in inputs\n"
+      for i in range(nbCh):
+        Pop[name].append(nest.Create('poisson_generator',int(nbSim[name])))
+        nest.SetStatus(Pop[name][i],{'rate':rate[name]})
+    else:
+      for i in range(nbCh):
+        Fake[name].append(nest.Create('poisson_generator',int(nbSim[name])))
+        nest.SetStatus(Fake[name][i],{'rate':rate[name]})
+        Pop[name].append(nest.Create('parrot_neuron',int(nbSim[name])))
+        nest.Connect(pre=Fake[name][i],post=Pop[name][i],conn_spec={'rule':'one_to_one'})
+
+  else:
+    print '* '+name+':',nbSim[name],'neurons with parameters:',BGparams[name]
+    for i in range(nbCh):
+      Pop[name].append(nest.Create("iaf_psc_alpha_multisynapse",int(nbSim[name]),params=BGparams[name]))
+
+#-------------------------------------------------------------------------------
 # Establishes a connexion between two populations, following the results of LG14
 # type : a string 'ex' or 'in', defining whether it is excitatory or inhibitory
 # nameTgt, nameSrc : strings naming the populations, as defined in NUCLEI list
@@ -126,6 +164,73 @@ def connect(type,nameSrc,nameTgt,inDegree,delay=1.,gain=1.):
       w = W[r]
       #w = nu / float(inDegree) * attenuation * wPSP[recType[r]-1] * gain
       nest.Connect(pre=inputPop, post=(Pop[nameTgt][nTgt],),syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
+
+#-------------------------------------------------------------------------------
+# Establishes a connexion between two populations, following the results of LG14, in a MultiChannel context
+# type : a string 'ex' or 'in', defining whether it is excitatory or inhibitory
+# nameTgt, nameSrc : strings naming the populations, as defined in NUCLEI list
+# projType : type of projections. For the moment: 'focused' (only channel-to-channel connection) and 
+#            'diffuse' (all-to-one with uniform distribution)
+# inDegree : number of neurons from Src project to a single Tgt neuron
+# gain : allows to amplify the weight normally deduced from LG14
+#-------------------------------------------------------------------------------
+def connectMC(type,nameSrc,nameTgt,projType,inDegree,delay=1.,gain=1.):
+  print "* connecting ",nameSrc,"->",nameTgt,"with",projType,type,"connection and",inDegree,"inputs"
+
+  # process receptor types
+  if type == 'ex':
+    lRecType = ['AMPA','NMDA']
+  elif type == 'AMPA':
+    lRecType = ['AMPA']
+  elif type == 'NMDA':
+    lRecType = ['NMDA']
+  elif type == 'in':
+    lRecType = ['GABA']
+  else:
+    print "Undefined connexion type:",type
+
+  W = computeW(lRecType,nameSrc,nameTgt,inDegree,gain,verbose=True)
+
+  if nameSrc+'->'+nameTgt in ConnectMap:
+    loadConnectMap = True
+  else:
+    loadConnectMap = False
+    ConnectMap[nameSrc+'->'+nameTgt] = [[] for i in range(len(Pop[nameTgt]))]
+
+  # To ensure that for excitatory connections, Tgt neurons receive AMPA and NMDA projections from the same Src neurons,
+  # we have to handle the "indegree" connectivity ourselves:
+  for outChannel in range(len(Pop[nameTgt])): # for each channel of the Target nucleus
+    for nTgt in range(int(nbSim[nameTgt])): # for each neuron in this channel 
+      if not loadConnectMap:
+      # if no connectivity map exists between the two populations, let's create one
+        if projType =='focused': # if projections focused, input come only from the same channel as outChannel
+          inputTable = rnd.choice(int(nbSim[nameSrc]),size=int(inDegree),replace=False)
+          inputPop = []
+          for i in inputTable:
+            inputPop.append(Pop[nameSrc][outChannel][i])
+          inputPop = tuple(inputPop)
+
+          ConnectMap[nameSrc+'->'+nameTgt][outChannel].append(inputPop)
+        elif projType=='diffuse': # if projections diffused, input connections are shared among each possible input channel equally
+          for inChannel in range(len(Pop[nameSrc])):
+            inputTable = rnd.choice(int(nbSim[nameSrc]),size=int(round(inDegree/float(len(Pop[nameSrc])),0)),replace=False)
+            inputPop = []
+            for i in inputTable:
+              inputPop.append(Pop[nameSrc][inChannel][i])
+            inputPop = tuple(inputPop)
+
+            ConnectMap[nameSrc+'->'+nameTgt][outChannel].append(inputPop)
+        else:
+          print "Unknown multiple channel connection method",projType
+      else:
+      #otherwise, use the existing one
+        #print nameSrc,"->",nameTgt,"using previously defined connection map"
+        inputPop = ConnectMap[nameSrc+'->'+nameTgt][outChannel][nTgt]
+
+      for r in lRecType:
+        w = W[r]
+        #w = nu / float(inDegree) * attenuation * wPSP[recType[r]-1] * gain
+        nest.Connect(pre=inputPop, post=(Pop[nameTgt][outChannel][nTgt],),syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
 
 #-------------------------------------------------------------------------------
 # computes the weight of a connection, based on LG14 parameters

@@ -2,6 +2,13 @@
 import sys
 import nest.raster_plot
 
+# This script loads the data in the gdf files produced by nest, 
+# and then uses the raster_plot module to plot the neural activity.
+# first argument : ID of the files, first four digits chosen by nest when saving the gdf files
+#                  example: file MSN-89621-00.gdf => ID = 8962
+# second argument: nb of CPUs used, i.e., number of gdf files
+
+
 NUCLEI={'MSN':1,'FSI':2,'STN':3,'GPe':4,'GPi':5}
 
 deactivationList = []

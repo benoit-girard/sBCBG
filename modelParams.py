@@ -24,6 +24,8 @@ params = {'LG14modelID':9,
           'inDegCMPfMSN':  1.,
           'inDegFSIMSN':  30., # 30 : according to Humphries et al. 2010, 30-150 FSIs->MSN
           'inDegMSNMSN':  70., # 70 = 210/3 : according to Koos et al. 2004, cited by Humphries et al., 2010, on avg 3 synpase per MSN-MSN connection
+          'inDegSTNMSN':   0.,
+          'inDegGPeMSN':   0.,
           'inDegCSNFSI':  50.,
           'inDegPTNFSI':   1.,
           'inDegSTNFSI':   2.,
