@@ -11,28 +11,10 @@ import sys
 # - Ie{GPe,GPi} : constant input current to GPe and GPi
 # - G{MSN,FSI,STN,GPi,GPe} : gain to be applied on LG14 input synaptic weights for each population
 
-def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',logFileName=''):
-  nest.ResetKernel()
-  dataPath='log/'
-  nest.SetKernelStatus({'local_num_threads': params['nbcpu'] if ('nbcpu' in params) else 2, "data_path": dataPath})
-  initNeurons()
-
-  offsetDuration = 1000.
-  simDuration = 5000. # ms
-  # nest.SetKernelStatus({"overwrite_files":True}) # Thanks to use of timestamps, file names should now 
-                                                   # be different as long as they are not created during the same second
-
-  print '/!\ Using the following LG14 parameterization',params['LG14modelID']
-  loadLG14params(params['LG14modelID'])
-
-  # We check that all the necessary parameters have been defined. They should be in the modelParams.py file.
-  # If one of them misses, we exit the program.
-  necessaryParams=['nbCh','nbMSN','nbFSI','nbSTN','nbGPe','nbGPi','nbCSN','nbPTN','nbCMPf','IeGPe','IeGPi','GMSN','GFSI','GSTN','GGPe','GGPi','inDegCSNMSN','inDegPTNMSN','inDegCMPfMSN','inDegMSNMSN','inDegFSIMSN','inDegSTNMSN','inDegGPeMSN','inDegCSNFSI','inDegPTNFSI','inDegSTNFSI','inDegGPeFSI','inDegCMPfFSI','inDegFSIFSI','inDegPTNSTN','inDegCMPfSTN','inDegGPeSTN','inDegCMPfGPe','inDegSTNGPe','inDegMSNGPe','inDegGPeGPe','inDegMSNGPi','inDegSTNGPi','inDegGPeGPi','inDegCMPfGPi',]
-  for np in necessaryParams:
-    if np not in params:
-      print "Missing parameter:",np 
-      exit()
-
+#------------------------------------------
+# Creates the populations of neurons necessary to simulate a BG circuit
+#------------------------------------------
+def createBG_MC():
   #==========================
   # Creation of neurons
   #-------------------------
@@ -49,25 +31,30 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
 
   nbSim['GPe'] = params['nbGPe']
   createMC('GPe',params['nbCh'])
-  nest.SetStatus(Pop['GPe'],{"I_e":params['IeGPe']})
+  for i in range(len(Pop['GPe'])):
+    nest.SetStatus(Pop['GPe'][i],{"I_e":params['IeGPe']})
 
   nbSim['GPi'] = params['nbGPi']
   createMC('GPi',params['nbCh'])
-  nest.SetStatus(Pop['GPi'],{"I_e":params['IeGPi']})
-  
-  parrot = True # switch to False at your risks & perils...
+  for i in range(len(Pop['GPi'])):
+    nest.SetStatus(Pop['GPi'][i],{"I_e":params['IeGPi']})
 
+  parrot = True # switch to False at your risks & perils...                                                                                                                   
   nbSim['CSN'] = params['nbCSN']
   createMC('CSN',params['nbCh'], fake=True, parrot=parrot)
-  
+
   nbSim['PTN'] = params['nbPTN']
-  create('PTN',params['nbCh'], fake=True, parrot=parrot)
+  createMC('PTN',params['nbCh'], fake=True, parrot=parrot)
 
   nbSim['CMPf'] = params['nbCMPf']
-  create('CMPf',params['nbCh'], fake=True, parrot=parrot)
+  createMC('CMPf',params['nbCh'], fake=True, parrot=parrot)
 
   print "Number of simulated neurons:", nbSim
 
+#------------------------------------------
+# Connects the populations of a previously created multi-channel BG circuit 
+#------------------------------------------
+def connectBG_MC(antagInjectionSite,antag):
   G = {'MSN': params['GMSN'],
        'FSI': params['GFSI'],
        'STN': params['GSTN'],
@@ -87,14 +74,14 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   connectMC('ex','PTN','MSN', 'focused', inDegree= min(params['inDegPTNMSN'],nbSim['PTN']),gain=G['MSN'])
   connectMC('ex','CMPf','MSN','focused', inDegree= min(params['inDegCMPfMSN'],nbSim['CMPf']),gain=G['MSN'])
   connectMC('in','MSN','MSN', 'focused', inDegree= min(params['inDegMSNMSN'],nbSim['MSN']),gain=G['MSN'])
-  connectMC('in','FSI','MSN', 'diffuse', inDegree= min(params['inDegFSIMSN'],nbSim['FSI']),gain=G['MSN']) # diffuse ? focused ?
+  connectMC('in','FSI','MSN', 'diffuse', inDegree= min(params['inDegFSIMSN'],nbSim['FSI']),gain=G['MSN']) # diffuse ? focused ?                                               
   # some parameterizations from LG14 have no STN->MSN or GPe->MSN synaptic contacts
   if alpha['STN->MSN'] != 0:
     print "alpha['STN->MSN']",alpha['STN->MSN']
     connectMC('ex','STN','MSN', 'diffuse', inDegree= min(params['inDegSTNMSN'],nbSim['STN']),gain=G['MSN'])
   if alpha['GPe->MSN'] != 0:
     print "alpha['GPe->MSN']",alpha['GPe->MSN']
-    connectMC('in','GPe','MSN', 'diffuse', inDegree= min(params['inDegGPeMSN'],nbSim['GPe']),gain=G['MSN']) # diffuse ? focused ?
+    connectMC('in','GPe','MSN', 'diffuse', inDegree= min(params['inDegGPeMSN'],nbSim['GPe']),gain=G['MSN']) # diffuse ? focused ?                                             
 
   print '* FSI Inputs'
   connectMC('ex','CSN','FSI', 'focused', inDegree= min(params['inDegCSNFSI'],nbSim['CSN']),gain=G['FSI'])
@@ -105,11 +92,10 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   connectMC('ex','CMPf','FSI','focused', inDegree= min(params['inDegCMPfFSI'],nbSim['CMPf']),gain=G['FSI'])
   connectMC('in','FSI','FSI', 'diffuse',inDegree= min(params['inDegFSIFSI'],nbSim['FSI']),gain=G['FSI'])
 
-#HERE
   print '* STN Inputs'
   connectMC('ex','PTN','STN', 'focused',inDegree= min(params['inDegPTNSTN'],nbSim['PTN']), gain=G['STN'])
   connectMC('ex','CMPf','STN','focused',inDegree= min(params['inDegCMPfSTN'],nbSim['CMPf']), gain=G['STN'])
-  connectMC('in','GPe','STN', 'focused',inDegree= min(params['inDegGPeSTN'],nbSim['GPe']), gain=G['STN']) # or diffuse, to be in line with the 2008 model?
+  connectMC('in','GPe','STN', 'focused',inDegree= min(params['inDegGPeSTN'],nbSim['GPe']), gain=G['STN']) # or diffuse, to be in line with the 2008 model?                    
 
   print '* GPe Inputs'
   if antagInjectionSite == 'GPe':
@@ -117,7 +103,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
       connectMC('NMDA','CMPf','GPe','focused',inDegree= min(params['inDegCMPfGPe'],nbSim['CMPf']), gain=G['GPe'])
       connectMC('NMDA','STN','GPe','diffuse', inDegree= min(params['inDegSTNGPe'],nbSim['STN']), gain=G['GPe'])
       connectMC('in','MSN','GPe','focused', inDegree= min(params['inDegMSNGPe'],nbSim['MSN']), gain=G['GPe'])
-      connectMC('in','GPe','GPe','diffuse', inDegree= min(params['inDegGPeGPe'],nbSim['GPe']), gain=G['GPe']) # diffuse or focused?
+      connectMC('in','GPe','GPe','diffuse', inDegree= min(params['inDegGPeGPe'],nbSim['GPe']), gain=G['GPe']) # diffuse or focused?                                           
     elif antag == 'NMDA':
       connectMC('AMPA','CMPf','GPe','focused',inDegree= min(params['inDegCMPfGPe'],nbSim['CMPf']), gain=G['GPe'])
       connectMC('AMPA','STN','GPe','diffuse', inDegree= min(params['inDegSTNGPe'],nbSim['STN']), gain=G['GPe'])
@@ -131,7 +117,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
       connectMC('ex','STN','GPe', 'diffuse',inDegree= min(params['inDegSTNGPe'],nbSim['STN']), gain=G['GPe'])
     else:
       print antagInjectionSite,": unknown antagonist experiment:",antag
-  else: 
+  else:
     connectMC('ex','CMPf','GPe','focused',inDegree= min(params['inDegCMPfGPe'],nbSim['CMPf']), gain=G['GPe'])
     connectMC('ex','STN','GPe', 'diffuse',inDegree= min(params['inDegSTNGPe'],nbSim['STN']), gain=G['GPe'])
     connectMC('in','MSN','GPe', 'focused',inDegree= min(params['inDegMSNGPe'],nbSim['MSN']), gain=G['GPe'])
@@ -165,15 +151,41 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
     connectMC('in','GPe','GPi', 'diffuse',inDegree= min(params['inDegGPeGPi'],nbSim['GPe']),gain=G['GPi'])
     connectMC('ex','CMPf','GPi','focused',inDegree= min(params['inDegCMPfGPi'],nbSim['CMPf']),gain=G['GPi'])
 
+
+def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',logFileName=''):
+  nest.ResetKernel()
+  dataPath='log/'
+  nest.SetKernelStatus({'local_num_threads': params['nbcpu'] if ('nbcpu' in params) else 2, "data_path": dataPath})
+  initNeurons()
+
+  offsetDuration = 1000.
+  simDuration = 5000. # ms
+  # nest.SetKernelStatus({"overwrite_files":True}) # Thanks to use of timestamps, file names should now 
+                                                   # be different as long as they are not created during the same second
+
+  print '/!\ Using the following LG14 parameterization',params['LG14modelID']
+  loadLG14params(params['LG14modelID'])
+
+  # We check that all the necessary parameters have been defined. They should be in the modelParams.py file.
+  # If one of them misses, we exit the program.
+  necessaryParams=['nbCh','nbMSN','nbFSI','nbSTN','nbGPe','nbGPi','nbCSN','nbPTN','nbCMPf','IeGPe','IeGPi','GMSN','GFSI','GSTN','GGPe','GGPi','inDegCSNMSN','inDegPTNMSN','inDegCMPfMSN','inDegMSNMSN','inDegFSIMSN','inDegSTNMSN','inDegGPeMSN','inDegCSNFSI','inDegPTNFSI','inDegSTNFSI','inDegGPeFSI','inDegCMPfFSI','inDegFSIFSI','inDegPTNSTN','inDegCMPfSTN','inDegGPeSTN','inDegCMPfGPe','inDegSTNGPe','inDegMSNGPe','inDegGPeGPe','inDegMSNGPi','inDegSTNGPi','inDegGPeGPi','inDegCMPfGPi',]
+  for np in necessaryParams:
+    if np not in params:
+      print "Missing parameter:",np 
+      exit()
+
+  #-------------------------
+  # creation and connection of the neural populations
+  #-------------------------
+  createBG_MC()
+
+  connectBG_MC(antagInjectionSite,antag)
+
   #-------------------------
   # measures
   #-------------------------
   spkDetect={} # spike detectors used to record the experiment
   expeRate={}
-
-  #if logFileName == '':
-  #  execTime = time.localtime()
-  #  logFileName = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
 
   antagStr = ''
   if antagInjectionSite != 'none':
@@ -181,9 +193,9 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
 
   for N in NUCLEI:
     # 1000ms offset period for network stabilization
-    #spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": logFileName+'_'+antagStr+N, "to_file": True, 'start':offsetDuration,'stop':offsetDuration+simDuration})
     spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": antagStr+N, "to_file": True, 'start':offsetDuration,'stop':offsetDuration+simDuration})
-    nest.Connect(Pop[N], spkDetect[N]) # pas sur que ça marche ici...
+    for i in range(len(Pop[N])):
+      nest.Connect(Pop[N][i], spkDetect[N])
 
   #-------------------------
   # Simulation
@@ -200,7 +212,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   if antagInjectionSite == 'none':
     for N in NUCLEI:
       strTestPassed = 'NO!'
-      expeRate[N] = nest.GetStatus(spkDetect[N], 'n_events')[0] / float(nbSim[N]*simDuration) * 1000
+      expeRate[N] = nest.GetStatus(spkDetect[N], 'n_events')[0] / float(nbSim[N]*simDuration*params['nbCh']) * 1000
       if expeRate[N] <= FRRNormal[N][1] and expeRate[N] >= FRRNormal[N][0]:
         # if the measured rate is within acceptable values
         strTestPassed = 'OK'

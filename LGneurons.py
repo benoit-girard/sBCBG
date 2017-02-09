@@ -95,7 +95,7 @@ def createMC(name,nbCh,fake=False,parrot=True):
     Fake[name]=[]
     if rate[name] == 0:
       print 'ERROR: create(): rate['+name+'] = 0 Hz'
-    print '* '+name+'(fake):',nbSim[name],'Poisson generators with avg rate:',rate[name]
+    print '* '+name+'(fake):',nbSim[name]*nbCh,'Poisson generators (divided in',nbCh,'channels) with avg rate:',rate[name]
     if not parrot:
       print "/!\ /!\ /!\ /!\ \nWARNING: parrot neurons not used, no correlations in inputs\n"
       for i in range(nbCh):
@@ -109,7 +109,7 @@ def createMC(name,nbCh,fake=False,parrot=True):
         nest.Connect(pre=Fake[name][i],post=Pop[name][i],conn_spec={'rule':'one_to_one'})
 
   else:
-    print '* '+name+':',nbSim[name],'neurons with parameters:',BGparams[name]
+    print '* '+name+':',nbSim[name]*nbCh,'neurons (divided in',nbCh,'channels) with parameters:',BGparams[name]
     for i in range(nbCh):
       Pop[name].append(nest.Create("iaf_psc_alpha_multisynapse",int(nbSim[name]),params=BGparams[name]))
 
@@ -177,7 +177,7 @@ def connect(type,nameSrc,nameTgt,inDegree,delay=1.,gain=1.):
 def connectMC(type,nameSrc,nameTgt,projType,inDegree,delay=1.,gain=1.):
   print "* connecting ",nameSrc,"->",nameTgt,"with",projType,type,"connection and",inDegree,"inputs"
 
-  # process receptor types
+  # prepare receptor type lists:
   if type == 'ex':
     lRecType = ['AMPA','NMDA']
   elif type == 'AMPA':
@@ -189,11 +189,15 @@ def connectMC(type,nameSrc,nameTgt,projType,inDegree,delay=1.,gain=1.):
   else:
     print "Undefined connexion type:",type
 
+  # compute the global weight of the connection, for each receptor type:
   W = computeW(lRecType,nameSrc,nameTgt,inDegree,gain,verbose=True)
 
+  # check whether a connection map has already been drawn or not:
   if nameSrc+'->'+nameTgt in ConnectMap:
+    print "Using existing connection map"
     loadConnectMap = True
   else:
+    print "Will create a connection map"
     loadConnectMap = False
     ConnectMap[nameSrc+'->'+nameTgt] = [[] for i in range(len(Pop[nameTgt]))]
 
@@ -212,8 +216,13 @@ def connectMC(type,nameSrc,nameTgt,projType,inDegree,delay=1.,gain=1.):
 
           ConnectMap[nameSrc+'->'+nameTgt][outChannel].append(inputPop)
         elif projType=='diffuse': # if projections diffused, input connections are shared among each possible input channel equally
+          n = int(inDegree)/int(len(Pop[nameSrc]))
+          r = float(inDegree)/float(len(Pop[nameSrc])) - n
+          #print nameSrc,'->',nameTgt,'#input connections:',n,'(',r,')'
           for inChannel in range(len(Pop[nameSrc])):
-            inputTable = rnd.choice(int(nbSim[nameSrc]),size=int(round(inDegree/float(len(Pop[nameSrc])),0)),replace=False)
+            nbInPerChannel = n + (1 if rnd.rand()<r else 0)
+            #print '   ',nbInPerChannel
+            inputTable = rnd.choice(int(nbSim[nameSrc]),size=nbInPerChannel,replace=False)
             inputPop = []
             for i in inputTable:
               inputPop.append(Pop[nameSrc][inChannel][i])
