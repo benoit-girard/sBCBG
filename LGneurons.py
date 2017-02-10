@@ -118,9 +118,10 @@ def createMC(name,nbCh,fake=False,parrot=True):
 # type : a string 'ex' or 'in', defining whether it is excitatory or inhibitory
 # nameTgt, nameSrc : strings naming the populations, as defined in NUCLEI list
 # inDegree : number of neurons from Src project to a single Tgt neuron
+# LCGDelays: shall we use the delays obtained by (Liénard, Cos, Girard, in prep) or not (default = True)
 # gain : allows to amplify the weight normally deduced from LG14
 #-------------------------------------------------------------------------------
-def connect(type,nameSrc,nameTgt,inDegree,delay=1.,gain=1.):
+def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1.):
   print "* connecting ",nameSrc,"->",nameTgt,"with",type,"connection and",inDegree,"inputs"
 
   # process receptor types
@@ -143,6 +144,12 @@ def connect(type,nameSrc,nameTgt,inDegree,delay=1.,gain=1.):
     loadConnectMap = False
     ConnectMap[nameSrc+'->'+nameTgt] = []
 
+  # determine which transmission delay to use:
+  if LCGDelays:
+    delay= tau[nameSrc+'->'+nameTgt]
+  else:
+    delay= 1.
+
   # To ensure that for excitatory connections, Tgt neurons receive AMPA and NMDA projections from the same Src neurons, 
   # we have to handle the "indegree" connectivity ourselves:
   for nTgt in range(int(nbSim[nameTgt])):
@@ -162,7 +169,7 @@ def connect(type,nameSrc,nameTgt,inDegree,delay=1.,gain=1.):
 
     for r in lRecType:
       w = W[r]
-      #w = nu / float(inDegree) * attenuation * wPSP[recType[r]-1] * gain
+
       nest.Connect(pre=inputPop, post=(Pop[nameTgt][nTgt],),syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
 
 #-------------------------------------------------------------------------------
@@ -172,9 +179,10 @@ def connect(type,nameSrc,nameTgt,inDegree,delay=1.,gain=1.):
 # projType : type of projections. For the moment: 'focused' (only channel-to-channel connection) and 
 #            'diffuse' (all-to-one with uniform distribution)
 # inDegree : number of neurons from Src project to a single Tgt neuron
+# LCGDelays: shall we use the delays obtained by (Liénard, Cos, Girard, in prep) or not (default = True)
 # gain : allows to amplify the weight normally deduced from LG14
 #-------------------------------------------------------------------------------
-def connectMC(type,nameSrc,nameTgt,projType,inDegree,delay=1.,gain=1.):
+def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1.):
   print "* connecting ",nameSrc,"->",nameTgt,"with",projType,type,"connection and",inDegree,"inputs"
 
   # prepare receptor type lists:
@@ -194,12 +202,18 @@ def connectMC(type,nameSrc,nameTgt,projType,inDegree,delay=1.,gain=1.):
 
   # check whether a connection map has already been drawn or not:
   if nameSrc+'->'+nameTgt in ConnectMap:
-    print "Using existing connection map"
+    #print "Using existing connection map"
     loadConnectMap = True
   else:
-    print "Will create a connection map"
+    #print "Will create a connection map"
     loadConnectMap = False
     ConnectMap[nameSrc+'->'+nameTgt] = [[] for i in range(len(Pop[nameTgt]))]
+
+  # determine which transmission delay to use:
+  if LCGDelays:
+    delay = tau[nameSrc+'->'+nameTgt]
+  else:
+    delay = 1.
 
   # To ensure that for excitatory connections, Tgt neurons receive AMPA and NMDA projections from the same Src neurons,
   # we have to handle the "indegree" connectivity ourselves:
@@ -238,7 +252,7 @@ def connectMC(type,nameSrc,nameTgt,projType,inDegree,delay=1.,gain=1.):
 
       for r in lRecType:
         w = W[r]
-        #w = nu / float(inDegree) * attenuation * wPSP[recType[r]-1] * gain
+
         nest.Connect(pre=inputPop, post=(Pop[nameTgt][outChannel][nTgt],),syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
 
 #-------------------------------------------------------------------------------
@@ -439,6 +453,34 @@ P_GPe_GPi = 0.84
 P_GPe_MSN = 0.16
 P_GPe_FSI = 0.16
 P_MSN_GPi = 0.82
+
+# tau: communication delays
+tau = {'MSN->GPe':    7.,
+       'MSN->GPi':   11.,
+       'MSN->MSN':    1.,
+       'FSI->MSN':    1.,
+       'FSI->FSI':    1.,
+       'STN->GPe':    3.,
+       'STN->GPi':    3.,
+       'STN->MSN':    3.,
+       'STN->FSI':    3.,
+       'GPe->STN':   10.,
+       'GPe->GPe':    1.,
+       'GPe->GPi':    3.,
+       'GPe->MSN':    3.,
+       'GPe->FSI':    3.,
+       'CSN->MSN':    7.,
+       'CSN->FSI':    7.,
+       'PTN->MSN':    3.,
+       'PTN->FSI':    3.,
+       'PTN->STN':    3.,
+       'CMPf->MSN':   7.,
+       'CMPf->FSI':   7.,
+       'CMPf->STN':   7.,
+       'CMPf->GPe':   7.,
+       'CMPf->GPi':   7.,
+       }
+
 
 # setting the 3 input ports for AMPA, NMDA and GABA receptor types
 #-------------------------

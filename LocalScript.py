@@ -22,6 +22,7 @@ def launchOneParameterizedRun(i):
   os.system('mkdir '+IDstring)
   os.system('cp LGneurons.py '+IDstring+'/')
   os.system('cp testFullBG.py '+IDstring+'/')
+  os.system('cp testChannelBG.py '+IDstring+'/')
   os.system('cp solutions_simple_unique.csv '+IDstring+'/')
   os.system('cp __init__.py '+IDstring+'/')
   os.chdir(IDstring)
@@ -35,7 +36,8 @@ def launchOneParameterizedRun(i):
 
 interactive = True
 
-params = {'LG14modelID': %2d,
+params = {'nbCh':     8,
+          'LG14modelID': %2d,
           'nbMSN': 2644.,
           'nbFSI':   53.,
           'nbSTN':    8.,
@@ -56,6 +58,8 @@ params = {'LG14modelID': %2d,
           'inDegCMPfMSN':  1.,
           'inDegFSIMSN':  30., # according to Humphries et al. 2010, 30-150 FSIs->MSN
           'inDegMSNMSN':  70., # according to Koos et al. 2004, cited by Humphries et al., 2010, on avg 3 synpase per MSN-MSN connection
+          'inDegSTNMSN':   0.,
+          'inDegGPeMSN':   0.,
           'inDegCSNFSI':  50.,
           'inDegPTNFSI':   1.,
           'inDegSTNFSI':   2.,
@@ -82,7 +86,8 @@ params = {'LG14modelID': %2d,
   paramsFile.close()
 
   # execute the script file
-  command = 'python testFullBG.py'
+  # command = 'python testFullBG.py'
+  command = 'python testChannelBG.py'
   os.system(command)
 
   os.chdir('..')
@@ -97,19 +102,19 @@ for iegpi in [10.,11.,12.]:
 
 i = 0                                                                                                                                                                           
 # which LG14 parameterization to use?
-lg14modelid = 2
+lg14modelid = 9
 
 # with which additional parameters?
 nbcsn = 3000.
 nbptn = 100.
 
-gmsn=4.
+gmsn=3.
 gfsi=1.
-gstn=1.3
+gstn=1.4
 ggpe=1.
 ggpi=1.
-iegpe=10.
-iegpi=9.
+iegpe=15.
+iegpi=10.
 
 '''
 gmsn=4.
