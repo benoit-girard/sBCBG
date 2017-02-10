@@ -223,7 +223,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
       text.append(s+'\n')
   else:
     for N in NUCLEI:
-      expeRate[N] = nest.GetStatus(spkDetect[N], 'n_events')[0] / float(nbSim[N]*simDuration) * 1000
+      expeRate[N] = nest.GetStatus(spkDetect[N], 'n_events')[0] / float(nbSim[N]*simDuration*params['nbCh']) * 1000
       if N == antagInjectionSite:
         strTestPassed = 'NO!'
         if expeRate[N] <= FRRAnt[N][antag][1] and expeRate[N] >= FRRAnt[N][antag][0]:
