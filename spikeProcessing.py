@@ -5,7 +5,9 @@ import numpy
 import pylab
 import nest.raster_plot as raster
 
-filePath = '2017_2_13_14:42_00000/log/'
+filePath = '2017_2_13_14:42_00000/log/' # GSTN*1.5, GGPe*1.5
+#filePath = '2017_2_14_11:20_00000/log/' # normal
+
 NUCLEI = ['STN','GPe']
 fileList = {}
 fileList['STN'] = ['STN-33652-0.gdf','STN-33652-1.gdf']
@@ -66,5 +68,10 @@ for N in NUCLEI:
   #pylab.plot(xf[1:], numpy.abs(yf[1:Nb//2])**2)
   pylab.show()
 
-
-
+  # Oscillation index computation :
+  #--------------------------------
+  PS = 2.0/Nb * numpy.abs(yf[1:Nb//2])**2
+  #print PS.size
+  #print xf[15*5:30*5],PS[15*5:30*5]
+  #print PS.sum()
+  print N,"OI[15-30Hz]",PS[15*5:30*5].sum()/PS.sum()
