@@ -47,7 +47,7 @@ def createBG_MC():
   createMC('PTN',params['nbCh'], fake=True, parrot=parrot)
 
   nbSim['CMPf'] = params['nbCMPf']
-  createMC('CMPf',params['nbCh'], fake=True, parrot=parrot)
+  createMC('CMPf',params['nbCh'], fake=True, parrot=False)
 
   print "Number of simulated neurons:", nbSim
 

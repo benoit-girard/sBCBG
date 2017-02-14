@@ -55,7 +55,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   create('PTN', fake=True, parrot=parrot)
 
   nbSim['CMPf'] = params['nbCMPf'] if ('nbCMPf' in params) else 9.
-  create('CMPf', fake=True, parrot=parrot)
+  create('CMPf', fake=True, parrot=False)
 
   print "Number of simulated neurons:", nbSim
 
@@ -312,7 +312,6 @@ def main():
   for a in ['All','AMPA','NMDA+AMPA','NMDA','GABAA']:
     score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
   '''
-
   #-------------------------
   print "******************"
   print "* Score:",score[0],'/',score[1]
