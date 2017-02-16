@@ -151,7 +151,15 @@ def connectBG_MC(antagInjectionSite,antag):
     connectMC('in','GPe','GPi', 'diffuse',inDegree= min(params['inDegGPeGPi'],nbSim['GPe']),gain=G['GPi'])
     connectMC('ex','CMPf','GPi','focused',inDegree= min(params['inDegCMPfGPi'],nbSim['CMPf']),gain=G['GPi'])
 
-
+#------------------------------------------
+# Checks that the BG model parameterization defined by the "params" dictionary can respect the electrophysiological constaints (firing rate at rest).
+# If testing for a given antagonist injection experiment, specifiy the injection site in antagInjectionSite, and the type of antagonists used in antag.
+# Returns [score obtained, maximal score]
+# params possible keys:
+# - nb{MSN,FSI,STN,GPi,GPe,CSN,PTN,CMPf} : number of simulated neurons for each population
+# - Ie{GPe,GPi} : constant input current to GPe and GPi
+# - G{MSN,FSI,STN,GPi,GPe} : gain to be applied on LG14 input synaptic weights for each population
+#------------------------------------------                                                          
 def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',logFileName=''):
   nest.ResetKernel()
   dataPath='log/'

@@ -217,32 +217,35 @@ def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1.):
 
   # To ensure that for excitatory connections, Tgt neurons receive AMPA and NMDA projections from the same Src neurons,
   # we have to handle the "indegree" connectivity ourselves:
-  for outChannel in range(len(Pop[nameTgt])): # for each channel of the Target nucleus
+  for tgtChannel in range(len(Pop[nameTgt])): # for each channel of the Target nucleus
     for nTgt in range(int(nbSim[nameTgt])): # for each neuron in this channel 
       if not loadConnectMap:
       # if no connectivity map exists between the two populations, let's create one
-        if projType =='focused': # if projections focused, input come only from the same channel as outChannel
+        if projType =='focused': # if projections focused, input come only from the same channel as tgtChannel
           inputTable = rnd.choice(int(nbSim[nameSrc]),size=int(inDegree),replace=False)
           inputPop = []
           for i in inputTable:
-            inputPop.append(Pop[nameSrc][outChannel][i])
+            inputPop.append(Pop[nameSrc][tgtChannel][i])
           inputPop = tuple(inputPop)
 
-          ConnectMap[nameSrc+'->'+nameTgt][outChannel].append(inputPop)
+          ConnectMap[nameSrc+'->'+nameTgt][tgtChannel].append(inputPop)
         elif projType=='diffuse': # if projections diffused, input connections are shared among each possible input channel equally
           n = int(inDegree)/int(len(Pop[nameSrc]))
           r = float(inDegree)/float(len(Pop[nameSrc])) - n
+          inputPop = []
           #print nameSrc,'->',nameTgt,'#input connections:',n,'(',r,')'
-          for inChannel in range(len(Pop[nameSrc])):
-            nbInPerChannel = n + (1 if rnd.rand()<r else 0)
+          for srcChannel in range(len(Pop[nameSrc])):
+            if rnd.rand() < r:
+              nbInPerChannel = n + 1
+            else:
+              nbInPerChannel = n
             #print '   ',nbInPerChannel
             inputTable = rnd.choice(int(nbSim[nameSrc]),size=nbInPerChannel,replace=False)
-            inputPop = []
             for i in inputTable:
-              inputPop.append(Pop[nameSrc][inChannel][i])
-            inputPop = tuple(inputPop)
+              inputPop.append(Pop[nameSrc][srcChannel][i])
 
-            ConnectMap[nameSrc+'->'+nameTgt][outChannel].append(inputPop)
+          inputPop = tuple(inputPop)
+          ConnectMap[nameSrc+'->'+nameTgt][tgtChannel].append(inputPop)
         else:
           print "Unknown multiple channel connection method",projType
       else:
@@ -253,7 +256,7 @@ def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1.):
       for r in lRecType:
         w = W[r]
 
-        nest.Connect(pre=inputPop, post=(Pop[nameTgt][outChannel][nTgt],),syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
+        nest.Connect(pre=inputPop, post=(Pop[nameTgt][tgtChannel][nTgt],),syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
 
 #-------------------------------------------------------------------------------
 # computes the weight of a connection, based on LG14 parameters
