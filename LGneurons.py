@@ -251,7 +251,7 @@ def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1.):
       else:
       #otherwise, use the existing one
         #print nameSrc,"->",nameTgt,"using previously defined connection map"
-        inputPop = ConnectMap[nameSrc+'->'+nameTgt][outChannel][nTgt]
+        inputPop = ConnectMap[nameSrc+'->'+nameTgt][tgtChannel][nTgt]
 
       for r in lRecType:
         w = W[r]

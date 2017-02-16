@@ -23,7 +23,7 @@ nbQueuedJobs = 0 # number of jobs currently in the queue
 # processes for one parameterization test:
 #----------------------------------------- 
 def launchOneParameterizedRun(i):
-  # checks that there are ot too many jobs launched, otherwise waits
+  # checks that there are not too many jobs launched, otherwise waits
   readyToGo = False
   while not readyToGo:
     os.system('squeue -u benoit-girard > squeueStatus.txt')
@@ -46,6 +46,7 @@ def launchOneParameterizedRun(i):
   os.system('mkdir '+IDstring)
   os.system('cp LGneurons.py '+IDstring+'/')
   os.system('cp testFullBG.py '+IDstring+'/')
+  os.system('cp testChannelBG.py '+IDstring+'/')
   os.system('cp solutions_simple_unique.csv '+IDstring+'/')
   os.system('cp __init__.py '+IDstring+'/')
   os.chdir(IDstring)
@@ -60,6 +61,7 @@ def launchOneParameterizedRun(i):
 interactive = False
 
 params = {'nbcpu':    %s,
+          'nbCh' :     8,
           'LG14modelID': %2d,
           'nbMSN':    %f,
           'nbFSI':    %f,
@@ -81,6 +83,8 @@ params = {'nbcpu':    %s,
           'inDegCMPfMSN':  1.,
           'inDegFSIMSN':  30., # according to Humphries et al. 2010, 30-150 FSIs->MSN
           'inDegMSNMSN':  70., # according to Koos et al. 2004, cited by Humphries et al., 2010, on avg 3 synpase per MSN-MSN connection
+          'inDegSTNMSN':   0.,
+          'inDegGPeMSN':   0.,
           'inDegCSNFSI':  50.,
           'inDegPTNFSI':   1.,
           'inDegSTNFSI':   2.,
@@ -107,7 +111,7 @@ params = {'nbcpu':    %s,
   paramsFile.close()
 
   # #SBATCH --mem-per-cpu=1G changed for #SBATCH --mem-per-cpu=200M
-  slurmOptions = ['#SBATCH --time=00:'+testedParameters['duration']+':00 \n',
+  slurmOptions = ['#SBATCH --time='+testedParameters['durationH']+':'+testedParameters['durationMin']+':00 \n',
                   '#SBATCH --partition=compute \n',
                   '#SBATCH --mem-per-cpu=1G \n',
                   '#SBATCH --ntasks=1 \n',
@@ -128,7 +132,9 @@ params = {'nbcpu':    %s,
   script.writelines(header)
   script.writelines(slurmOptions)
   script.writelines(moduleLoad)
-  script.writelines('python testFullBG.py \n')
+  #script.writelines('python testFullBG.py \n')
+  #script.writelines('python testChannelBG.py \n')
+  script.writelines('python '+testedParameters['whichTest']+'.py \n')
   script.close()
 
   # execute the script file
@@ -140,8 +146,10 @@ params = {'nbcpu':    %s,
 #===============================
 
 # with which additional parameters?
-testedParameters={'duration':  '60',
-                  'nbcpu':     '10',
+testedParameters={'durationH':    '03',
+                  'durationMin':  '00',
+                  'nbcpu':        '16',
+                  'whichTest':    'testChannelBG',
                   'lg14modelid':  9,
                   'nbmsn':2644.,
                   'nbfsi':  53.,
@@ -163,21 +171,21 @@ testedParameters={'duration':  '60',
 testedParametersIntervals = {}
 
 testedParametersIntervals['lg14modelid']=[9.]
-testedParametersIntervals['nbmsn']=[2644.*10]
-testedParametersIntervals['nbfsi']=[  53.*10]
-testedParametersIntervals['nbstn']=[   8.*10]
-testedParametersIntervals['nbgpe']=[  25.*10]
-testedParametersIntervals['nbgpi']=[  14.*10]
-testedParametersIntervals['nbcsn']=[3000.*10]
-testedParametersIntervals['nbptn']=[ 100.*10]
-testedParametersIntervals['nbcmpf']=[  9.*10]
+testedParametersIntervals['nbmsn']=[2644.]
+testedParametersIntervals['nbfsi']=[  53.]
+testedParametersIntervals['nbstn']=[   8.]
+testedParametersIntervals['nbgpe']=[  25.]
+testedParametersIntervals['nbgpi']=[  14.]
+testedParametersIntervals['nbcsn']=[3000.]
+testedParametersIntervals['nbptn']=[ 100.]
+testedParametersIntervals['nbcmpf']=[  9.]
 testedParametersIntervals['gmsn']=[4.]
 testedParametersIntervals['gfsi']=[1.]
 testedParametersIntervals['gstn']=[1.4]
 testedParametersIntervals['ggpe']=[1.]
 testedParametersIntervals['ggpi']=[1.]
 testedParametersIntervals['iegpe']=[11.]
-testedParametersIntervals['iegpi']=[10.]
+testedParametersIntervals['iegpi']=[11.]
 
 '''
 testedParametersIntervals['gmsn']=[2.,3.,4.]
