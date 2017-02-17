@@ -146,7 +146,7 @@ params = {'nbcpu':    %s,
 #===============================
 
 # with which additional parameters?
-testedParameters={'durationH':    '03',
+testedParameters={'durationH':    '01',
                   'durationMin':  '00',
                   'nbcpu':        '16',
                   'whichTest':    'testChannelBG',
@@ -159,12 +159,12 @@ testedParameters={'durationH':    '03',
                   'nbcsn':3000.,
                   'nbptn': 100.,
                   'nbcmpf':  9.,
-                  'gmsn':    4.37,
-                  'gfsi':    1.3,
-                  'gstn':    1.38,
-                  'ggpe':    1.3,
+                  'gmsn':    4.,
+                  'gfsi':    1.,
+                  'gstn':    1.4,
+                  'ggpe':    1.,
                   'ggpi':    1.,
-                  'iegpe':  13.,
+                  'iegpe':  11.,
                   'iegpi':  11.,
                   }
 

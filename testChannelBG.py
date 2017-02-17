@@ -159,7 +159,8 @@ def connectBG_MC(antagInjectionSite,antag):
 # - nb{MSN,FSI,STN,GPi,GPe,CSN,PTN,CMPf} : number of simulated neurons for each population
 # - Ie{GPe,GPi} : constant input current to GPe and GPi
 # - G{MSN,FSI,STN,GPi,GPe} : gain to be applied on LG14 input synaptic weights for each population
-#------------------------------------------                                                          
+#------------------------------------------
+
 def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',logFileName=''):
   nest.ResetKernel()
   dataPath='log/'
@@ -275,6 +276,166 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   return score, 5 if antagInjectionSite == 'none' else 1
 
 #-----------------------------------------------------------------------
+def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PTNFR=[15.,35], antagInjectionSite='none',antag=''):
+  nest.ResetKernel()
+  dataPath='log/'
+  nest.SetKernelStatus({'local_num_threads': params['nbcpu'] if ('nbcpu' in params) else 2, "data_path": dataPath})
+  initNeurons()
+
+  offsetDuration = 200.
+  simDuration = 800. # ms
+  loadLG14params(params['LG14modelID'])
+
+  # We check that all the necessary parameters have been defined. They should be in the modelParams.py file.
+  # If one of them misses, we exit the program.
+  necessaryParams=['nbCh','nbMSN','nbFSI','nbSTN','nbGPe','nbGPi','nbCSN','nbPTN','nbCMPf','IeGPe','IeGPi','GMSN','GFSI','GSTN','GGPe','GGPi','inDegCSNMSN','inDegPTNMSN','inDegCMPfMSN','inDegMSNMSN','inDegFSIMSN','inDegSTNMSN','inDegGPeMSN','inDegCSNFSI','inDegPTNFSI','inDegSTNFSI','inDegGPeFSI','inDegCMPfFSI','inDegFSIFSI','inDegPTNSTN','inDegCMPfSTN','inDegGPeSTN','inDegCMPfGPe','inDegSTNGPe','inDegMSNGPe','inDegGPeGPe','inDegMSNGPi','inDegSTNGPi','inDegGPeGPi','inDegCMPfGPi',]
+  for nepa in necessaryParams:
+    if nepa not in params:
+      print "Missing parameter:",nepa
+      exit()
+
+  nbRecord=2 # number of channels whose activity will be recorded
+  if params['nbCh']<2:
+    print 'need at least 2 channels to perform Gurney test'
+    exit()
+  elif params['nbCh']>2:
+    nbRecord = 3 # if we have more than 2 channels, we will also record one of the neutral channels
+
+  #-------------------------
+  # creation and connection of the neural populations
+  #-------------------------
+  createBG_MC()
+  connectBG_MC(antagInjectionSite,antag)
+
+  #-------------------------
+  # prepare the firing rates of the inputs for the 5 steps of the experiment
+  #-------------------------  
+  gCSN = CSNFR[1]-CSNFR[0]
+  gPTN = PTNFR[1]-PTNFR[0]
+  activityLevels = np.array([[0,0.4,0.4,0.6,0.4], [0.,0.,0.6,0.6,0.6]]) 
+
+  CSNrate= gCSN * activityLevels + np.ones((5)) * CSNFR[0]
+  PTNrate= gPTN * activityLevels + np.ones((5)) * PTNFR[0]
+
+  score = 0
+  expeRate={}
+  for N in NUCLEI:
+    expeRate[N]=-1. * np.ones((nbRecord,5))
+
+  inspector = {}
+  for N in NUCLEI:
+    inspector[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": N, "to_file": False})
+    for i in range(nbRecord):
+      nest.Connect(Pop[N][i],inspector[N])
+
+  #----------------------------------
+  # Loop over the 5 steps of the test
+  #----------------------------------
+  for timeStep in range(5):
+    #-------------------------
+    # measures                                                                                                                                                  
+    #-------------------------
+    spkDetect=[{},{},{}] # list of spike detector dictionaries used to record the experiment in the first 3 channels
+
+    antagStr = ''
+    if antagInjectionSite != 'none':
+      antagStr = antagInjectionSite+'_'+antag+'_'
+
+    for i in range(nbRecord):
+      for N in NUCLEI:
+        spkDetect[i][N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": str(timeStep)+'_'+antagStr+N, "to_file": True, 'start':offsetDuration + timeStep*(offsetDuration+simDuration),'stop':(timeStep+1)*(offsetDuration+simDuration)})
+        nest.Connect(Pop[N][i], spkDetect[i][N])
+
+    frstr = str(timeStep) + ', '
+
+    #-------------------------
+    # Simulation
+    #-------------------------
+    print 'Channel 0:',CSNrate[0,timeStep],PTNrate[0,timeStep]
+    print 'Channel 1:',CSNrate[1,timeStep],PTNrate[1,timeStep]
+
+    if 'Fake' in globals():
+      if 'CSN' in Fake:
+        nest.SetStatus(Fake['CSN'][0],{'rate':CSNrate[0,timeStep]})
+        nest.SetStatus(Fake['CSN'][1],{'rate':CSNrate[1,timeStep]})
+      else:
+        nest.SetStatus(Pop['CSN'][0],{'rate':CSNrate[0,timeStep]})
+        nest.SetStatus(Pop['CSN'][1],{'rate':CSNrate[1,timeStep]})
+      if 'PTN' in Fake:
+        nest.SetStatus(Fake['PTN'][0],{'rate':PTNrate[0,timeStep]})
+        nest.SetStatus(Fake['PTN'][1],{'rate':PTNrate[1,timeStep]})
+      else:
+        nest.SetStatus(Pop['PTN'][0],{'rate':PTNrate[0,timeStep]})
+        nest.SetStatus(Pop['PTN'][1],{'rate':PTNrate[1,timeStep]})
+    else:
+      nest.SetStatus(Pop['CSN'][0],{'rate':CSNrate[0,timeStep]})
+      nest.SetStatus(Pop['CSN'][1],{'rate':CSNrate[1,timeStep]})
+      nest.SetStatus(Pop['PTN'][0],{'rate':PTNrate[0,timeStep]})
+      nest.SetStatus(Pop['PTN'][1],{'rate':PTNrate[1,timeStep]})
+
+    nest.Simulate(simDuration+offsetDuration)
+
+    for i in range(nbRecord):
+      print '------ Channel',i,'-------'
+      for N in NUCLEI:
+        #strTestPassed = 'NO!'
+        expeRate[N][i,timeStep] = nest.GetStatus(spkDetect[i][N], 'n_events')[0] / float(nbSim[N]*simDuration) * 1000
+        print 't('+str(timeStep)+')',N,':',expeRate[N][i,timeStep],'Hz'
+        frstr += '%f , ' %(expeRate[N][i,timeStep])
+
+    strTestPassed = 'YES!'
+    if timeStep == 0:
+      for i in range(params['nbCh']):
+        if expeRate['GPi'][0,timeStep]<FRRNormal['GPi'][0]:
+          strTestPassed = 'NO!'
+      meanRestGPi = expeRate['GPi'][:,timeStep].mean()
+    elif timeStep == 1:
+      if expeRate['GPi'][0,timeStep] > meanRestGPi*0.9:
+        strTestPassed = 'NO!'
+    elif timeStep == 2:
+      if expeRate['GPi'][1,timeStep] > meanRestGPi*0.9 or expeRate['GPi'][0,timeStep] < expeRate['GPi'][1,timeStep]:
+        strTestPassed = 'NO!'
+    elif timeStep == 3:
+      if expeRate['GPi'][0,timeStep] > meanRestGPi*0.9 or expeRate['GPi'][1,timeStep] > meanRestGPi*0.9 :
+        strTestPassed = 'NO!'
+    elif timeStep == 4:
+      if expeRate['GPi'][1,timeStep] > meanRestGPi*0.9 or expeRate['GPi'][0,timeStep] < expeRate['GPi'][1,timeStep]:
+        strTestPassed = 'NO!'
+
+    if strTestPassed == 'YES!':
+      score +=1
+
+    print expeRate['GPi'][0,timeStep],'Hz',expeRate['GPi'][1,timeStep],'Hz',strTestPassed
+
+    #-------------------------
+    # Displays
+    #-------------------------
+    '''
+    if showRasters and interactive:
+      for i in range(nbRecord):
+        displayStr = ' Channel '+str(i)
+        displayStr+=' ('+antagStr[:-1]+')' if (antagInjectionSite != 'none') else ''
+        #for N in NUCLEI:
+        for N in ['MSN','STN']:
+          #nest.raster_plot.from_device(spkDetect[i][N],hist=True,title=N+displayStr)
+          nest.raster_plot.from_device(spkDetect[i][N],hist=False,title=N+displayStr)
+
+      nest.raster_plot.show()
+    '''
+
+  if showRasters and interactive:
+    for N in NUCLEI:
+      nest.raster_plot.from_device(inspector[N],hist=True,title=N)
+    nest.raster_plot.show()
+
+  frstr+='\n'
+  firingRatesFile=open(dataPath+'firingRates.csv','a')
+  firingRatesFile.writelines(frstr)
+  firingRatesFile.close()
+
+  return score,5
+
+#-----------------------------------------------------------------------
 def main():
   if len(sys.argv) >= 2:
     print "Command Line Parameters"
@@ -333,9 +494,11 @@ def main():
   #timeStr = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
 
   #IMPROVE
-  params['nbCh']=8
+  #params['nbCh']=2
 
+  
   score = np.zeros((2))
+  '''
   score += checkAvgFR(params=params,antagInjectionSite='none',antag='',showRasters=True)
 
   for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
@@ -343,6 +506,9 @@ def main():
 
   for a in ['All','AMPA','NMDA+AMPA','NMDA','GABAA']:
     score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
+  '''
+
+  score += checkGurneyTest(showRasters=True,params=params)
 
   #-------------------------
   print "******************"
