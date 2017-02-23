@@ -276,7 +276,10 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   return score, 5 if antagInjectionSite == 'none' else 1
 
 #-----------------------------------------------------------------------
-def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PTNFR=[15.,35], antagInjectionSite='none',antag=''):
+# PActiveCNS/PTN : proportion of "active" neurons in the CSN/PTN populations (in [0.,1.])
+#
+#-----------------------------------------------------------------------
+def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., PTNFR=[15.,35], PActivePTN=1., antagInjectionSite='none',antag=''):
   nest.ResetKernel()
   dataPath='log/'
   nest.SetKernelStatus({'local_num_threads': params['nbcpu'] if ('nbcpu' in params) else 2, "data_path": dataPath})
@@ -317,6 +320,50 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PTNFR=[15.,35], 
   CSNrate= gCSN * activityLevels + np.ones((5)) * CSNFR[0]
   PTNrate= gPTN * activityLevels + np.ones((5)) * PTNFR[0]
 
+  #-------------------------
+  # and prepare the lists of neurons that will be affected by these activity changes
+  #-------------------------
+  ActPop = {'CSN':[(),()],'PTN':[(),()]}
+  if 'Fake' in globals():
+    if 'CSN' in Fake:
+      if PActiveCSN==1.:
+       ActPop['CSN']=Fake['CSN']
+      else:
+        for i in range(2):
+          ActPop['CSN'][i] = tuple(rnd.choice(a=np.array(Fake['CSN'][i]),size=int(nbSim['CSN']*PActiveCSN),replace=False))
+    else:
+      if PActiveCSN==1.:
+       ActPop['CSN']=Pop['CSN']
+      else:
+        for i in range(2):
+          ActPop['CSN'][i] = tuple(rnd.choice(a=np.array(Pop['CSN'][i]),size=int(nbSim['CSN']*PActiveCSN),replace=False))
+    if 'PTN' in Fake:
+      if PActivePTN==1.:
+        ActPop['PTN']=Fake['PTN']
+      else:
+        for i in range(2):
+          ActPop['PTN'][i] = tuple(rnd.choice(a=np.array(Fake['PTN'][i]),size=int(nbSim['PTN']*PActivePTN),replace=False))
+    else:
+      if PActivePTN==1.:
+        ActPop['PTN']=Pop['PTN']
+      else:
+        for i in range(2):
+          ActPop['PTN'][i] = tuple(rnd.choice(a=np.array(Pop['PTN'][i]),size=int(nbSim['PTN']*PActivePTN),replace=False))
+  else:
+    if PActiveCSN==1.:
+     ActPop['CSN']=Pop['CSN']
+    else:
+      for i in range(2):
+        ActPop['CSN'][i] = tuple(rnd.choice(a=np.array(Pop['CSN'][i]),size=int(nbSim['CSN']*PActiveCSN),replace=False))
+    if PActivePTN==1.:
+      ActPop['PTN']=Pop['PTN']
+    else:
+      for i in range(2):
+        ActPop['PTN'][i] = tuple(rnd.choice(a=np.array(Pop['PTN'][i]),size=int(nbSim['PTN']*PActivePTN),replace=False))
+
+  #-------------------------
+  # log-related variales
+  #-------------------------
   score = 0
   expeRate={}
   for N in NUCLEI:
@@ -327,6 +374,17 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PTNFR=[15.,35], 
     inspector[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": N, "to_file": False})
     for i in range(nbRecord):
       nest.Connect(Pop[N][i],inspector[N])
+
+  #-------------------------
+  # write header in firingRate summary file
+  #-------------------------
+  frstr = 'step , '
+  for i in range(nbRecord):
+    for N in NUCLEI:
+      frstr += N+' ('+str(i)+') , '
+  frstr+='\n'
+  firingRatesFile=open(dataPath+'firingRates.csv','w')
+  firingRatesFile.writelines(frstr)
 
   #----------------------------------
   # Loop over the 5 steps of the test
@@ -351,6 +409,7 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PTNFR=[15.,35], 
     #-------------------------
     # Simulation
     #-------------------------
+    print '====== Step',timeStep,'======'
     print 'Channel 0:',CSNrate[0,timeStep],PTNrate[0,timeStep]
     print 'Channel 1:',CSNrate[1,timeStep],PTNrate[1,timeStep]
 
@@ -405,7 +464,12 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PTNFR=[15.,35], 
     if strTestPassed == 'YES!':
       score +=1
 
+    print '------ Result ------'
     print expeRate['GPi'][0,timeStep],'Hz',expeRate['GPi'][1,timeStep],'Hz',strTestPassed
+
+    # write measured firing rates in csv file
+    frstr+='\n'
+    firingRatesFile.writelines(frstr)
 
     #-------------------------
     # Displays
@@ -428,9 +492,6 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PTNFR=[15.,35], 
       nest.raster_plot.from_device(inspector[N],hist=True,title=N)
     nest.raster_plot.show()
 
-  frstr+='\n'
-  firingRatesFile=open(dataPath+'firingRates.csv','a')
-  firingRatesFile.writelines(frstr)
   firingRatesFile.close()
 
   return score,5
@@ -493,10 +554,6 @@ def main():
   #execTime = time.localtime()
   #timeStr = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
 
-  #IMPROVE
-  #params['nbCh']=2
-
-  
   score = np.zeros((2))
   '''
   score += checkAvgFR(params=params,antagInjectionSite='none',antag='',showRasters=True)
@@ -508,7 +565,7 @@ def main():
     score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
   '''
 
-  score += checkGurneyTest(showRasters=True,params=params)
+  score += checkGurneyTest(showRasters=True,params=params,PActiveCSN=0.5,PActivePTN=0.5)
 
   #-------------------------
   print "******************"

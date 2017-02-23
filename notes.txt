@@ -1,6 +1,6 @@
 Optimisation de paramètres :
 
-1) optimisation à la main du modèle 9 (celui de la table 9 du papier).
+1.1) optimisation à la main du modèle 9 (celui de la table 9 du papier).
 
 gmsn=4.
 gfsi=1.
@@ -10,7 +10,7 @@ ggpi=1.
 iegpe=11.
 iegpi=10.
 
-2) grid search à l'aide de Sango, sur la base de cette recherche initiale (26 janvier):
+1.2) grid search à l'aide de Sango, sur la base de cette recherche initiale (26 janvier):
 
 gmsn [1.,2.,3.,4.]
 gfsi [1., 1.1, 1.2]
@@ -25,7 +25,7 @@ On observe au final que le score de maximal (14) :
 * est obtenu avec toutes les autres valeurs de gain testées => donc on peut être au plus proche de LG14 avec G=1.
 * est obtenu avec toutes les valeurs de courant testées => pourrait tester quelles sont les limites basses et hautes
 
-3) nouvelle grid search le 2 Février:
+1.3) nouvelle grid search le 2 Février:
 
 testedParametersIntervals['lg14modelid']=[9.]
 testedParametersIntervals['gmsn']=[3.5,4.,4.5,5.]
@@ -36,7 +36,27 @@ testedParametersIntervals['ggpi']=[1.]
 testedParametersIntervals['iegpe']=[10.,11.,12.,13.]
 testedParametersIntervals['iegpi']=[9.,10.,11.,12.]
 
-4) modèle 2 (il a des feedbacks non nuls du STN sur Str), 2 février:
+1.4) avec le paramétrage du 1.1 (y compris les in deegree qui devraient pourtant être changés) score de 4/5 : GPi un peu trop bas (53.6 au lieu de 59 Hz) (2017_2_6_10:45_00000)
+-> un test avec les 14 notes du score: 13/14 (2017_2_6_11:14_00000)
+-> un test avec IeGPi 10.->11. : 14/14 (2017_2_6_11:20_00000)
+
+Donc, le paramétrage de référence pour le modèle 9 :
+gmsn=4.
+gfsi=1.
+gstn=1.4
+ggpe=1.	
+ggpi=1.
+iegpe=11.
+iegpi=11.
+
+
+-----------
+
+optim modèle n°2
+
+2.1) modèle 2 (il a des feedbacks non nuls du STN sur Str), 2 février:
+(il y a eu aussi un test le 30 janvier, mais le code était peut-être buggé, pas sûr qu'on puisse faire confiance au résultat)
+/!\ Attention, ici et en 5), on n' pas change ls "in degres" et on aurait peut-être du...
 
 testedParametersIntervals['lg14modelid']=[2.]
 testedParametersIntervals['gmsn']=[3.5,4.,4.5,5.]
@@ -55,7 +75,7 @@ Meilleur score de  13/14, on note que :
   Et beaucoup ont GMSN à 5. (plus que les autres valeurs) : tester 5.5 et 6. ?
   GSTN à 1.3 ou 1.4 -> 1.5 ?
 
-5) modèle 2 avec mise à jour des plages de paramètres (3 février) :
+2.2) modèle 2 avec mise à jour des plages de paramètres (3 février) :
 
 testedParametersIntervals['lg14modelid']=[2.]
 testedParametersIntervals['gmsn']=[4.5,5.,5.5,6.]
@@ -66,6 +86,308 @@ testedParametersIntervals['ggpi']=[1.]
 testedParametersIntervals['iegpe']=[12.,13.,14.,15.]
 testedParametersIntervals['iegpi']=[6., 7., 8.,9.]
 
+Alors, 2 param correctes :
+4.50, 1.00, 1.40, 1.00, 1.00, 14.00,
+4.50, 1.00, 1.40, 1.00, 1.00, 15.00
+
+GROS BUG: on peut tout oublier sur les params du modèle 2: les seuils de décharge étaient faux (ceux du modèle 9)
+
+2.3) Nouveaux essais avec code corrigé (LocalScript):
+gmsn=4.
+gfsi=1.
+gstn=1.4
+ggpe=1.
+ggpi=1.
+iegpe=10.
+iegpi=10.
+
+3/5 :
+STN trop élevé (23 au lieu de 22.8)
+GPi trop élevé (116 au lieu de 79)
+
+=> baisse de gstn
+
+2.4) baisse gSTN seulement (LocalScript)
+
+gmsn=4.
+gfsi=1.
+gstn=1.2
+ggpe=1.
+ggpi=1.
+iegpe=10.
+iegpi=10.
+
+STN trop faible ! (13.8) -> On va se concentrer sur gSTN = 1.3
+GPi toujours trop élevé (105)
+
+2.5) dernier essai en local pour définir les inervalles à explorer en grid search:
+gmsn=4.
+gfsi=1.
+gstn=1.3
+ggpe=1.
+ggpi=1.
+iegpe=10.
+iegpi=9.
+
+4/5 : GPi toujours trop élevé (102).
+Noter que l'activité des MSN est ultra faible...
+
+2.6) On lance donc la grid search sur (2017_2_6_14\:18):
+testedParametersIntervals['gmsn']=[4.,4.5, 5.]
+testedParametersIntervals['gfsi']=[1.]
+testedParametersIntervals['gstn']=[1.2,1.3,1.4]
+testedParametersIntervals['ggpe']=[1.]
+testedParametersIntervals['ggpi']=[1.]
+testedParametersIntervals['iegpe']=[10.,11.,12.]
+testedParametersIntervals['iegpi']=[7.,8.,9.,10.]
+
+------------------------------
+
+3) le 10 février, essais sur le modèle 9 avec 8 canaux
+
+* Avec (2017_2_10_10:10_00000):
+
+gmsn=4.
+gfsi=1.
+gstn=1.3
+ggpe=1.
+ggpi=1.
+iegpe=10.
+iegpi=9.
+
+On a:
+
+* MSN - Rate: 0.542955748865 Hz -> OK (0 , 1)
+* FSI - Rate: 9.4108490566 Hz -> OK (0 , 20)
+* STN - Rate: 23.184375 Hz -> NO! (15.2 , 22.8)
+* GPe - Rate: 14.298 Hz -> NO! (55.7 , 74.5)
+* GPi - Rate: 31.9571428571 Hz -> NO! (59.1 , 79.5)
+-------------------
+******************
+* Score: 2.0 / 5.0
+******************
+
+* Si on baisse GSTN à 1.2 (2017_2_10_11:23_00000), on a :
+
+----- RESULTS -----
+* MSN - Rate: 0.543125945537 Hz -> OK (0 , 1)
+* FSI - Rate: 9.48679245283 Hz -> OK (0 , 20)
+* STN - Rate: 16.34375 Hz -> OK (15.2 , 22.8)
+* GPe - Rate: 11.338 Hz -> NO! (55.7 , 74.5)
+* GPi - Rate: 30.7428571429 Hz -> NO! (59.1 , 79.5)
+-------------------
+******************
+* Score: 3.0 / 5.0
+******************
+
+* En passant IeGPe à 11. et IeGPi à 10. (2017_2_10_11:41_00000) :
+
+----- RESULTS -----
+* MSN - Rate: 0.54359871407 Hz -> OK (0 , 1)
+* FSI - Rate: 9.38632075472 Hz -> OK (0 , 20)
+* STN - Rate: 15.409375 Hz -> OK (15.2 , 22.8)
+* GPe - Rate: 17.503 Hz -> NO! (55.7 , 74.5)
+* GPi - Rate: 37.3428571429 Hz -> NO! (59.1 , 79.5)
+-------------------
+******************
+* Score: 3.0 / 5.0
+******************
+
+* Avec une forte baisse de GMSN (pour laisser GPe et GPi s'exprimer) (2017_2_10_11:47_00000): 
+
+gmsn=2.
+gfsi=1.
+gstn=1.2
+ggpe=1.
+ggpi=1.
+iegpe=11.
+iegpi=10.
+
+----- RESULTS -----
+* MSN - Rate: 0.0 Hz -> OK (0 , 1)
+* FSI - Rate: 8.42877358491 Hz -> OK (0 , 20)
+* STN - Rate: 12.2625 Hz -> NO! (15.2 , 22.8)
+* GPe - Rate: 34.472 Hz -> NO! (55.7 , 74.5)
+* GPi - Rate: 74.5375 Hz -> OK (59.1 , 79.5)
+-------------------
+
+Donc il ne faut pas trop baisser GMSN
+
+* On remonte GMSN à 3. (2017_2_10_12:26_00000)
+
+----- RESULTS -----
+* MSN - Rate: 0.0407053706505 Hz -> OK (0 , 1)
+* FSI - Rate: 8.3570754717 Hz -> OK (0 , 20)
+* STN - Rate: 11.434375 Hz -> NO! (15.2 , 22.8)
+* GPe - Rate: 40.089 Hz -> NO! (55.7 , 74.5)
+* GPi - Rate: 71.2803571429 Hz -> OK (59.1 , 79.5)
+-------------------
+******************
+* Score: 3.0 / 5.0
+******************
+
+* On remonte aussi GSTN à 1.3 (2017_2_10_12:33_00000)
+
+----- RESULTS -----
+* MSN - Rate: 0.0406864599092 Hz -> OK (0 , 1)
+* FSI - Rate: 8.32924528302 Hz -> OK (0 , 20)
+* STN - Rate: 17.296875 Hz -> OK (15.2 , 22.8)
+* GPe - Rate: 42.647 Hz -> NO! (55.7 , 74.5)
+* GPi - Rate: 72.6410714286 Hz -> OK (59.1 , 79.5)
+-------------------
+
+* Ca manque encore un peu de punch au niveau du GPe, on remonte IeGPe à 14 (2017_2_10_12:51_00000):
+
+----- RESULTS -----
+* MSN - Rate: 0.0406297276853 Hz -> OK (0 , 1)
+* FSI - Rate: 8.14009433962 Hz -> OK (0 , 20)
+* STN - Rate: 15.33125 Hz -> OK (15.2 , 22.8)
+* GPe - Rate: 54.251 Hz -> NO! (55.7 , 74.5)
+* GPi - Rate: 71.8321428571 Hz -> OK (59.1 , 79.5)
+-------------------
+
+* 5/5 avec (2017_2_10_12:58_00000) :
+
+gmsn=3.
+gfsi=1.
+gstn=1.4
+ggpe=1.
+ggpi=1.
+iegpe=15.
+iegpi=10.
+
+----- RESULTS -----
+* MSN - Rate: 0.0407053706505 Hz -> OK (0 , 1)
+* FSI - Rate: 8.00471698113 Hz -> OK (0 , 20)
+* STN - Rate: 19.9625 Hz -> OK (15.2 , 22.8)
+* GPe - Rate: 61.571 Hz -> OK (55.7 , 74.5)
+* GPi - Rate: 72.6767857143 Hz -> OK (59.1 , 79.5)
+-------------------
+
+* =>relancé avec un test complet (15) : 2017_2_10_15:50_00000
+il y avait un bug dans le calcul des taux de décharge pour les expés de déactivation, mais à première vue, le courant IeGPi n'est pas assez fort pour avoir 6Hz d'activité dans la manip AMPA+NMDA -> remonter un peu
+
+* Test 2017_2_10_16:14_00000
+gmsn=3.
+gfsi=1.
+gstn=1.4
+ggpe=1.
+ggpi=1.
+iegpe=15.
+iegpi=11.
+
+10/14
+
+Ce coup-ci, GPi trop élevé au repos, ainsi que dans certaines manips antag.
+Et aussi GPe trop faible avec les antagonistes GABA (!) 
+
+=> trouver un bon paramétrage !
+
+* Test 2017_2_13_13:32_00000
+gmsn=4.
+gfsi=1.
+gstn=1.4
+ggpe=1.
+ggpi=1.
+iegpe=11.
+iegpi=11.
+neurones CM/Pf non corrlélés (Parrot : False)
+
+Pas le bon paramétrage, score de 2/5 sur le premier test. STN trop élevé, GPe & GPi trop bas. (au total, 5/14 !)
+Il va falloir explorer pourquoi, en particulier qu'il n'y a pas de bug sur le nombre de connexions dans les modèles à canaux multiples.
+
+3.1) Correction d'un potentiel bug dans les connections. Test(2017_2_16_10:24_00000)
+
+5/5 OK, mais plantage à cause de la visualisation. Relancé () pour avoir le score total.
+
+----------------------------------------------------------------------
+
+4) A la recherche de la source de la synchronisation
+Avec le petit modèle à 1 canal.
+
+corrélés 
+--------------------------
+CSN   | N | Y | Y | Y	
+PTN   | N | Y | N | Y	
+CM/Pf | N | Y | Y | N
+--------------------------
+Sync  | N | Y |	Y | N
+
+* reproduction des résultats avec le modèle 9 (2017_2_13_11:18_00000) : OK
+gmsn=4.
+gfsi=1.
+gstn=1.4
+ggpe=1.
+ggpi=1.
+iegpe=11.
+iegpi=11.
+
+* virer les parrots sur les PTN (2017_2_13_11:24_00000) 14/14
+les MSN semblent moins réguliers, mais les FSI toujours autant...
+
+* virer les parrots sur les CSN et les PTN (2017_2_13_11:41_00000) 14/14
+Les régularités sont là... => rôle du CM/Pf !?
+=> Si oui, l'arrivée simultanée des spikes du CM/PF partout en même temps est sûrement peu réaliste, et favorise cette synchronie.
+   Revoir les délais des entrées du CP/Pf
+
+* virer les parrots sur CM/Pf only (2017_2_13_12:53_00000) : 14/14
+Et pas de synchronies !
+
+Le rôle du CM/Pf sur la dynamique des BG est donc centrale...
+Dans les plus gros modèles, en particulier ceux à canaux multiples, il faudra comparer les projections CMPf "diffuse" entre canaux, ou "focused". Est-ce que "diffuse" est suffisante pour se libérer des synchronies, même si on a les bons rapports de nb de neurones et des "parrots" (et donc des corrélations dans les entrées) ?
+
+------------------------------------------------------------------------------------------
+
+5) Premier test PD-like (2017_2_13_14:36_00000): GSTN et GGPe * 1.3 : rien de bien probant
+(2017_2_13_14:39_00000) * 1.5 : pareil
+
+=> essayer sur un réseau plus grand (là, un canal...) ?
+(2017_2_13_14:42_00000) nb neurones * 10 : Là, il y a peut-être un petit quelque chose visible à l'oeil, il faudrait calculer le spectre de puissance pour y voir plus clair...
+
+Les spectres de puissance montrent une bosse autour de beta, reste à voir si elle est là aussi en conditions normales...
+
+Test 2017_2_14_11:20_00000 : contrôle, pour comparer.
+
+contrôle :
+OI[15-30Hz] 0.155274720822
+OI[15-30Hz] 0.177146205006
+
+DA depletion (1.5 * G[STN,GPe]):
+OI[15-30Hz] 0.197807434383
+OI[15-30Hz] 0.244936437859
+
+Il y a bien une augmentation de l'index d'oscillation, tel que défini chez Kumar.
+
+Essai avec 1.8 * G[STN,GPe]: 2017_2_14_15:5_00000
+
+STN OI[15-30Hz]: 0.23247013906
+GPe OI[15-30Hz]: 0.300145363892
+
+------------------------------------------------------------------------------------------
+
+6.1) Premier test de sélection avec le "Test de Gurney"
+Modèle 9, CSN \in [2,10], PTN \in [15,35] 
+Après correction de bugs, premier essai sur les 2 premières étapes : 2017_2_17_14:31_0000
+Avec 5 étapes et 2 canaux : 2017_2_17_14:52_00000
+=> il n'y a pas eu de sauvegarde du fichier firingRates.csv (pas encore implémenté ?)
+
+Relancé avec : 2017_2_22_15:21_00000
+l'écriture de firingRates.csv est pê buggée, à tester...
+En effet, bug, en curs de correction dans : 
+2017_2_22_15:35_00000
+2017_2_22_16:40_00000
+2017_2_23_15:5_00000
+2017_2_23_15:13_00000: The good one? Proportion de neurones suractivés dans CSN et PTN : 50%
+
+
+
+6.2) Lancé sur Sango avec 2 (2017_2_17_15:41_00000) puis 8 canaux (2017_2_17_17:31_0000).
+
+sur 2017_2_17_17:31_0000: apparemment, problème d'écriture des fichiers car trop de fichiers ouverts. 
+Relancé avec seulement 8 cpu : 2017_2_21_11:34_00000 (core dumped!)
+Relancé 2017_2_22_11:55_00000
+
+Par ailleurs, STN très élevé, sélection trop forte (sortie canal 1 à 0 alos que canal 1: 0.4 et canal 2: 0.6). travailler les plages de variation de CSN et PTN (pour l'instant, CSN: 2-10, PTN: 15-35), et aussi sur des variations du nombre d'inputs qui atteignent ces valeurs (actuellement 100% des neurones d'entrée d'un canal activés identiquement).
 
 ------------------------------
 

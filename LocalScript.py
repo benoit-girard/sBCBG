@@ -36,13 +36,14 @@ def launchOneParameterizedRun(i):
 
 interactive = True
 
-params = {'nbCh':     8,
+params = {'nbCh':     %d,
           'LG14modelID': %2d,
-          'nbMSN': 2644.,
-          'nbFSI':   53.,
-          'nbSTN':    8.,
-          'nbGPe':   25.,
-          'nbGPi':   14.,
+          'whichTest': '%s', # which test was used to generate the log
+          'nbMSN': 26440.,
+          'nbFSI':   530.,
+          'nbSTN':    80.,
+          'nbGPe':   250.,
+          'nbGPi':   140.,
           'nbCSN': %5.f,
           'nbPTN': %4.f,
           'nbCMPf':   9.,
@@ -78,7 +79,7 @@ params = {'nbCh':     8,
           'inDegGPeGPi':  23.,
           'inDegCMPfGPi':  9.,
           }
-''' %(lg14modelid,nbcsn,nbptn,gmsn,gfsi,gstn,ggpe,ggpi,iegpe,iegpi)
+''' %(nbch,lg14modelid,whichtest,nbcsn,nbptn,gmsn,gfsi,gstn,ggpe,ggpi,iegpe,iegpi)
 
   print 'Write modelParams.py'
   paramsFile = open('modelParams.py','w')
@@ -86,8 +87,8 @@ params = {'nbCh':     8,
   paramsFile.close()
 
   # execute the script file
-  # command = 'python testFullBG.py'
-  command = 'python testChannelBG.py'
+  #command = 'python testFullBG.py'
+  command = 'python '+whichtest+'.py'
   os.system(command)
 
   os.chdir('..')
@@ -104,17 +105,22 @@ i = 0
 # which LG14 parameterization to use?
 lg14modelid = 9
 
+# which test will be carried out?
+whichtest = 'testChannelBG' # can be testFullBG, testChannelBG
+nbch = 2
+
 # with which additional parameters?
 nbcsn = 3000.
 nbptn = 100.
 
+'''
 gmsn=3.
 gfsi=1.
 gstn=1.4
 ggpe=1.
 ggpi=1.
 iegpe=15.
-iegpi=10.
+iegpi=11.
 
 '''
 gmsn=4.
@@ -123,8 +129,8 @@ gstn=1.4
 ggpe=1.
 ggpi=1.
 iegpe=11.
-iegpi=10.
-'''
+iegpi=11.
+
 
 #nbcsn=12000.
 #nbptn=400.

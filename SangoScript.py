@@ -61,8 +61,9 @@ def launchOneParameterizedRun(i):
 interactive = False
 
 params = {'nbcpu':    %s,
-          'nbCh' :     8,
+          'nbCh' :    %d,
           'LG14modelID': %2d,
+          'whichTest': %s, # which test was used to generate the log
           'nbMSN':    %f,
           'nbFSI':    %f,
           'nbSTN':    %f,
@@ -103,7 +104,7 @@ params = {'nbcpu':    %s,
           'inDegGPeGPi':  23.,
           'inDegCMPfGPi':  9.,
           }
-''' %(testedParameters['nbcpu'],testedParameters['lg14modelid'],testedParameters['nbmsn'],testedParameters['nbfsi'],testedParameters['nbstn'],testedParameters['nbgpe'],testedParameters['nbgpi'],testedParameters['nbcsn'],testedParameters['nbptn'],testedParameters['nbcmpf'],testedParameters['gmsn'],testedParameters['gfsi'],testedParameters['gstn'],testedParameters['ggpe'],testedParameters['ggpi'],testedParameters['iegpe'],testedParameters['iegpi'])
+''' %(testedParameters['nbcpu'],testedParameters['nbch'],testedParameters['lg14modelid'],testedParameters['whichTest'],testedParameters['nbmsn'],testedParameters['nbfsi'],testedParameters['nbstn'],testedParameters['nbgpe'],testedParameters['nbgpi'],testedParameters['nbcsn'],testedParameters['nbptn'],testedParameters['nbcmpf'],testedParameters['gmsn'],testedParameters['gfsi'],testedParameters['gstn'],testedParameters['ggpe'],testedParameters['ggpi'],testedParameters['iegpe'],testedParameters['iegpi'])
 
   print 'Write modelParams.py'
   paramsFile = open('modelParams.py','w')
@@ -146,10 +147,11 @@ params = {'nbcpu':    %s,
 #===============================
 
 # with which additional parameters?
-testedParameters={'durationH':    '01',
+testedParameters={'durationH':    '04',
                   'durationMin':  '00',
-                  'nbcpu':        '16',
+                  'nbcpu':        '8',
                   'whichTest':    'testChannelBG',
+                  'nbch': 8,
                   'lg14modelid':  9,
                   'nbmsn':2644.,
                   'nbfsi':  53.,
