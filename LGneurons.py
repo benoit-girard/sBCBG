@@ -356,8 +356,8 @@ nbSim = {'MSN': 0.,
         }
 
 # P(X->Y): probability that a given neuron from X projects to at least neuron of Y
-P = {'MSN->GPe': 0.82,
-     'MSN->GPi': 1.,
+P = {'MSN->GPe': 1., 
+     'MSN->GPi': 0.82,
      'MSN->MSN': 1.,
      'FSI->MSN': 1.,
      'FSI->FSI': 1.,
@@ -444,18 +444,6 @@ lx={'MSN':619E-6,'FSI':961E-6,'STN':750E-6,'GPe':865E-6,'GPi':1132E-6}
 LX={}
 for n in NUCLEI:
     LX[n]=lx[n]*sqrt((4*Ri)/(dx[n]*Rm))
-
-# P_X_Y: probability that a neuron from X projects to Y
-P_MSN_GPe = 0.82
-P_STN_GPe = 0.83
-P_STN_GPi = 0.72
-P_STN_MSN = 0.17
-P_STN_FSI = 0.17
-P_GPe_GPe = 0.84
-P_GPe_GPi = 0.84
-P_GPe_MSN = 0.16
-P_GPe_FSI = 0.16
-P_MSN_GPi = 0.82
 
 # tau: communication delays
 tau = {'MSN->GPe':    7.,
