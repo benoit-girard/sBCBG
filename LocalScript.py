@@ -39,11 +39,11 @@ interactive = True
 params = {'nbCh':     %d,
           'LG14modelID': %2d,
           'whichTest': '%s', # which test was used to generate the log
-          'nbMSN': 26440.,
-          'nbFSI':   530.,
-          'nbSTN':    80.,
-          'nbGPe':   250.,
-          'nbGPi':   140.,
+          'nbMSN': 2644.,
+          'nbFSI':   53.,
+          'nbSTN':    8.,
+          'nbGPe':   25.,
+          'nbGPi':   14.,
           'nbCSN': %5.f,
           'nbPTN': %4.f,
           'nbCMPf':   9.,
@@ -107,7 +107,7 @@ lg14modelid = 9
 
 # which test will be carried out?
 whichtest = 'testChannelBG' # can be testFullBG, testChannelBG
-nbch = 2
+nbch = 8
 
 # with which additional parameters?
 nbcsn = 3000.
@@ -129,7 +129,7 @@ gstn=1.4
 ggpe=1.
 ggpi=1.
 iegpe=11.
-iegpi=11.
+iegpi=12.
 
 
 #nbcsn=12000.

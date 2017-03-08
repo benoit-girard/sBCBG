@@ -413,6 +413,7 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
     print 'Channel 0:',CSNrate[0,timeStep],PTNrate[0,timeStep]
     print 'Channel 1:',CSNrate[1,timeStep],PTNrate[1,timeStep]
 
+    '''
     if 'Fake' in globals():
       if 'CSN' in Fake:
         nest.SetStatus(Fake['CSN'][0],{'rate':CSNrate[0,timeStep]})
@@ -431,6 +432,12 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
       nest.SetStatus(Pop['CSN'][1],{'rate':CSNrate[1,timeStep]})
       nest.SetStatus(Pop['PTN'][0],{'rate':PTNrate[0,timeStep]})
       nest.SetStatus(Pop['PTN'][1],{'rate':PTNrate[1,timeStep]})
+    '''
+
+    nest.SetStatus(ActPop['CSN'][0],{'rate':CSNrate[0,timeStep]})
+    nest.SetStatus(ActPop['CSN'][1],{'rate':CSNrate[1,timeStep]})
+    nest.SetStatus(ActPop['PTN'][0],{'rate':PTNrate[0,timeStep]})
+    nest.SetStatus(ActPop['PTN'][1],{'rate':PTNrate[1,timeStep]})
 
     nest.Simulate(simDuration+offsetDuration)
 
@@ -565,7 +572,8 @@ def main():
     score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
   '''
 
-  score += checkGurneyTest(showRasters=True,params=params,PActiveCSN=0.5,PActivePTN=0.5)
+  score += checkGurneyTest(showRasters=True,params=params,PActiveCSN=0.2,PActivePTN=0.2)
+  #score += checkGurneyTest(showRasters=True,params=params,PActiveCSN=1.,PActivePTN=1.)
 
   #-------------------------
   print "******************"

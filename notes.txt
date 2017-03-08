@@ -378,10 +378,44 @@ En effet, bug, en curs de correction dans :
 2017_2_22_16:40_00000
 2017_2_23_15:5_00000
 2017_2_23_15:13_00000: The good one? Proportion de neurones suractivés dans CSN et PTN : 50%
+-> erreur, les canaux étaient 10x trop gros, reste des tests taillex10. 
 
+On relance : 2017_2_23_15:46_00000 (2 canaux)
+Sur la première étape, l'un des canaux est un peu trop bas, donc le score ne test ne passe pas. 
+58.9285714286 Hz 61.5178571429 Hz NO!
 
+Avec proportion d'actifs de 0.2 (2 canaux) : bug ? C'est très louche, les activités sont strictement identiques en sortie !
 
-6.2) Lancé sur Sango avec 2 (2017_2_17_15:41_00000) puis 8 canaux (2017_2_17_17:31_0000).
+trouvé et corrigé : 2017_2_23_16:3_00000 !
+Toujours 4/5 car sortie GPi un peu faible : augmenter Ie_GPi ?
+
+6.2) Gurney en Local :
+
+* 2017_2_23_16:53_00000, 2 canaux, PActPop=0.2
+gmsn=4.
+gfsi=1.
+gstn=1.4
+ggpe=1.
+ggpi=1.
+iegpe=11.
+iegpi=12.
+OK !
+
+* 2017_2_23_16:59_00000, 2 canaux, PActPop=0.5
+OK, on atteint déjà la sur-sélection : GPi = (0,0) pour (0.4, 0.6)
+
+* 2017_2_23_17:3_00000, 2 canaux, PActPop=1.
+OK, on atteint déjà la sur-sélection : GPi = (0,0) pour (0.4, 0.6)
+
+* 2017_2_23_17:5_00000, 8 canaux, PActPop=1.
+OK, on atteint déjà la sur-sélection : GPi = (0,0) pour (0.4, 0.6)
+
+* 2017_2_23_17:11_00000, 8 canaux, PActPop=0.5
+OK, on atteint déjà la sur-sélection : GPi = (0,0) pour (0.4, 0.6)
+
+* 2017_2_23_17:18_00000, 8 canaux, PActPop=0.2
+
+6.3) Lancé sur Sango avec 2 (2017_2_17_15:41_00000) puis 8 canaux (2017_2_17_17:31_0000).
 
 sur 2017_2_17_17:31_0000: apparemment, problème d'écriture des fichiers car trop de fichiers ouverts. 
 Relancé avec seulement 8 cpu : 2017_2_21_11:34_00000 (core dumped!)
