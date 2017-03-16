@@ -107,6 +107,7 @@ lg14modelid = 9
 
 # which test will be carried out?
 whichtest = 'testChannelBG' # can be testFullBG, testChannelBG
+#whichtest = 'testFullBG' # can be testFullBG, testChannelBG
 nbch = 8
 
 # with which additional parameters?
@@ -129,7 +130,7 @@ gstn=1.4
 ggpe=1.
 ggpi=1.
 iegpe=11.
-iegpi=12.
+iegpi=11.
 
 
 #nbcsn=12000.

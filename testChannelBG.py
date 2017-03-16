@@ -413,27 +413,6 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
     print 'Channel 0:',CSNrate[0,timeStep],PTNrate[0,timeStep]
     print 'Channel 1:',CSNrate[1,timeStep],PTNrate[1,timeStep]
 
-    '''
-    if 'Fake' in globals():
-      if 'CSN' in Fake:
-        nest.SetStatus(Fake['CSN'][0],{'rate':CSNrate[0,timeStep]})
-        nest.SetStatus(Fake['CSN'][1],{'rate':CSNrate[1,timeStep]})
-      else:
-        nest.SetStatus(Pop['CSN'][0],{'rate':CSNrate[0,timeStep]})
-        nest.SetStatus(Pop['CSN'][1],{'rate':CSNrate[1,timeStep]})
-      if 'PTN' in Fake:
-        nest.SetStatus(Fake['PTN'][0],{'rate':PTNrate[0,timeStep]})
-        nest.SetStatus(Fake['PTN'][1],{'rate':PTNrate[1,timeStep]})
-      else:
-        nest.SetStatus(Pop['PTN'][0],{'rate':PTNrate[0,timeStep]})
-        nest.SetStatus(Pop['PTN'][1],{'rate':PTNrate[1,timeStep]})
-    else:
-      nest.SetStatus(Pop['CSN'][0],{'rate':CSNrate[0,timeStep]})
-      nest.SetStatus(Pop['CSN'][1],{'rate':CSNrate[1,timeStep]})
-      nest.SetStatus(Pop['PTN'][0],{'rate':PTNrate[0,timeStep]})
-      nest.SetStatus(Pop['PTN'][1],{'rate':PTNrate[1,timeStep]})
-    '''
-
     nest.SetStatus(ActPop['CSN'][0],{'rate':CSNrate[0,timeStep]})
     nest.SetStatus(ActPop['CSN'][1],{'rate':CSNrate[1,timeStep]})
     nest.SetStatus(ActPop['PTN'][0],{'rate':PTNrate[0,timeStep]})
@@ -504,6 +483,178 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
   return score,5
 
 #-----------------------------------------------------------------------
+# PActiveCNS/PTN : proportion of "active" neurons in the CSN/PTN populations (in [0.,1.])
+#
+#-----------------------------------------------------------------------
+def checkGeorgopoulosTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., PTNFR=[15.,35], PActivePTN=1., antagInjectionSite='none',antag=''):
+  nest.ResetKernel()
+  dataPath='log/'
+  nest.SetKernelStatus({'local_num_threads': params['nbcpu'] if ('nbcpu' in params) else 2, "data_path": dataPath})
+  initNeurons()
+
+  offsetDuration = 500.
+  simDuration = 1000. # ms
+  loadLG14params(params['LG14modelID'])
+
+  # We check that all the necessary parameters have been defined. They should be in the modelParams.py file.
+  # If one of them misses, we exit the program.
+  necessaryParams=['nbCh','nbMSN','nbFSI','nbSTN','nbGPe','nbGPi','nbCSN','nbPTN','nbCMPf','IeGPe','IeGPi','GMSN','GFSI','GSTN','GGPe','GGPi','inDegCSNMSN','inDegPTNMSN','inDegCMPfMSN','inDegMSNMSN','inDegFSIMSN','inDegSTNMSN','inDegGPeMSN','inDegCSNFSI','inDegPTNFSI','inDegSTNFSI','inDegGPeFSI','inDegCMPfFSI','inDegFSIFSI','inDegPTNSTN','inDegCMPfSTN','inDegGPeSTN','inDegCMPfGPe','inDegSTNGPe','inDegMSNGPe','inDegGPeGPe','inDegMSNGPi','inDegSTNGPi','inDegGPeGPi','inDegCMPfGPi',]
+  for nepa in necessaryParams:
+    if nepa not in params:
+      print "Missing parameter:",nepa
+      exit()
+
+  #-------------------------
+  # creation and connection of the neural populations
+  #-------------------------
+  createBG_MC()
+  connectBG_MC(antagInjectionSite,antag)
+
+  #-------------------------
+  # prepare the firing rates of the inputs
+  #-------------------------
+  gCSN = CSNFR[1]-CSNFR[0]
+  gPTN = PTNFR[1]-PTNFR[0]
+  activityLevels = np.ones((params['nbCh']))
+  for i in range(params['nbCh']):
+    activityLevels[i] = 2 * np.pi / params['nbCh'] * i
+  activityLevels = (np.cos(activityLevels)+1)/2.
+
+  CSNrate= gCSN * activityLevels + np.ones((params['nbCh'])) * CSNFR[0]
+  PTNrate= gPTN * activityLevels + np.ones((params['nbCh'])) * PTNFR[0]
+
+  #-------------------------
+  # and prepare the lists of neurons that will be affected by these activity changes
+  #-------------------------
+  ActPop = {'CSN':[() for i in range(params['nbCh'])],'PTN':[() for i in range(params['nbCh'])]}
+  if 'Fake' in globals():
+    if 'CSN' in Fake:
+      if PActiveCSN==1.:
+       ActPop['CSN']=Fake['CSN']
+      else:
+        for i in range(params['nbCh']):
+          ActPop['CSN'][i] = tuple(rnd.choice(a=np.array(Fake['CSN'][i]),size=int(nbSim['CSN']*PActiveCSN),replace=False))
+    else:
+      if PActiveCSN==1.:
+       ActPop['CSN']=Pop['CSN']
+      else:
+        for i in range(params['nbCh']):
+          ActPop['CSN'][i] = tuple(rnd.choice(a=np.array(Pop['CSN'][i]),size=int(nbSim['CSN']*PActiveCSN),replace=False))
+    if 'PTN' in Fake:
+      if PActivePTN==1.:
+        ActPop['PTN']=Fake['PTN']
+      else:
+        for i in range(params['nbCh']):
+          ActPop['PTN'][i] = tuple(rnd.choice(a=np.array(Fake['PTN'][i]),size=int(nbSim['PTN']*PActivePTN),replace=False))
+    else:
+      if PActivePTN==1.:
+        ActPop['PTN']=Pop['PTN']
+      else:
+        for i in range(params['nbCh']):
+          ActPop['PTN'][i] = tuple(rnd.choice(a=np.array(Pop['PTN'][i]),size=int(nbSim['PTN']*PActivePTN),replace=False))
+  else:
+    if PActiveCSN==1.:
+     ActPop['CSN']=Pop['CSN']
+    else:
+      for i in range(params['nbCh']):
+        ActPop['CSN'][i] = tuple(rnd.choice(a=np.array(Pop['CSN'][i]),size=int(nbSim['CSN']*PActiveCSN),replace=False))
+    if PActivePTN==1.:
+      ActPop['PTN']=Pop['PTN']
+    else:
+      for i in range(params['nbCh']):
+        ActPop['PTN'][i] = tuple(rnd.choice(a=np.array(Pop['PTN'][i]),size=int(nbSim['PTN']*PActivePTN),replace=False))
+
+  #-------------------------
+  # log-related variables
+  #-------------------------
+  GPiRestRate= -1*np.ones((params['nbCh']))
+  expeRate={}
+  for N in NUCLEI:
+    expeRate[N]=-1. * np.ones((params['nbCh']))
+
+  inspector = {}
+  for N in NUCLEI:
+    inspector[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": N, "to_file": False})
+    for i in range(params['nbCh']):
+      nest.Connect(Pop[N][i],inspector[N])
+
+  #-------------------------
+  # write header in firingRate summary file
+  #-------------------------
+  frstr = 'channel , '
+  for N in NUCLEI:
+    frstr += N+', '
+  frstr+='\n'
+  firingRatesFile=open(dataPath+'firingRates.csv','w')
+  firingRatesFile.writelines(frstr)
+
+  #-------------------------
+  # measures
+  #-------------------------
+  spkDetect=[{} for i in range(params['nbCh'])] # list of spike detector dictionaries used to record the experiment in all the channels
+
+  antagStr = ''
+  if antagInjectionSite != 'none':
+    antagStr = antagInjectionSite+'_'+antag+'_'
+
+  for i in range(params['nbCh']):
+    for N in NUCLEI:
+      spkDetect[i][N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": antagStr+N, "to_file": True, 'start':2*offsetDuration+simDuration,'stop':2*(offsetDuration+simDuration)})
+      nest.Connect(Pop[N][i], spkDetect[i][N])
+
+  GPiRestSpkDetect = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": antagStr+'GPiRest', "to_file": True, 'start':offsetDuration,'stop':offsetDuration+simDuration})
+  for i in range(params['nbCh']):
+      nest.Connect(Pop['GPi'][i], GPiRestSpkDetect)
+
+  #-------------------------
+  # Simulation
+  #-------------------------
+
+  # step 1 : stimulation without inputs, to calibrate the GPi activity at rest :
+  nest.Simulate(simDuration+offsetDuration)
+
+  print '------ Rest Period ------'  
+  frstr = 'rest, , , , ,' # only GPi is recorded at rest, and on all channels
+  GPiRestRate = nest.GetStatus(GPiRestSpkDetect, 'n_events')[0] / float(nbSim[N]*simDuration*params['nbCh']) * 1000
+  print "GPi rate at rest:",GPiRestRate;"Hz"
+  frstr += '%f \n' %GPiRestRate
+  firingRatesFile.writelines(frstr)
+
+  for i in range(params['nbCh']):
+    nest.SetStatus(ActPop['CSN'][i],{'rate':CSNrate[i]})
+    nest.SetStatus(ActPop['PTN'][i],{'rate':PTNrate[i]})
+
+  nest.Simulate(simDuration+offsetDuration)
+
+  for i in range(params['nbCh']):
+    print '------ Channel',i,'------'
+    frstr = str(i)+', '
+    for N in NUCLEI:
+      expeRate[N][i] = nest.GetStatus(spkDetect[i][N], 'n_events')[0] / float(nbSim[N]*simDuration) * 1000
+      print N,':',expeRate[N][i],'Hz'
+      frstr += '%f , ' %(expeRate[N][i])
+    frstr += '\n'
+
+    firingRatesFile.writelines(frstr)
+
+  firingRatesFile.close()
+
+  #-------------------------
+  # Displays
+  #-------------------------
+  if showRasters and interactive:
+    for N in NUCLEI:
+      nest.raster_plot.from_device(inspector[N],hist=True,title=N)
+    nest.raster_plot.show()
+
+    pylab.plot(expeRate['GPi'])
+    pylab.show()
+
+  contrast = 2. / CSNrate * GPiRestRate / expeRate[GPi]
+
+  return contrast
+
+#-----------------------------------------------------------------------
 def main():
   if len(sys.argv) >= 2:
     print "Command Line Parameters"
@@ -572,12 +723,16 @@ def main():
     score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
   '''
 
-  score += checkGurneyTest(showRasters=True,params=params,PActiveCSN=0.2,PActivePTN=0.2)
+
+  proportion = 0.1
+  #score += checkGurneyTest(showRasters=True,params=params,PActiveCSN=proportion,PActivePTN=proportion)
+  score += checkGeorgopoulosTest(params=params,PActiveCSN=proportion,PActivePTN=proportion)
   #score += checkGurneyTest(showRasters=True,params=params,PActiveCSN=1.,PActivePTN=1.)
 
   #-------------------------
   print "******************"
-  print "* Score:",score[0],'/',score[1]
+  #print "* Score:",score[0],'/',score[1]
+  print score
   print "******************"
 
   #-------------------------

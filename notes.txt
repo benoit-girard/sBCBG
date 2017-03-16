@@ -49,6 +49,9 @@ ggpi=1.
 iegpe=11.
 iegpi=11.
 
+1.5) vérifications de la validité du paramétrage, du fait de l'inversion entre P(MSN->GPe) et P(MSN->GPi):
+* 2017_3_13_10:44_00000 : en normal, pas de soucis, score 5/5
+* 2017_3_13_10:48_00000 : avec désactivations : tout est OK !
 
 -----------
 
@@ -299,6 +302,17 @@ Il va falloir explorer pourquoi, en particulier qu'il n'y a pas de bug sur le no
 3.1) Correction d'un potentiel bug dans les connections. Test(2017_2_16_10:24_00000)
 
 5/5 OK, mais plantage à cause de la visualisation. Relancé () pour avoir le score total.
+
+3.2) Test sélection "Gurney Test" avec correction bug P(MSN->GPe/GPi) et 8 canaux
+2017_3_13_11:7_00000 : à première vue, c'est pas mal, mais dans la phase 3 (canal 0 à 0.4, canal 1 à 0.6) il semble que la sortie du canal 0 ne remonte pas trop (reste autour de 10Hz). A regarder de près, pê en modifiant les inDegrees et les focused/diffuse.
+
+2017_3_15_13:44_00000 : essai avec une proportion de pop activée de 10%, pas mal !
+2017_3_15_14:57_00000 : il y avait un bug (0.1 de CSN mais 0.2 de PTN). Relancé
+
+3.3) Tests "Georgopoulos" (comme dans LG14)
+
+2017_3_15_15:27_00000 : pb pour se finir à la fin (lié à l'affichage des rasters ?)
+2017_3_15_15:34_00000
 
 ----------------------------------------------------------------------
 
