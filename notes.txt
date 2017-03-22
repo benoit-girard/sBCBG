@@ -299,6 +299,8 @@ neurones CM/Pf non corrlélés (Parrot : False)
 Pas le bon paramétrage, score de 2/5 sur le premier test. STN trop élevé, GPe & GPi trop bas. (au total, 5/14 !)
 Il va falloir explorer pourquoi, en particulier qu'il n'y a pas de bug sur le nombre de connexions dans les modèles à canaux multiples.
 
+-----------------------------------------------------------------------------------
+
 3.1) Correction d'un potentiel bug dans les connections. Test(2017_2_16_10:24_00000)
 
 5/5 OK, mais plantage à cause de la visualisation. Relancé () pour avoir le score total.
@@ -436,6 +438,22 @@ Relancé avec seulement 8 cpu : 2017_2_21_11:34_00000 (core dumped!)
 Relancé 2017_2_22_11:55_00000
 
 Par ailleurs, STN très élevé, sélection trop forte (sortie canal 1 à 0 alos que canal 1: 0.4 et canal 2: 0.6). travailler les plages de variation de CSN et PTN (pour l'instant, CSN: 2-10, PTN: 15-35), et aussi sur des variations du nombre d'inputs qui atteignent ces valeurs (actuellement 100% des neurones d'entrée d'un canal activés identiquement).
+
+------------------------------
+
+7.1) test de variations des "in Degree" et des "connection types" (faocused/diffuse): ajouté des paramètres pour le cType.
+
+Test à 8 canaux (modèle 9, paramétrage standard) :
+
+----- RESULTS -----
+* MSN - Rate: 0.298392586989 Hz -> OK (0 , 1)
+* FSI - Rate: 7.12075471698 Hz -> OK (0 , 20)
+* STN - Rate: 20.2 Hz -> OK (15.2 , 22.8)
+* GPe - Rate: 61.624 Hz -> OK (55.7 , 74.5)
+* GPi - Rate: 71.8142857143 Hz -> OK (59.1 , 79.5)
+-------------------
+
+Ca a l'air bon.
 
 ------------------------------
 

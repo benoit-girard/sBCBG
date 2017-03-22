@@ -330,7 +330,7 @@ def main():
   #timeStr = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
 
   score = np.zeros((2))
-  score += checkAvgFR(params=params,antagInjectionSite='none',antag='')#,showRasters=True)
+  score += checkAvgFR(params=params,antagInjectionSite='none',antag='',showRasters=True)
 
 
   for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
