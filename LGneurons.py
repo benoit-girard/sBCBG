@@ -124,6 +124,11 @@ def createMC(name,nbCh,fake=False,parrot=True):
 def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1.):
   print "* connecting ",nameSrc,"->",nameTgt,"with",type,"connection and",inDegree,"inputs"
 
+  # check if in degree acceptable (not larger than number of neurons in the source nucleus)
+  if inDegree  > nbSim[nameSrc]:
+    print "/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(nbSim[nameSrc])+"), thus reduced to the latter value"
+    inDegree = nbSim[nameSrc]
+
   # process receptor types
   if type == 'ex':
     lRecType = ['AMPA','NMDA']
@@ -184,6 +189,14 @@ def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1.):
 #-------------------------------------------------------------------------------
 def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1.):
   print "* connecting ",nameSrc,"->",nameTgt,"with",projType,type,"connection and",inDegree,"inputs"
+
+  # check if in degree acceptable (not larger than number of neurons in the source nucleus)
+  if projType == 'focused' and inDegree > nbSim[nameSrc]:
+    print "/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(nbSim[nameSrc])+"), thus reduced to the latter value"
+    inDegree = nbSim[nameSrc]
+  if projType == 'diffuse' and inDegree  > nbSim[nameSrc]*len(Pop[nameSrc]):
+    print "/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(bSim[nameSrc]*len(Pop[nameSrc]))+"), thus reduced to the latter value"
+    inDegree = nbSim[nameSrc]*len(Pop[nameSrc])
 
   # prepare receptor type lists:
   if type == 'ex':

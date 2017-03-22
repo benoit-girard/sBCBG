@@ -441,7 +441,7 @@ Par ailleurs, STN très élevé, sélection trop forte (sortie canal 1 à 0 alos
 
 ------------------------------
 
-7.1) test de variations des "in Degree" et des "connection types" (faocused/diffuse): ajouté des paramètres pour le cType.
+7.1) test de variations des "in Degree" et des "connection types" (focused/diffuse): ajouté des paramètres pour le cType.
 
 Test à 8 canaux (modèle 9, paramétrage standard) :
 
@@ -454,6 +454,10 @@ Test à 8 canaux (modèle 9, paramétrage standard) :
 -------------------
 
 Ca a l'air bon.
+
+7.2) Test avec des inputs CMPf diffus, avec des in deg changées pour approximativement maxValue/8, sans parrots (donc de toute façon dé-corrélés)
+2017_3_22_14:46_00000
+
 
 ------------------------------
 

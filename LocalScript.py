@@ -56,7 +56,7 @@ params = {'nbCh':     %d,
           'IeGPi':    %3.1f,
           'inDegCSNMSN': 100.,
           'inDegPTNMSN':   1.,
-          'inDegCMPfMSN':  1.,
+          'inDegCMPfMSN':  %3.1f, # 1.,
           'inDegFSIMSN':  30., # according to Humphries et al. 2010, 30-150 FSIs->MSN
           'inDegMSNMSN':  70., # according to Koos et al. 2004, cited by Humphries et al., 2010, on avg 3 synpase per MSN-MSN connection
           'inDegSTNMSN':   0.,
@@ -65,22 +65,22 @@ params = {'nbCh':     %d,
           'inDegPTNFSI':   1.,
           'inDegSTNFSI':   2.,
           'inDegGPeFSI':  25.,
-          'inDegCMPfFSI':  9.,
+          'inDegCMPfFSI': %3.1f, # 9.,
           'inDegFSIFSI':  15., # according to Humphries et al., 2010, 13-63 FSIs->FSI
           'inDegPTNSTN':  25.,
-          'inDegCMPfSTN':  9.,
+          'inDegCMPfSTN': %3.1f, # 9.,
           'inDegGPeSTN':  25.,
-          'inDegCMPfGPe':  9.,
+          'inDegCMPfGPe': %3.1f, # 9.,
           'inDegSTNGPe':   8.,
           'inDegMSNGPe':2644.,
           'inDegGPeGPe':  25.,
           'inDegMSNGPi':2644.,
           'inDegSTNGPi':   8.,
           'inDegGPeGPi':  23.,
-          'inDegCMPfGPi':  9.,
+          'inDegCMPfGPi': %3.1f, # 9.,
           'cTypeCSNMSN': 'focused', # defining connection types for channel-based models (focused or diffuse)
           'cTypePTNMSN': 'focused',
-          'cTypeCMPfMSN':'focused',
+          'cTypeCMPfMSN':'%s', #'focused',
           'cTypeFSIMSN': 'diffuse', 
           'cTypeMSNMSN': 'focused', 
           'cTypeSTNMSN': 'diffuse',
@@ -89,21 +89,21 @@ params = {'nbCh':     %d,
           'cTypePTNFSI': 'focused',
           'cTypeSTNFSI': 'diffuse',
           'cTypeGPeFSI': 'focused',
-          'cTypeCMPfFSI':'focused',
+          'cTypeCMPfFSI':'%s', #'focused',
           'cTypeFSIFSI': 'diffuse', 
           'cTypePTNSTN': 'focused',
-          'cTypeCMPfSTN':'focused',
+          'cTypeCMPfSTN':'%s', #'focused',
           'cTypeGPeSTN': 'diffuse',
-          'cTypeCMPfGPe':'focused',
+          'cTypeCMPfGPe':'%s', #'focused',
           'cTypeSTNGPe': 'diffuse',
           'cTypeMSNGPe': 'focused',
           'cTypeGPeGPe': 'diffuse',
           'cTypeMSNGPi': 'focused',
           'cTypeSTNGPi': 'diffuse',
           'cTypeGPeGPi': 'diffuse',
-          'cTypeCMPfGPi':'focused',
+          'cTypeCMPfGPi':'%s', #'focused',
           }
-''' %(nbch,lg14modelid,whichtest,nbcsn,nbptn,gmsn,gfsi,gstn,ggpe,ggpi,iegpe,iegpi)
+''' %(nbch,lg14modelid,whichtest,nbcsn,nbptn,gmsn,gfsi,gstn,ggpe,ggpi,iegpe,iegpi,indegcmpfmsn,indegcmpffsi,indegcmpfstn,indegcmpfgpe,indegcmpfgpi,ctypefromcmpf,ctypefromcmpf,ctypefromcmpf,ctypefromcmpf,ctypefromcmpf)
 
   print 'Write modelParams.py'
   paramsFile = open('modelParams.py','w')
@@ -156,6 +156,13 @@ ggpi=1.
 iegpe=11.
 iegpi=11.
 
+# Tests concerning CMPf connectivity parameters:
+indegcmpfmsn = 2 # 1 ; 1 - 16 ; modifying from 1 to 2 has a strong effect on MSN activity, from 0.7 to 0.06 Hz !
+indegcmpffsi = 20 # 9 ; 0 - 170
+indegcmpfstn = 10 # 9 ; 1 - 85
+indegcmpfgpe = 3 # 9 ; 0 - 27
+indegcmpfgpi = 10 # 9 ; 0 - 78
+ctypefromcmpf = 'diffuse'
 
 #nbcsn=12000.
 #nbptn=400.

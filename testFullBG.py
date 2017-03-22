@@ -63,86 +63,86 @@ def connectBG(antagInjectionSite,antag):
   print '\nConnecting neurons\n================'
   print "**",antag,"antagonist injection in",antagInjectionSite,"**"
   print '* MSN Inputs'
-  connect('ex','CSN','MSN', inDegree= min(params['inDegCSNMSN'],nbSim['CSN']),gain=G['MSN'])
-  connect('ex','PTN','MSN', inDegree= min(params['inDegPTNMSN'],nbSim['PTN']),gain=G['MSN'])
-  connect('ex','CMPf','MSN', inDegree= min(params['inDegCMPfMSN'],nbSim['CMPf']),gain=G['MSN'])
-  connect('in','MSN','MSN', inDegree= min(params['inDegMSNMSN'],nbSim['MSN']),gain=G['MSN'])
-  connect('in','FSI','MSN', inDegree= min(params['inDegFSIMSN'],nbSim['FSI']),gain=G['MSN'])
+  connect('ex','CSN','MSN', inDegree= params['inDegCSNMSN'], gain=G['MSN'])
+  connect('ex','PTN','MSN', inDegree= params['inDegPTNMSN'], gain=G['MSN'])
+  connect('ex','CMPf','MSN', inDegree=params['inDegCMPfMSN'],gain=G['MSN'])
+  connect('in','MSN','MSN', inDegree= params['inDegMSNMSN'], gain=G['MSN'])
+  connect('in','FSI','MSN', inDegree= params['inDegFSIMSN'], gain=G['MSN'])
   # some parameterizations from LG14 have no STN->MSN or GPe->MSN synaptic contacts
   if alpha['STN->MSN'] != 0:
     print "alpha['STN->MSN']",alpha['STN->MSN']
-    connect('ex','STN','MSN', inDegree= min(params['inDegSTNMSN'],nbSim['STN']),gain=G['MSN'])
+    connect('ex','STN','MSN', inDegree= params['inDegSTNMSN'],gain=G['MSN'])
   if alpha['GPe->MSN'] != 0:
     print "alpha['GPe->MSN']",alpha['GPe->MSN']
-    connect('in','GPe','MSN', inDegree= min(params['inDegGPeMSN'],nbSim['GPe']),gain=G['MSN']) # diffuse ? focused ?                                                               
+    connect('in','GPe','MSN', inDegree= params['inDegGPeMSN'],gain=G['MSN'])
 
   print '* FSI Inputs'
-  connect('ex','CSN','FSI',  inDegree= min(params['inDegCSNFSI'],nbSim['CSN']),gain=G['FSI'])
-  connect('ex','PTN','FSI',  inDegree= min(params['inDegPTNFSI'],nbSim['PTN']),gain=G['FSI'])
+  connect('ex','CSN','FSI',  inDegree= params['inDegCSNFSI'], gain=G['FSI'])
+  connect('ex','PTN','FSI',  inDegree= params['inDegPTNFSI'], gain=G['FSI'])
   if alpha['STN->FSI'] != 0:
-    connect('ex','STN','FSI',inDegree= min(params['inDegSTNFSI'],nbSim['STN']),gain=G['FSI'])
-  connect('in','GPe','FSI',  inDegree= min(params['inDegGPeFSI'],nbSim['GPe']),gain=G['FSI'])
-  connect('ex','CMPf','FSI', inDegree= min(params['inDegCMPfFSI'],nbSim['CMPf']),gain=G['FSI'])
-  connect('in','FSI','FSI',  inDegree= min(params['inDegFSIFSI'],nbSim['FSI']),gain=G['FSI'])
+    connect('ex','STN','FSI',inDegree= params['inDegSTNFSI'], gain=G['FSI'])
+  connect('in','GPe','FSI',  inDegree= params['inDegGPeFSI'], gain=G['FSI'])
+  connect('ex','CMPf','FSI', inDegree= params['inDegCMPfFSI'],gain=G['FSI'])
+  connect('in','FSI','FSI',  inDegree= params['inDegFSIFSI'], gain=G['FSI'])
 
   print '* STN Inputs'
-  connect('ex','PTN','STN', inDegree= min(params['inDegPTNSTN'],nbSim['PTN']), gain=G['STN'])
-  connect('ex','CMPf','STN',inDegree= min(params['inDegCMPfSTN'],nbSim['CMPf']), gain=G['STN'])
-  connect('in','GPe','STN', inDegree= min(params['inDegGPeSTN'],nbSim['GPe']), gain=G['STN']) # or diffuse, to be in line with the 2008 model?                                      
+  connect('ex','PTN','STN', inDegree= params['inDegPTNSTN'], gain=G['STN'])
+  connect('ex','CMPf','STN',inDegree= params['inDegCMPfSTN'],gain=G['STN'])
+  connect('in','GPe','STN', inDegree= params['inDegGPeSTN'], gain=G['STN']) 
 
   print '* GPe Inputs'
   if antagInjectionSite == 'GPe':
     if   antag == 'AMPA':
-      connect('NMDA','CMPf','GPe',inDegree= min(params['inDegCMPfGPe'],nbSim['CMPf']), gain=G['GPe'])
-      connect('NMDA','STN','GPe', inDegree= min(params['inDegSTNGPe'],nbSim['STN']), gain=G['GPe'])
-      connect('in','MSN','GPe', inDegree= min(params['inDegMSNGPe'],nbSim['MSN']), gain=G['GPe'])
-      connect('in','GPe','GPe', inDegree= min(params['inDegGPeGPe'],nbSim['GPe']), gain=G['GPe']) # diffuse or focused?                                                             
+      connect('NMDA','CMPf','GPe',inDegree=params['inDegCMPfGPe'],gain=G['GPe'])
+      connect('NMDA','STN','GPe', inDegree=params['inDegSTNGPe'], gain=G['GPe'])
+      connect('in','MSN','GPe', inDegree=  params['inDegMSNGPe'], gain=G['GPe'])
+      connect('in','GPe','GPe', inDegree=  params['inDegGPeGPe'], gain=G['GPe']) 
     elif antag == 'NMDA':
-      connect('AMPA','CMPf','GPe',inDegree= min(params['inDegCMPfGPe'],nbSim['CMPf']), gain=G['GPe'])
-      connect('AMPA','STN','GPe', inDegree= min(params['inDegSTNGPe'],nbSim['STN']), gain=G['GPe'])
-      connect('in','MSN','GPe', inDegree= min(params['inDegMSNGPe'],nbSim['MSN']), gain=G['GPe'])
-      connect('in','GPe','GPe', inDegree= min(params['inDegGPeGPe'],nbSim['GPe']), gain=G['GPe'])
+      connect('AMPA','CMPf','GPe',inDegree= params['inDegCMPfGPe'],gain=G['GPe'])
+      connect('AMPA','STN','GPe', inDegree= params['inDegSTNGPe'], gain=G['GPe'])
+      connect('in','MSN','GPe', inDegree= params['inDegMSNGPe'],   gain=G['GPe'])
+      connect('in','GPe','GPe', inDegree= params['inDegGPeGPe'],   gain=G['GPe'])
     elif antag == 'AMPA+GABAA':
-      connect('NMDA','CMPf','GPe',inDegree= min(params['inDegCMPfGPe'],nbSim['CMPf']), gain=G['GPe'])
-      connect('NMDA','STN','GPe',inDegree= min(params['inDegSTNGPe'],nbSim['STN']), gain=G['GPe'])
+      connect('NMDA','CMPf','GPe',inDegree= params['inDegCMPfGPe'],gain=G['GPe'])
+      connect('NMDA','STN','GPe',inDegree= params['inDegSTNGPe'],  gain=G['GPe'])
     elif antag == 'GABAA':
-      connect('ex','CMPf','GPe',inDegree= min(params['inDegCMPfGPe'],nbSim['CMPf']), gain=G['GPe'])
-      connect('ex','STN','GPe', inDegree= min(params['inDegSTNGPe'],nbSim['STN']), gain=G['GPe'])
+      connect('ex','CMPf','GPe',inDegree= params['inDegCMPfGPe'], gain=G['GPe'])
+      connect('ex','STN','GPe', inDegree= params['inDegSTNGPe'],  gain=G['GPe'])
     else:
       print antagInjectionSite,": unknown antagonist experiment:",antag
   else:
-    connect('ex','CMPf','GPe',inDegree= min(params['inDegCMPfGPe'],nbSim['CMPf']), gain=G['GPe'])
-    connect('ex','STN','GPe', inDegree= min(params['inDegSTNGPe'],nbSim['STN']), gain=G['GPe'])
-    connect('in','MSN','GPe', inDegree= min(params['inDegMSNGPe'],nbSim['MSN']), gain=G['GPe'])
-    connect('in','GPe','GPe', inDegree= min(params['inDegGPeGPe'],nbSim['GPe']), gain=G['GPe'])
+    connect('ex','CMPf','GPe',inDegree= params['inDegCMPfGPe'],gain=G['GPe'])
+    connect('ex','STN','GPe', inDegree= params['inDegSTNGPe'], gain=G['GPe'])
+    connect('in','MSN','GPe', inDegree= params['inDegMSNGPe'], gain=G['GPe'])
+    connect('in','GPe','GPe', inDegree= params['inDegGPeGPe'], gain=G['GPe'])
 
   print '* GPi Inputs'
   if antagInjectionSite =='GPi':
     if   antag == 'All':
       pass
     elif antag == 'NMDA':
-      connect('in','MSN','GPi',   inDegree= min(params['inDegMSNGPi'],nbSim['MSN']),gain=G['GPi'])
-      connect('AMPA','STN','GPi', inDegree= min(params['inDegSTNGPi'],nbSim['STN']),gain=G['GPi'])
-      connect('in','GPe','GPi',   inDegree= min(params['inDegGPeGPi'],nbSim['GPe']),gain=G['GPi'])
-      connect('AMPA','CMPf','GPi',inDegree= min(params['inDegCMPfGPi'],nbSim['CMPf']),gain=G['GPi'])
+      connect('in','MSN','GPi',   inDegree= params['inDegMSNGPi'], gain=G['GPi'])
+      connect('AMPA','STN','GPi', inDegree= params['inDegSTNGPi'], gain=G['GPi'])
+      connect('in','GPe','GPi',   inDegree= params['inDegGPeGPi'], gain=G['GPi'])
+      connect('AMPA','CMPf','GPi',inDegree= params['inDegCMPfGPi'],gain=G['GPi'])
     elif antag == 'NMDA+AMPA':
-      connect('in','MSN','GPi', inDegree= min(params['inDegMSNGPi'],nbSim['MSN']),gain=G['GPi'])
-      connect('in','GPe','GPi', inDegree= min(params['inDegGPeGPi'],nbSim['GPe']),gain=G['GPi'])
+      connect('in','MSN','GPi', inDegree= params['inDegMSNGPi'], gain=G['GPi'])
+      connect('in','GPe','GPi', inDegree= params['inDegGPeGPi'], gain=G['GPi'])
     elif antag == 'AMPA':
-      connect('in','MSN','GPi',   inDegree= min(params['inDegMSNGPi'],nbSim['MSN']),gain=G['GPi'])
-      connect('NMDA','STN','GPi', inDegree= min(params['inDegSTNGPi'],nbSim['STN']),gain=G['GPi'])
-      connect('in','GPe','GPi',   inDegree= min(params['inDegGPeGPi'],nbSim['GPe']),gain=G['GPi'])
-      connect('NMDA','CMPf','GPi',inDegree= min(params['inDegCMPfGPi'],nbSim['CMPf']),gain=G['GPi'])
+      connect('in','MSN','GPi',   inDegree= params['inDegMSNGPi'], gain=G['GPi'])
+      connect('NMDA','STN','GPi', inDegree= params['inDegSTNGPi'], gain=G['GPi'])
+      connect('in','GPe','GPi',   inDegree= params['inDegGPeGPi'], gain=G['GPi'])
+      connect('NMDA','CMPf','GPi',inDegree= params['inDegCMPfGPi'],gain=G['GPi'])
     elif antag == 'GABAA':
-      connect('ex','STN','GPi', inDegree= min(params['inDegSTNGPi'],nbSim['STN']),gain=G['GPi'])
-      connect('ex','CMPf','GPi',inDegree= min(params['inDegCMPfGPi'],nbSim['CMPf']),gain=G['GPi'])
+      connect('ex','STN','GPi', inDegree= params['inDegSTNGPi'], gain=G['GPi'])
+      connect('ex','CMPf','GPi',inDegree= params['inDegCMPfGPi'],gain=G['GPi'])
     else:
       print antagInjectionSite,": unknown antagonist experiment:",antag
   else:
-    connect('in','MSN','GPi', inDegree= min(params['inDegMSNGPi'],nbSim['MSN']),gain=G['GPi'])
-    connect('ex','STN','GPi', inDegree= min(params['inDegSTNGPi'],nbSim['STN']),gain=G['GPi'])
-    connect('in','GPe','GPi', inDegree= min(params['inDegGPeGPi'],nbSim['GPe']),gain=G['GPi'])
-    connect('ex','CMPf','GPi',inDegree= min(params['inDegCMPfGPi'],nbSim['CMPf']),gain=G['GPi'])
+    connect('in','MSN','GPi', inDegree= params['inDegMSNGPi'], gain=G['GPi'])
+    connect('ex','STN','GPi', inDegree= params['inDegSTNGPi'], gain=G['GPi'])
+    connect('in','GPe','GPi', inDegree= params['inDegGPeGPi'], gain=G['GPi'])
+    connect('ex','CMPf','GPi',inDegree= params['inDegCMPfGPi'],gain=G['GPi'])
 
 #------------------------------------------
 # Checks that the BG model parameterization defined by the "params" dictionary can respect the electrophysiological constaints (firing rate at rest).
