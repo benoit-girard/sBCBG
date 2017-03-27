@@ -102,6 +102,7 @@ params = {'nbCh':     %d,
           'cTypeSTNGPi': 'diffuse',
           'cTypeGPeGPi': 'diffuse',
           'cTypeCMPfGPi':'%s', #'focused',
+          'parrotCMPf' : False,
           }
 ''' %(nbch,lg14modelid,whichtest,nbcsn,nbptn,gmsn,gfsi,gstn,ggpe,ggpi,iegpe,iegpi,indegcmpfmsn,indegcmpffsi,indegcmpfstn,indegcmpfgpe,indegcmpfgpi,ctypefromcmpf,ctypefromcmpf,ctypefromcmpf,ctypefromcmpf,ctypefromcmpf)
 
@@ -138,27 +139,19 @@ nbch = 8
 nbcsn = 3000.
 nbptn = 100.
 
-'''
-gmsn=3.
-gfsi=1.
-gstn=1.4
-ggpe=1.
-ggpi=1.
-iegpe=15.
-iegpi=11.
+D2depletion = 1.
 
-'''
-gmsn=4.
+gmsn=3.5
 gfsi=1.
-gstn=1.4
-ggpe=1.
+gstn=1.4 * D2depletion
+ggpe=1.  * D2depletion
 ggpi=1.
 iegpe=11.
-iegpi=11.
+iegpi=10.
 
 # Tests concerning CMPf connectivity parameters:
-indegcmpfmsn = 2 # 1 ; 1 - 16 ; modifying from 1 to 2 has a strong effect on MSN activity, from 0.7 to 0.06 Hz !
-indegcmpffsi = 20 # 9 ; 0 - 170
+indegcmpfmsn = 1 # 1 ; 1 - 16 ; modifying from 1 to 2 has a strong effect on MSN activity, from 0.7 to 0.06 Hz !
+indegcmpffsi = 9 # 9 ; 0 - 170
 indegcmpfstn = 10 # 9 ; 1 - 85
 indegcmpfgpe = 3 # 9 ; 0 - 27
 indegcmpfgpi = 10 # 9 ; 0 - 78

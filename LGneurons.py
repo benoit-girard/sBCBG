@@ -160,7 +160,8 @@ def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1.):
   for nTgt in range(int(nbSim[nameTgt])):
     if not loadConnectMap:
     # if no connectivity map exists between the two populations, let's create one
-      inputTable = rnd.choice(int(nbSim[nameSrc]),size=int(inDegree),replace=False)
+      r = inDegree - int(inDegree)
+      inputTable = rnd.choice(int(nbSim[nameSrc]),size=int(inDegree) if rnd.rand() > r else int(inDegree)+1,replace=False)
       inputPop = []
       for i in inputTable:
         inputPop.append(Pop[nameSrc][i])
@@ -235,7 +236,8 @@ def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1.):
       if not loadConnectMap:
       # if no connectivity map exists between the two populations, let's create one
         if projType =='focused': # if projections focused, input come only from the same channel as tgtChannel
-          inputTable = rnd.choice(int(nbSim[nameSrc]),size=int(inDegree),replace=False)
+          r = inDegree - int(inDegree)
+          inputTable = rnd.choice(int(nbSim[nameSrc]),size=int(inDegree) if rnd.rand() > r else int(inDegree)+1,replace=False)
           inputPop = []
           for i in inputTable:
             inputPop.append(Pop[nameSrc][tgtChannel][i])
@@ -480,9 +482,9 @@ tau = {'MSN->GPe':    7.,
        'PTN->STN':    3.,
        'CMPf->MSN':   7.,
        'CMPf->FSI':   7.,
-       'CMPf->STN':   7.,
-       'CMPf->GPe':   7.,
-       'CMPf->GPi':   7.,
+       'CMPf->STN':   4.,#7
+       'CMPf->GPe':   5.,#7
+       'CMPf->GPi':   6.,#7
        }
 
 

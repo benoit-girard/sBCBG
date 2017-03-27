@@ -39,15 +39,14 @@ def createBG_MC():
   for i in range(len(Pop['GPi'])):
     nest.SetStatus(Pop['GPi'][i],{"I_e":params['IeGPi']})
 
-  parrot = True # switch to False at your risks & perils...                                                                                                                   
   nbSim['CSN'] = params['nbCSN']
-  createMC('CSN',params['nbCh'], fake=True, parrot=parrot)
+  createMC('CSN',params['nbCh'], fake=True, parrot=True)
 
   nbSim['PTN'] = params['nbPTN']
-  createMC('PTN',params['nbCh'], fake=True, parrot=parrot)
+  createMC('PTN',params['nbCh'], fake=True, parrot=True)
 
   nbSim['CMPf'] = params['nbCMPf']
-  createMC('CMPf',params['nbCh'], fake=True, parrot=False)
+  createMC('CMPf',params['nbCh'], fake=True, parrot=params['parrotCMPf'])
 
   print "Number of simulated neurons:", nbSim
 
@@ -168,7 +167,8 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   initNeurons()
 
   offsetDuration = 1000.
-  simDuration = 5000. # ms
+  simDuration = 2000. # ms
+  #simDuration = 5000. # ms
   # nest.SetKernelStatus({"overwrite_files":True}) # Thanks to use of timestamps, file names should now 
                                                    # be different as long as they are not created during the same second
 
@@ -205,6 +205,10 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
     spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": antagStr+N, "to_file": True, 'start':offsetDuration,'stop':offsetDuration+simDuration})
     for i in range(len(Pop[N])):
       nest.Connect(Pop[N][i], spkDetect[N])
+
+  spkDetect['CMPf'] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": antagStr+'CMPf', "to_file": True, 'start':offsetDuration,'stop':offsetDuration+simDuration})
+  for i in range(len(Pop['CMPf'])):
+    nest.Connect(Pop['CMPf'][i], spkDetect['CMPf'])
 
   #-------------------------
   # Simulation
@@ -269,7 +273,10 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   if showRasters and interactive:
     displayStr = ' ('+antagStr[:-1]+')' if (antagInjectionSite != 'none') else ''
     for N in NUCLEI:
-      nest.raster_plot.from_device(spkDetect[N],hist=True,title=N+displayStr)
+      #nest.raster_plot.from_device(spkDetect[N],hist=True,title=N+displayStr)
+      nest.raster_plot.from_device(spkDetect[N],hist=False,title=N+displayStr)
+
+    nest.raster_plot.from_device(spkDetect['CMPf'],hist=False,title='CMPf'+displayStr)
 
     nest.raster_plot.show()
 
@@ -650,7 +657,7 @@ def checkGeorgopoulosTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN
     pylab.plot(expeRate['GPi'])
     pylab.show()
 
-  contrast = 2. / CSNrate * GPiRestRate / expeRate[GPi]
+  contrast = 2. / CSNrate * GPiRestRate / expeRate['GPi']
 
   return contrast
 
@@ -714,7 +721,7 @@ def main():
 
   score = np.zeros((2))
   
-  score += checkAvgFR(params=params,antagInjectionSite='none',antag='',showRasters=True)
+  #score += checkAvgFR(params=params,antagInjectionSite='none',antag='',showRasters=True)
   '''
   for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
     score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
@@ -725,8 +732,11 @@ def main():
 
 
   #proportion = 0.1
+  proportion = 1.
   #score += checkGurneyTest(showRasters=True,params=params,PActiveCSN=proportion,PActivePTN=proportion)
   #score += checkGeorgopoulosTest(params=params,PActiveCSN=proportion,PActivePTN=proportion)
+  # Test Liénard-style:
+  score += checkGeorgopoulosTest(params=params,CSNFR=[2.,4.], PTNFR=[15.,15])
   #score += checkGurneyTest(showRasters=True,params=params,PActiveCSN=1.,PActivePTN=1.)
 
   #-------------------------

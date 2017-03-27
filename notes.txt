@@ -354,7 +354,7 @@ Dans les plus gros modèles, en particulier ceux à canaux multiples, il faudra 
 
 ------------------------------------------------------------------------------------------
 
-5) Premier test PD-like (2017_2_13_14:36_00000): GSTN et GGPe * 1.3 : rien de bien probant
+5.1) Premier test PD-like (2017_2_13_14:36_00000): GSTN et GGPe * 1.3 : rien de bien probant
 (2017_2_13_14:39_00000) * 1.5 : pareil
 
 => essayer sur un réseau plus grand (là, un canal...) ?
@@ -378,6 +378,36 @@ Essai avec 1.8 * G[STN,GPe]: 2017_2_14_15:5_00000
 
 STN OI[15-30Hz]: 0.23247013906
 GPe OI[15-30Hz]: 0.300145363892
+
+5.2) essai avec grand réseaux à canaux, pour sortir des rasters
+2017_3_23_14:6 (parrots CMPf)
+2017_3_23_14:16_00000 (uncorrelated CMPf)
+
+nbch = 8
+
+D2depletion = 1.8
+
+gmsn=3.5
+gfsi=1.
+gstn=1.4 * D2depletion
+ggpe=1.   * D2depletion
+ggpi=1.
+iegpe=11.
+iegpi=10.
+
+# Tests concerning CMPf connectivity parameters:
+indegcmpfmsn = 1 # 1 ; 1 - 16 ; modifying from 1 to 2 has a strong effect on MSN activity, from 0.7 to 0.06 Hz !
+indegcmpffsi = 1 # 9 ; 0 - 170
+indegcmpfstn = 10 # 9 ; 1 - 85
+indegcmpfgpe = 3 # 9 ; 0 - 27
+indegcmpfgpi = 10 # 9 ; 0 - 78
+ctypefromcmpf = 'diffuse'
+
+5.3) les FSI on un profil d'activité stéréotypé, avec des bursts de 3 spikes. Est-ce normal ? Ce n'est pas spécifique aux manips PD : il y a ça depuis les dernières modifs de in degree.
+ En revenant à : indegcmpffsi = 9 # 9 ; 0 - 170
+2017_3_23_14:26_00000
+
+=> OK, ça disparaît, ça vient bien de la trop forte concentration des signaux CMPf sur FSI 
 
 ------------------------------------------------------------------------------------------
 
@@ -439,6 +469,12 @@ Relancé 2017_2_22_11:55_00000
 
 Par ailleurs, STN très élevé, sélection trop forte (sortie canal 1 à 0 alos que canal 1: 0.4 et canal 2: 0.6). travailler les plages de variation de CSN et PTN (pour l'instant, CSN: 2-10, PTN: 15-35), et aussi sur des variations du nombre d'inputs qui atteignent ces valeurs (actuellement 100% des neurones d'entrée d'un canal activés identiquement).
 
+6.4) Tests lancés le 14 mars pour l'internal seminar, dates à retrouver...
+
+6.5) Georgopoulos test à 8 canaux, avec max CSN à 4Hz
+2017_3_23_16:30_00000
+
+
 ------------------------------
 
 7.1) test de variations des "in Degree" et des "connection types" (focused/diffuse): ajouté des paramètres pour le cType.
@@ -456,7 +492,211 @@ Test à 8 canaux (modèle 9, paramétrage standard) :
 Ca a l'air bon.
 
 7.2) Test avec des inputs CMPf diffus, avec des in deg changées pour approximativement maxValue/8, sans parrots (donc de toute façon dé-corrélés)
-2017_3_22_14:46_00000
+2017_3_22_15:31_00000
+
+# Tests concerning CMPf connectivity parameters:
+indegcmpfmsn = 2 # 1 ; 1 - 16 ; modifying from 1 to 2 has a strong effect on MSN activity, from 0.3 to 0.12 Hz !
+indegcmpffsi = 20 # 9 ; 0 - 170
+indegcmpfstn = 10 # 9 ; 1 - 85
+indegcmpfgpe = 3 # 9 ; 0 - 27
+indegcmpfgpi = 10 # 9 ; 0 - 78
+ctypefromcmpf = 'diffuse'
+
+----- RESULTS -----
+* MSN - Rate: 0.122948184569 Hz -> OK (0 , 1)
+* FSI - Rate: 1.99528301887 Hz -> OK (0 , 20)
+* STN - Rate: 18.053125 Hz -> OK (15.2 , 22.8)
+* GPe - Rate: 67.073 Hz -> OK (55.7 , 74.5)
+* GPi - Rate: 87.5428571429 Hz -> NO! (59.1 , 79.5)
+
+passer le in deg de CMPf->MSN de 1 à 2 modifie énormément le taux de décharge des MSN... à éviter
+
+7.3) test identique, mais en revenant à 1 CMPf->MSN
+2017_3_22_15:42_00000
+
+# Tests concerning CMPf connectivity parameters:
+indegcmpfmsn = 1 # 1 ; 1 - 16 
+indegcmpffsi = 20 # 9 ; 0 - 170
+indegcmpfstn = 10 # 9 ; 1 - 85
+indegcmpfgpe = 3 # 9 ; 0 - 27
+indegcmpfgpi = 10 # 9 ; 0 - 78
+ctypefromcmpf = 'diffuse'
+
+----- RESULTS -----
+* MSN - Rate: 0.651928895613 Hz -> OK (0 , 1)
+* FSI - Rate: 2.30188679245 Hz -> OK (0 , 20)
+* STN - Rate: 23.325 Hz -> NO! (15.2 , 22.8)
+* GPe - Rate: 47.861 Hz -> NO! (55.7 , 74.5)
+* GPi - Rate: 36.5714285714 Hz -> NO! (59.1 , 79.5)
+-------------------
+
+7.4) On dirait que les FSI sont trop peu activés, d'où la suractivation des MSN, qui dérègle tout.
+2017_3_22_15:57_00000
+
+indegcmpfmsn = 1 # 1 ; 1 - 16 ; modifying from 1 to 2 has a strong effect on MSN activity, from 0.7 to 0.06 Hz !
+indegcmpffsi = 10 # 9 ; 0 - 170
+indegcmpfstn = 10 # 9 ; 1 - 85
+indegcmpfgpe = 3 # 9 ; 0 - 27
+indegcmpfgpi = 10 # 9 ; 0 - 78
+ctypefromcmpf = 'diffuse'
+
+----- RESULTS -----
+* MSN - Rate: 0.467341149773 Hz -> OK (0 , 1)
+* FSI - Rate: 6.91273584906 Hz -> OK (0 , 20)
+* STN - Rate: 21.371875 Hz -> OK (15.2 , 22.8)
+* GPe - Rate: 54.089 Hz -> NO! (55.7 , 74.5)
+* GPi - Rate: 54.2214285714 Hz -> NO! (59.1 , 79.5)
+-------------------
+
+GPe & GPi toujours trop bas, car MSN trop haut !
+FSI un peu trop bas aussi : on pourrait espérer un taux e décharge entre 10 et 30Hz selon Berke 2011...
+12.8 ± 8.9 spikes/s selon Marche & Apicella 2016 ! On pourrait changer le test pour cette valeur là...
+Juste baisser le G_MSN ?
+
+7.4) 2017_3_22_16:21_00000
+
+gmsn=3. 
+gfsi=1.
+gstn=1.4
+ggpe=1.
+ggpi=1.
+iegpe=11.
+iegpi=11.
+
+# Tests concerning CMPf connectivity parameters:
+indegcmpfmsn = 1 # 1 ; 1 - 16 ; modifying from 1 to 2 has a strong effect on MSN activity, from 0.7 to 0.06 Hz !
+indegcmpffsi = 10 # 9 ; 0 - 170
+indegcmpfstn = 10 # 9 ; 1 - 85
+indegcmpfgpe = 3 # 9 ; 0 - 27
+indegcmpfgpi = 10 # 9 ; 0 - 78
+ctypefromcmpf = 'diffuse'
+
+----- RESULTS -----
+* MSN - Rate: 0.0475605143722 Hz -> OK (0 , 1)
+* FSI - Rate: 6.59716981132 Hz -> OK (0 , 20)
+* STN - Rate: 17.753125 Hz -> OK (15.2 , 22.8)
+* GPe - Rate: 70.997 Hz -> OK (55.7 , 74.5)
+* GPi - Rate: 94.7160714286 Hz -> NO! (59.1 , 79.5)
+-------------------
+
+3, c'est trop bas !
+
+7.5) 2017_3_22_16:38_00000 
+
+gmsn = 3.5
+
+----- RESULTS -----
+* MSN - Rate: 0.137604009077 Hz -> OK (0 , 1)
+* FSI - Rate: 11.7174528302 Hz -> OK (0 , 20)
+* STN - Rate: 18.615625 Hz -> OK (15.2 , 22.8)
+* GPe - Rate: 67.647 Hz -> OK (55.7 , 74.5)
+* GPi - Rate: 87.0035714286 Hz -> NO! (59.1 , 79.5)
+-------------------
+
+7.6) Juste baisser Ie_GPi ? Vérifier après coup que les désactivations marchent toujours...
+2017_3_22_16:46_00000
+
+iegpi=10.
+
+----- RESULTS -----
+* MSN - Rate: 0.137604009077 Hz -> OK (0 , 1)
+* FSI - Rate: 11.7174528302 Hz -> OK (0 , 20)
+* STN - Rate: 18.615625 Hz -> OK (15.2 , 22.8)
+* GPe - Rate: 67.647 Hz -> OK (55.7 , 74.5)
+* GPi - Rate: 78.5142857143 Hz -> OK (59.1 , 79.5)
+-------------------
+
+5/5 => on teste tout !
+
+2017_3_22_16:52_00000
+
+14/14 ! Youpie !
+
+gmsn=3.
+gfsi=1.
+gstn=1.4
+ggpe=1.
+ggpi=1.
+iegpe=11.
+iegpi=10.
+
+# Tests concerning CMPf connectivity parameters:
+indegcmpfmsn = 1 # 1 ; 1 - 16 ; modifying from 1 to 2 has a strong effect on MSN activity, from 0.7 to 0.06 Hz !
+indegcmpffsi = 10 # 9 ; 0 - 170
+indegcmpfstn = 10 # 9 ; 1 - 85
+indegcmpfgpe = 3 # 9 ; 0 - 27
+indegcmpfgpi = 10 # 9 ; 0 - 78
+ctypefromcmpf = 'diffuse'
+
+7.7) C'est donc le moment de tester le même paramétrage avec des parrots pour le CMPf
+
+2017_3_22_19:37_00000
+
+----- RESULTS -----
+* MSN - Rate: 0.139164145234 Hz -> OK (0 , 1)
+* FSI - Rate: 11.8886792453 Hz -> OK (0 , 20)
+* STN - Rate: 18.840625 Hz -> OK (15.2 , 22.8)
+* GPe - Rate: 67.989 Hz -> OK (55.7 , 74.5)
+* GPi - Rate: 78.9803571429 Hz -> OK (59.1 , 79.5)
+-------------------
+
+Les synchronisations sont toujours là...
+=> essayer de faire varier les délais de conduction CMPf -> populations
+=> vérifier si elles sont toujours là avec des réseaux plus grands
+=> essayer d'introduire de la variabilité dans les seuils de décharge des populations pour voir si ça affecte la situation
+
+7.8) essai en augmentant le in degree de GPe de 3 à 10, car je soupçonne que c'est la forte influence des neurones individuels de CMPf sur GPe qui génère tout ça.
+
+2017_3_22_20:49_00000
+Malgré tout, toujours plein de synchronies...
+
+----- RESULTS -----
+* MSN - Rate: 0.139116868381 Hz -> OK (0 , 1)
+* FSI - Rate: 11.8905660377 Hz -> OK (0 , 20)
+* STN - Rate: 18.790625 Hz -> OK (15.2 , 22.8)
+* GPe - Rate: 67.928 Hz -> OK (55.7 , 74.5)
+* GPi - Rate: 78.8785714286 Hz -> OK (59.1 , 79.5)
+-------------------
+
+7.9) essai avec des délais de conduction variables du CMPf vers le reste des BG : 
+2017_3_23_10:38_00000
+
+Dans LGneurons.py, pour tau :
+       'CMPf->FSI':   7.,
+       'CMPf->STN':   4.,#7
+       'CMPf->GPe':   5.,#7
+       'CMPf->GPi':   6.,#7
+
+----- RESULTS -----
+* MSN - Rate: 0.139154689864 Hz -> OK (0 , 1)
+* FSI - Rate: 11.8924528302 Hz -> OK (0 , 20)
+* STN - Rate: 18.734375 Hz -> OK (15.2 , 22.8)
+* GPe - Rate: 67.811 Hz -> OK (55.7 , 74.5)
+* GPi - Rate: 78.8392857143 Hz -> OK (59.1 , 79.5)
+-------------------
+
+Ca ne change rien de fondamental, toujours des synchronisations...
+
+7.10) réseau plus grand :
+2017_3_23_11:47_00000
+
+nbch = 20
+
+gmsn=3.5
+gfsi=1.
+gstn=1.4
+ggpe=1.
+ggpi=1.
+iegpe=11.
+iegpi=10.
+
+# Tests concerning CMPf connectivity parameters:
+indegcmpfmsn = 1 # 1 ; 1 - 16 ; modifying from 1 to 2 has a strong effect on MSN activity, from 0.7 to 0.06 Hz !
+indegcmpffsi = 1 # 9 ; 0 - 170
+indegcmpfstn = 10 # 9 ; 1 - 85
+indegcmpfgpe = 3 # 9 ; 0 - 27
+indegcmpfgpi = 10 # 9 ; 0 - 78
+ctypefromcmpf = 'diffuse'
 
 
 ------------------------------
