@@ -92,10 +92,9 @@ class JobDispatcher:
     os.system('cp LGneurons.py '+IDstring+'/')
     os.system('cp testFullBG.py '+IDstring+'/')
     os.system('cp testChannelBG.py '+IDstring+'/')
-    os.system('cp plot_tools.py '+IDstring+'/')
+#    os.system('cp plot_tools.py '+IDstring+'/')
     os.system('cp solutions_simple_unique.csv '+IDstring+'/')
     os.system('cp __init__.py '+IDstring+'/')
-    os.system('cp gdf_concat.sh '+IDstring+'/')
     os.system('mkdir '+IDstring+'/log')
 
   def write_modelParams(self, IDstring, params):
