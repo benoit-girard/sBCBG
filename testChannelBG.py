@@ -73,14 +73,14 @@ def connectBG_MC(antagInjectionSite,antag):
   connectMC('ex','PTN','MSN', params['cTypePTNMSN'], inDegree= params['inDegPTNMSN'], gain=G['MSN'])
   connectMC('ex','CMPf','MSN',params['cTypeCMPfMSN'],inDegree= params['inDegCMPfMSN'],gain=G['MSN'])
   connectMC('in','MSN','MSN', params['cTypeMSNMSN'], inDegree= params['inDegMSNMSN'], gain=G['MSN'])
-  connectMC('in','FSI','MSN', params['cTypeFSIMSN'], inDegree= params['inDegFSIMSN'], gain=G['MSN']) # diffuse ? focused ?
+  connectMC('in','FSI','MSN', params['cTypeFSIMSN'], inDegree= params['inDegFSIMSN'], gain=G['MSN'])
   # some parameterizations from LG14 have no STN->MSN or GPe->MSN synaptic contacts
   if alpha['STN->MSN'] != 0:
     print "alpha['STN->MSN']",alpha['STN->MSN']
     connectMC('ex','STN','MSN', params['cTypeSTNMSN'], inDegree= params['inDegSTNMSN'], gain=G['MSN'])
   if alpha['GPe->MSN'] != 0:
     print "alpha['GPe->MSN']",alpha['GPe->MSN']
-    connectMC('in','GPe','MSN', params['cTypeGPeMSN'], inDegree= params['inDegGPeMSN'], gain=G['MSN']) # diffuse ? focused ?
+    connectMC('in','GPe','MSN', params['cTypeGPeMSN'], inDegree= params['inDegGPeMSN'], gain=G['MSN'])
 
   print '* FSI Inputs'
   connectMC('ex','CSN','FSI', params['cTypeCSNFSI'], inDegree= params['inDegCSNFSI'], gain=G['FSI'])
@@ -94,7 +94,7 @@ def connectBG_MC(antagInjectionSite,antag):
   print '* STN Inputs'
   connectMC('ex','PTN','STN', params['cTypePTNSTN'], inDegree= params['inDegPTNSTN'],  gain=G['STN'])
   connectMC('ex','CMPf','STN',params['cTypeCMPfSTN'],inDegree= params['inDegCMPfSTN'], gain=G['STN'])
-  connectMC('in','GPe','STN', params['cTypeGPeSTN'], inDegree= params['inDegGPeSTN'],  gain=G['STN']) # or diffuse, to be in line with the 2008 model?
+  connectMC('in','GPe','STN', params['cTypeGPeSTN'], inDegree= params['inDegGPeSTN'],  gain=G['STN'])
 
   print '* GPe Inputs'
   if antagInjectionSite == 'GPe':
@@ -102,7 +102,7 @@ def connectBG_MC(antagInjectionSite,antag):
       connectMC('NMDA','CMPf','GPe',params['cTypeCMPfGPe'],inDegree= params['inDegCMPfGPe'],gain=G['GPe'])
       connectMC('NMDA','STN','GPe', params['cTypeSTNGPe'], inDegree= params['inDegSTNGPe'], gain=G['GPe'])
       connectMC('in','MSN','GPe',   params['cTypeMSNGPe'], inDegree= params['inDegMSNGPe'], gain=G['GPe'])
-      connectMC('in','GPe','GPe',   params['cTypeGPeGPe'], inDegree= params['inDegGPeGPe'], gain=G['GPe']) # diffuse or focused?
+      connectMC('in','GPe','GPe',   params['cTypeGPeGPe'], inDegree= params['inDegGPeGPe'], gain=G['GPe'])
     elif antag == 'NMDA':
       connectMC('AMPA','CMPf','GPe',params['cTypeCMPfGPe'],inDegree= params['inDegCMPfGPe'],gain=G['GPe'])
       connectMC('AMPA','STN','GPe', params['cTypeSTNGPe'], inDegree= params['inDegSTNGPe'], gain=G['GPe'])

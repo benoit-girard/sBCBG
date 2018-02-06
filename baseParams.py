@@ -52,7 +52,7 @@ params   =       {'durationH':         '04', # used by Sango
                   'cTypeFSIMSN':  'diffuse', 
                   'cTypeMSNMSN':  'focused', 
                   'cTypeSTNMSN':  'diffuse',
-                  'cTypeGPeMSN':  'diffuse',
+                  'cTypeGPeMSN':  'diffuse', # diffuse ? focused ?
                   'cTypeCSNFSI':  'focused',
                   'cTypePTNFSI':  'focused',
                   'cTypeSTNFSI':  'diffuse',
@@ -61,11 +61,11 @@ params   =       {'durationH':         '04', # used by Sango
                   'cTypeFSIFSI':  'diffuse', 
                   'cTypePTNSTN':  'focused',
                   'cTypeCMPfSTN': 'focused',
-                  'cTypeGPeSTN':  'diffuse',
+                  'cTypeGPeSTN':  'diffuse', # or diffuse, to be in line with the 2008 model?
                   'cTypeCMPfGPe': 'focused',
                   'cTypeSTNGPe':  'diffuse',
                   'cTypeMSNGPe':  'focused',
-                  'cTypeGPeGPe':  'diffuse',
+                  'cTypeGPeGPe':  'diffuse', # diffuse or focused?
                   'cTypeMSNGPi':  'focused',
                   'cTypeSTNGPi':  'diffuse',
                   'cTypeGPeGPi':  'diffuse',
