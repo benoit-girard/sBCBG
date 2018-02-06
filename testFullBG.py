@@ -156,7 +156,9 @@ def connectBG(antagInjectionSite,antag):
 def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',logFileName=''):
   nest.ResetKernel()
   dataPath='log/'
-  nest.SetKernelStatus({'local_num_threads': params['nbcpu'] if ('nbcpu' in params) else 2, "data_path": dataPath})
+  if 'nbcpu' in params:
+    nest.SetKernelStatus({'local_num_threads': params['nbcpu']})
+  nest.SetKernelStatus({"data_path": dataPath})
   initNeurons()
 
   offsetDuration = 1000.
@@ -326,9 +328,6 @@ def main():
 
   nest.set_verbosity("M_WARNING")
   
-  #execTime = time.localtime()
-  #timeStr = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
-
   score = np.zeros((2))
   score += checkAvgFR(params=params,antagInjectionSite='none',antag='',showRasters=True)
 

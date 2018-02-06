@@ -1,6 +1,6 @@
 #!/apps/free/python/2.7.10/bin/python
 # -*- coding: utf-8 -*-
-interactive = True # avoid loading X dependent things
+interactive = False # avoid loading X dependent things
                    # set to False for simulations on Sango
 
 if interactive :
