@@ -124,7 +124,7 @@ def connectBG_MC(antagInjectionSite,antag):
 
   print '* GPi Inputs'
   if antagInjectionSite =='GPi':
-    if   antag == 'All':
+    if   antag == 'AMPA+NMDA+GABAA':
       pass
     elif antag == 'NMDA':
       connectMC('in','MSN','GPi',   params['cTypeMSNGPi'], inDegree= params['inDegMSNGPi'], gain=G['GPi'])
@@ -726,7 +726,7 @@ def main():
   for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
     score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
 
-  for a in ['All','AMPA','NMDA+AMPA','NMDA','GABAA']:
+  for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
     score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
   '''
 

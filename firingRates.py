@@ -80,7 +80,7 @@ for i in t:
   data.append(iaf_IF(i,tau_ref,tau_m,th-sigma))
 ax.plot(t, data,'r:')
 
-ax.plot(t, LG14(t), 'b-')
+ax.plot(t, LG14(t), '#FFA500')
 
 ax.grid(True)
 

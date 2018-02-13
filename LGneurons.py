@@ -34,7 +34,6 @@ def loadLG14params(ID):
     #print 'dist:',k,v,round(float(LG14Solutions[ID]['DIST_'+k.replace('->','_')]),2)
     p[k] = round(float(LG14Solutions[ID]['DIST_'+k.replace('->','_')]),2)
 
-  # here have been forgotten the firing thresholds (theta) parameter!
   for k,v in BGparams.iteritems():
     BGparams[k]['V_th'] = round(float(LG14Solutions[ID]['THETA_'+k]),1)
 
@@ -121,12 +120,17 @@ def createMC(name,nbCh,fake=False,parrot=True):
 # LCGDelays: shall we use the delays obtained by (Liénard, Cos, Girard, in prep) or not (default = True)
 # gain : allows to amplify the weight normally deduced from LG14
 #-------------------------------------------------------------------------------
-def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1.):
-  print "* connecting ",nameSrc,"->",nameTgt,"with",type,"connection and",inDegree,"inputs"
+def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1., verbose=True):
+
+  def printv(text):
+    if verbose:
+      print(text)
+
+  printv("* connecting "+nameSrc+" -> "+nameTgt+" with "+type+" connection and "+str(inDegree)+ " inputs")
 
   # check if in degree acceptable (not larger than number of neurons in the source nucleus)
   if inDegree  > nbSim[nameSrc]:
-    print "/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(nbSim[nameSrc])+"), thus reduced to the latter value"
+    printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(nbSim[nameSrc])+"), thus reduced to the latter value")
     inDegree = nbSim[nameSrc]
 
   # process receptor types
@@ -139,9 +143,9 @@ def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1.):
   elif type == 'in':
     lRecType = ['GABA']
   else:
-    print "Undefined connexion type:",type
+    raise KeyError('Undefined connexion type: '+type)
   
-  W = computeW(lRecType,nameSrc,nameTgt,inDegree,gain,verbose=True)
+  W = computeW(lRecType,nameSrc,nameTgt,inDegree,gain,verbose=verbose)
 
   if nameSrc+'->'+nameTgt in ConnectMap:
     loadConnectMap = True
@@ -188,15 +192,20 @@ def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1.):
 # LCGDelays: shall we use the delays obtained by (Liénard, Cos, Girard, in prep) or not (default = True)
 # gain : allows to amplify the weight normally deduced from LG14
 #-------------------------------------------------------------------------------
-def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1.):
-  print "* connecting ",nameSrc,"->",nameTgt,"with",projType,type,"connection and",inDegree,"inputs"
+def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1., verbose=True):
+
+  def printv(text):
+    if verbose:
+      print(text)
+
+  printv("* connecting "+nameSrc+" -> "+nameTgt+" with "+projType+type+" connection and "+str(inDegree)+" inputs")
 
   # check if in degree acceptable (not larger than number of neurons in the source nucleus)
   if projType == 'focused' and inDegree > nbSim[nameSrc]:
-    print "/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(nbSim[nameSrc])+"), thus reduced to the latter value"
+    printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(nbSim[nameSrc])+"), thus reduced to the latter value")
     inDegree = nbSim[nameSrc]
   if projType == 'diffuse' and inDegree  > nbSim[nameSrc]*len(Pop[nameSrc]):
-    print "/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(bSim[nameSrc]*len(Pop[nameSrc]))+"), thus reduced to the latter value"
+    printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(bSim[nameSrc]*len(Pop[nameSrc]))+"), thus reduced to the latter value")
     inDegree = nbSim[nameSrc]*len(Pop[nameSrc])
 
   # prepare receptor type lists:
@@ -209,10 +218,10 @@ def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1.):
   elif type == 'in':
     lRecType = ['GABA']
   else:
-    print "Undefined connexion type:",type
+    raise KeyError('Undefined connexion type: '+type)
 
   # compute the global weight of the connection, for each receptor type:
-  W = computeW(lRecType,nameSrc,nameTgt,inDegree,gain,verbose=True)
+  W = computeW(lRecType,nameSrc,nameTgt,inDegree,gain,verbose=verbose)
 
   # check whether a connection map has already been drawn or not:
   if nameSrc+'->'+nameTgt in ConnectMap:
@@ -318,7 +327,7 @@ FRRNormal = {'MSN': [0,1],
              'GPe': [55.7,74.5],
              'GPi': [59.1,79.5],
              }
-FRRGPi = {'All':[53.4,96.8],
+FRRGPi = {'AMPA+NMDA+GABAA':[53.4,96.8],
           'NMDA':[27.2451,78.6255],
           'NMDA+AMPA':[6.811275,52.364583],
           'AMPA':[5.7327,66.0645],

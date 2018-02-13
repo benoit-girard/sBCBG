@@ -30,7 +30,7 @@ import json
 
 #import shlex
 import os
-import time
+import datetime
 
 
 class JobDispatcher:
@@ -38,11 +38,11 @@ class JobDispatcher:
   def __init__(self, cmd_args):
     # In addition to the commandline arguments, the JobDispatcher object
     # contains timing info and the git status of the repository
-    execTime = time.localtime()
-    self.timeString = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])
+    self.timeString = str(datetime.datetime.now()).replace('-','_').replace(' ','_').replace(':','_')[:-7]
     self.cmd_args = cmd_args
     self.platform = cmd_args.platform
     self.interactive = cmd_args.interactive
+    self.tag = cmd_args.tag
     self.sim_counter = 0
     self.get_git_info()
     self.params = {} # will be filled later
@@ -90,6 +90,7 @@ class JobDispatcher:
     print('Create subdirectory: '+IDstring)
     os.system('mkdir '+IDstring)
     os.system('cp LGneurons.py '+IDstring+'/')
+    os.system('cp fasttestFullBG.py '+IDstring+'/')
     os.system('cp testFullBG.py '+IDstring+'/')
     os.system('cp testChannelBG.py '+IDstring+'/')
 #    os.system('cp plot_tools.py '+IDstring+'/')
@@ -124,7 +125,9 @@ class JobDispatcher:
 
   def launchOneParameterizedRun(self, counter, params):
     # Generates the sub-directory and queue the run
-    IDstring = self.timeString+'_%05d' % (counter)
+    IDstring = self.timeString+'_xp%04d' % (counter)
+    if self.tag != '':
+      IDstring += '_'+self.tag
     # 1: initialize the directory
     self.create_workspace(IDstring)
     os.chdir(IDstring)
@@ -270,11 +273,12 @@ def main():
     Optional = parser.add_argument_group('optional arguments')
     Optional.add_argument('--custom', type=str, help='Provide a custom file to initialize parameters - without the .py extension', default=None)
     Optional.add_argument('--LG14modelID', type=int, help='Which LG14 parameterization to use?', default=None)
-    Optional.add_argument('--whichTest', type=str, help='Which test to run?', choices=['testFullBG', 'testChannelBG'], default=None)
+    Optional.add_argument('--whichTest', type=str, help='Which test to run?', choices=['fasttestFullBG', 'testFullBG', 'testChannelBG'], default=None)
     Optional.add_argument('--nbcpu', type=int, help='Number of CPU to use (-1 to guess)', default=None)
     Optional.add_argument('--nbCh', type=int, help='Number of Basal Ganglia channels to simulate', default=None)
     Optional.add_argument('--interactive', action="store_true", help='Set to enable the display of debug plots', default=False)
     Optional.add_argument('--email', type=str, help='To receive emails when Sango cluster simulations are done', default=None)
+    Optional.add_argument('--tag', type=str, help='optional tag for this experiment, to be added to the directory name (avoid special characters like "/" or "\\")', default='')
     
     cmd_args = parser.parse_args()
     
