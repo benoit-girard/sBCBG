@@ -45,7 +45,7 @@ def createBG():
   create('PTN', fake=True, parrot=parrot)
 
   nbSim['CMPf'] = params['nbCMPf']
-  create('CMPf', fake=True, parrot=False)
+  create('CMPf', fake=True, parrot=params['parrotCMPf']) # was: False
 
   print "Number of simulated neurons:", nbSim
 
