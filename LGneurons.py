@@ -519,9 +519,9 @@ tau = {'MSN->GPe':    7.,
        'PTN->STN':    3.,
        'CMPf->MSN':   7.,
        'CMPf->FSI':   7.,
-       'CMPf->STN':   4.,#7
-       'CMPf->GPe':   5.,#7
-       'CMPf->GPi':   6.,#7
+       'CMPf->STN':   7.,#4
+       'CMPf->GPe':   7.,#5
+       'CMPf->GPi':   7.,#6
        }
 
 

@@ -2,6 +2,8 @@
 from LGneurons import *
 from modelParams import *
 import nest.raster_plot
+import nest.voltage_trace
+import pylab as pl
 #import time
 import sys
 
@@ -32,7 +34,7 @@ def createBG():
   create('GPi')
   nest.SetStatus(Pop['GPi'],{"I_e":params['IeGPi']})
 
-  parrot = True # switch to False at your risks & perils...                                                                                                                                     
+  parrot = True # switch to False at your risks & perils...
   nbSim['CSN'] = params['nbCSN']
   create('CSN', fake=True, parrot=parrot)
 
@@ -174,8 +176,8 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   necessaryParams=['nbCh','nbMSN','nbFSI','nbSTN','nbGPe','nbGPi','nbCSN','nbPTN','nbCMPf','IeGPe','IeGPi','GMSN','GFSI','GSTN','GGPe','GGPi','inDegCSNMSN','inDegPTNMSN','inDegCMPfMSN','inDegMSNMSN','inDegFSIMSN','inDegSTNMSN','inDegGPeMSN','inDegCSNFSI','inDegPTNFSI','inDegSTNFSI','inDegGPeFSI','inDegCMPfFSI','inDegFSIFSI','inDegPTNSTN','inDegCMPfSTN','inDegGPeSTN','inDegCMPfGPe','inDegSTNGPe','inDegMSNGPe','inDegGPeGPe','inDegMSNGPi','inDegSTNGPi','inDegGPeGPi','inDegCMPfGPi',]
   for np in necessaryParams:
     if np not in params:
-      print "Missing parameter:",np
-      exit()
+      raise KeyError('Missing parameter: '+np)
+
   #------------------------
   # creation and connection of the neural populations
   #------------------------
