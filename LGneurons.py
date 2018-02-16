@@ -159,28 +159,56 @@ def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1., verbose=True):
   else:
     delay= 1.
 
+  pop_array = np.array(Pop[nameSrc]) # convert to numpy array to allow indexing
+  connect_queue = np.array([[],[]], dtype=int) # the connection queue
+  max_chunk_size = 1000 # what is the max number of connections to add simultaneously?
+
+  oldway_connec = False
+
   # To ensure that for excitatory connections, Tgt neurons receive AMPA and NMDA projections from the same Src neurons, 
   # we have to handle the "indegree" connectivity ourselves:
   for nTgt in range(int(nbSim[nameTgt])):
-    if not loadConnectMap:
-    # if no connectivity map exists between the two populations, let's create one
-      r = inDegree - int(inDegree)
-      inputTable = rnd.choice(int(nbSim[nameSrc]),size=int(inDegree) if rnd.rand() > r else int(inDegree)+1,replace=False)
-      inputPop = []
-      for i in inputTable:
-        inputPop.append(Pop[nameSrc][i])
-      inputPop = tuple(inputPop)
-
-      ConnectMap[nameSrc+'->'+nameTgt].append(inputPop)
+    if loadConnectMap:
+      # use previously created connectivity map
+      inputTable = ConnectMap[nameSrc+'->'+nameTgt][nTgt]
+      inDeg = len(inputTable)
     else:
-    #otherwise, use the existing one
-      #print nameSrc,"->",nameTgt,"using previously defined connection map"
-      inputPop = ConnectMap[nameSrc+'->'+nameTgt][nTgt]
+      # if no connectivity map exists between the two populations, let's create one
+      r = inDegree - int(inDegree)
+      inDeg = int(inDegree) if rnd.rand() > r else int(inDegree)+1
+      inputTable = pop_array[rnd.choice(int(nbSim[nameSrc]), size=inDeg, replace=False)]
+      ConnectMap[nameSrc+'->'+nameTgt] += [tuple(inputTable)]
 
-    for r in lRecType:
-      w = W[r]
+    connect_queue = np.concatenate((connect_queue, np.array([[Pop[nameTgt][nTgt]]*inDeg, inputTable])), axis=1)
 
-      nest.Connect(pre=inputPop, post=(Pop[nameTgt][nTgt],),syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
+    if connect_queue.shape[1] > max_chunk_size:
+      # space for at least one chunk? => empty the queue
+      connect_queue = empty_queue(connect_queue, W, delay, lRecType, max_chunk_size, do_empty=False)
+
+    # old way of connecting neurons
+    #for r in lRecType:
+    #  w = W[r]
+    #  nest.Connect(pre=ConnectMap[nameSrc+'->'+nameTgt][nTgt], post=(Pop[nameTgt][nTgt],), syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
+
+  empty_queue(connect_queue, W, delay, lRecType, max_chunk_size, do_empty=True)
+
+
+#-------------------------------------------------------------------------------
+# Simple queue mechanism
+# This function makes connections by chunk, until the chunk size is too small
+#-------------------------------------------------------------------------------
+def empty_queue(l, W, delay, lRecType, n, do_empty = False):
+  for connect_chunk in [[l[0][i:i + n], l[1][i:i + n]] for i in xrange(0, len(l[0]), n)]:
+    if len(connect_chunk[0]) < n and not do_empty:
+      # return the incomplete chunk, it will processed next time
+      return connect_chunk
+    else:
+      # call the connect function
+      for r in lRecType:
+        w = W[r]
+        nest.Connect(pre=tuple(connect_chunk[1]), post=tuple(connect_chunk[0]), conn_spec='one_to_one', syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
+  return np.array([[],[]], dtype=int)
+
 
 #-------------------------------------------------------------------------------
 # Establishes a connexion between two populations, following the results of LG14, in a MultiChannel context
