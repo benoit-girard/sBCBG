@@ -255,13 +255,15 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   nest.ResetNetwork()
   initNeurons()
 
+  showPotential = False # Switch to True to graph neurons' membrane potentials - does not handle well restarted simulations
+
   dataPath='log/'
   nest.SetKernelStatus({"overwrite_files":True}) # when we redo the simulation, we erase the previous traces
 
   simulationOffset = nest.GetKernelStatus('time')
   print('Simulation Offset: '+str(simulationOffset))
   offsetDuration = 1000.
-  simDuration = 1000. # ms
+  simDuration = 5000. # ms
 
   #-------------------------
   # measures
@@ -269,10 +271,6 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   spkDetect={} # spike detectors used to record the experiment
   multimeters={} # multimeters used to record one neuron in each population
   expeRate={}
-
-  #if logFileName == '':
-  #  execTime = time.localtime()
-  #  logFileName = str(execTime[0])+'_'+str(execTime[1])+'_'+str(execTime[2])+'_'+str(execTime[3])+':'+str(execTime[4])+':'+str(execTime[5])
 
   antagStr = ''
   if antagInjectionSite != 'none':
@@ -282,9 +280,10 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
     # 1000ms offset period for network stabilization
     spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": antagStr+N, "to_file": True, 'start':offsetDuration+simulationOffset,'stop':offsetDuration+simDuration+simulationOffset})
     nest.Connect(Pop[N], spkDetect[N])
-    # multimeter records only the last 200ms in one neuron in each population
-    multimeters[N] = nest.Create('multimeter', params = {"withgid": True, 'withtime': True, 'interval': 0.1, 'record_from': ['V_m'], "label": antagStr+N, "to_file": True, 'start':offsetDuration+simulationOffset+simDuration-200.,'stop':offsetDuration+simDuration+simulationOffset})
-    nest.Connect(multimeters[N], [Pop[N][0]])
+    if showPotential:
+      # multimeter records only the last 200ms in one neuron in each population
+      multimeters[N] = nest.Create('multimeter', params = {"withgid": True, 'withtime': True, 'interval': 0.1, 'record_from': ['V_m'], "label": antagStr+N, "to_file": False, 'start':offsetDuration+simulationOffset+simDuration-200.,'stop':offsetDuration+simDuration+simulationOffset})
+      nest.Connect(multimeters[N], [Pop[N][0]])
 
   #-------------------------
   # Simulation
@@ -378,15 +377,15 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
     for N in NUCLEI:
       nest.raster_plot.from_device(spkDetect[N],hist=True,title=N+displayStr)
 
-    #nest.raster_plot.show()
-
-    pl.figure()
-    nsub = 231
-    for N in NUCLEI:
-      pl.subplot(nsub)
-      nest.voltage_trace.from_device(multimeters[N],title=N+displayStr+' #0')
-      pl.axhline(y=BGparams[N]['V_th'], color='r', linestyle='-')
-      nsub += 1
+    if showPotential:
+      pl.figure()
+      nsub = 231
+      for N in NUCLEI:
+        pl.subplot(nsub)
+        nest.voltage_trace.from_device(multimeters[N],title=N+displayStr+' #0')
+        nest.Disconnect(Pop[N], multimeters[N])
+        pl.axhline(y=BGparams[N]['V_th'], color='r', linestyle='-')
+        nsub += 1
     pl.show()
 
   return score, 5 if antagInjectionSite == 'none' else 1
