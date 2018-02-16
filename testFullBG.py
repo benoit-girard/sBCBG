@@ -150,26 +150,77 @@ def connectBG(antagInjectionSite,antag):
     connect('ex','CMPf','GPi',inDegree= params['inDegCMPfGPi'],gain=G['GPi'])
 
 #------------------------------------------
-# Checks that the BG model parameterization defined by the "params" dictionary can respect the electrophysiological constaints (firing rate at rest).
-# If testing for a given antagonist injection experiment, specifiy the injection site in antagInjectionSite, and the type of antagonists used in antag.
-# Returns [score obtained, maximal score]
-# params possible keys:
-# - nb{MSN,FSI,STN,GPi,GPe,CSN,PTN,CMPf} : number of simulated neurons for each population
-# - Ie{GPe,GPi} : constant input current to GPe and GPi
-# - G{MSN,FSI,STN,GPi,GPe} : gain to be applied on LG14 input synaptic weights for each population
+# Re-weight a specific connection, characterized by a source, a target, and a receptor
+# Returns the previous value of that connection (useful for 'reactivating' after a deactivation experiment)
 #------------------------------------------
-def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',logFileName=''):
+def alter_connection(src, tgt, tgt_receptor, altered_weight):
+  recTypeEquiv = {'AMPA':1,'NMDA':2,'GABA':3, 'GABAA':3} # adds 'GABAA'
+  # check that we have this connection in the current network
+  conns_in = nest.GetConnections(source=Pop[src], target=Pop[tgt])
+  if len(conns_in):
+    receptors = nest.GetStatus(conns_in, keys='receptor')
+    previous_weights = nest.GetStatus(conns_in, keys='weight')
+    rec_nb = recTypeEquiv[tgt_receptor]
+    if isinstance(altered_weight, int):
+      altered_weights = [altered_weight] * len(receptors)
+    elif len(altered_weight) == len(receptors):
+      altered_weights = altered_weight # already an array
+    else:
+      raise LookupError('Wrong size for the `altered_weights` variable (should be scalar or a list with as many items as there are synapses in that connection - including non-targeted receptors)')
+    new_weights = [{'weight': float(previous_weights[i])} if receptors[i] != rec_nb else {'weight': float(altered_weights[i])} for i in range(len(receptors))] # replace the weights for the targeted receptor
+    nest.SetStatus(conns_in, new_weights)
+    return previous_weights
+  return None
+
+#------------------------------------------
+# gets the nuclei involved in deactivation experiments in GPe/GPi
+#------------------------------------------
+def get_afferents(a):
+  GABA_afferents = ['MSN', 'GPe'] # afferents with gabaergic connections
+  GLUT_afferents = ['STN', 'CMPf'] # afferents with glutamatergic connections
+  if a == 'GABAA':
+    afferents = GABA_afferents
+  elif a == 'AMPA+GABAA':
+    afferents = GABA_afferents + GLUT_afferents
+  elif a == 'AMPA+NMDA+GABAA':
+    afferents = GABA_afferents + GLUT_afferents
+  else:
+    afferents = GLUT_afferents
+  return afferents
+
+#------------------------------------------
+# deactivate connections based on antagonist experiment
+#------------------------------------------
+def deactivate(site, a):
+  ww = {}
+  for src in get_afferents(a):
+    ww[src] = None
+    for rec in a.split('+'):
+      w = alter_connection(src, site, rec, 0)
+      if ww[src] == None:
+        ww[src] = w # keep the original weights only once
+  return ww
+
+#------------------------------------------
+# reactivate connections based on antagonist experiment
+#------------------------------------------
+def reactivate(site, a, ww):
+  for src in get_afferents(a):
+    for rec in a.split('+'):
+      alter_connection(src, site, rec, ww[src])
+
+#------------------------------------------
+# Instantiate the BG network according to the `params` dictionnary
+# For now, this instantiation respects the hardcoded antagonist injection sites
+# In the future, these will be handled by changing the network weights
+#------------------------------------------
+def instantiate_BG(params={}, antagInjectionSite='none', antag=''):
   nest.ResetKernel()
   dataPath='log/'
   if 'nbcpu' in params:
     nest.SetKernelStatus({'local_num_threads': params['nbcpu']})
   nest.SetKernelStatus({"data_path": dataPath})
   initNeurons()
-
-  offsetDuration = 1000.
-  simDuration = 5000. # ms
-  # nest.SetKernelStatus({"overwrite_files":True}) # Thanks to use of timestamps, file names should now 
-                                                   # be different as long as they are not created during the same second
 
   print '/!\ Using the following LG14 parameterization',params['LG14modelID']
   loadLG14params(params['LG14modelID'])
@@ -190,6 +241,28 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
 
   connectBG(antagInjectionSite,antag)
 
+
+#------------------------------------------
+# Checks whether the BG model respects the electrophysiological constaints (firing rate at rest).
+# If testing for a given antagonist injection experiment, specifiy the injection site in antagInjectionSite, and the type of antagonists used in antag.
+# Returns [score obtained, maximal score]
+# params possible keys:
+# - nb{MSN,FSI,STN,GPi,GPe,CSN,PTN,CMPf} : number of simulated neurons for each population
+# - Ie{GPe,GPi} : constant input current to GPe and GPi
+# - G{MSN,FSI,STN,GPi,GPe} : gain to be applied on LG14 input synaptic weights for each population
+#------------------------------------------
+def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',logFileName=''):
+  nest.ResetNetwork()
+  initNeurons()
+
+  dataPath='log/'
+  nest.SetKernelStatus({"overwrite_files":True}) # when we redo the simulation, we erase the previous traces
+
+  simulationOffset = nest.GetKernelStatus('time')
+  print('Simulation Offset: '+str(simulationOffset))
+  offsetDuration = 1000.
+  simDuration = 1000. # ms
+
   #-------------------------
   # measures
   #-------------------------
@@ -206,8 +279,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
 
   for N in NUCLEI:
     # 1000ms offset period for network stabilization
-    #spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": logFileName+'_'+antagStr+N, "to_file": True, 'start':offsetDuration,'stop':offsetDuration+simDuration})
-    spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": antagStr+N, "to_file": True, 'start':offsetDuration,'stop':offsetDuration+simDuration})
+    spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": antagStr+N, "to_file": True, 'start':offsetDuration+simulationOffset,'stop':offsetDuration+simDuration+simulationOffset})
     nest.Connect(Pop[N], spkDetect[N])
 
   #-------------------------
@@ -361,15 +433,29 @@ def main():
 
   nest.set_verbosity("M_WARNING")
   
+  instantiate_BG(params, antagInjectionSite='none', antag='')
   score = np.zeros((2))
   score += checkAvgFR(params=params,antagInjectionSite='none',antag='',showRasters=True)
 
-
+  # The following implements the deactivation tests without re-wiring the BG (faster)
   for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
+    ww = deactivate('GPe', a)
     score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
+    reactivate('GPe', a, ww)
 
   for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
+    ww = deactivate('GPi', a)
     score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
+    reactivate('GPi', a, ww)
+
+  ## The following implements the deactivation tests with re-creation of the entire BG every time (slower)
+  #for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
+  #  instantiate_BG(params, antagInjectionSite='GPe', antag=a)
+  #  score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
+
+  #for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
+  #  instantiate_BG(params, antagInjectionSite='GPi', antag=a)
+  #  score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
 
   #-------------------------
   print "******************"
