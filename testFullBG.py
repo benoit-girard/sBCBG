@@ -170,6 +170,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
 
   print '/!\ Using the following LG14 parameterization',params['LG14modelID']
   loadLG14params(params['LG14modelID'])
+  loadThetaFromCustomparams(params)
 
   # We check that all the necessary parameters have been defined. They should be in the modelParams.py file.
   # If one of them misses, we exit the program.

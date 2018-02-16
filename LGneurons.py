@@ -37,6 +37,17 @@ def loadLG14params(ID):
   for k,v in BGparams.iteritems():
     BGparams[k]['V_th'] = round(float(LG14Solutions[ID]['THETA_'+k]),1)
 
+
+def loadThetaFromCustomparams(params):
+  for k,v in BGparams.iteritems():
+    try:
+      newval = round(float(params['THETA_'+k]), 2)
+      print("WARNING: overwriting LG14 value for theta in "+k+" from original value of "+str(BGparams[k]['V_th'])+" to new value: "+str(newval))
+      BGparams[k]['V_th'] = newval # firing threshold
+    except:
+      print("INFO: keeping LG14 value for theta in "+k+" to its original value of "+str(BGparams[k]['V_th']))
+      pass
+
 #-------------------------------------------------------------------------------
 # Changes the default of the iaf_psc_alpha_multisynapse neurons 
 # Very important because it defines the 3 types of receptors (AMPA, NMDA, GABA) that will be needed
