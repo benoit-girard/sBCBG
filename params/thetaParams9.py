@@ -3,13 +3,17 @@
 # defines the value of the parameters that will be used by testFullbG.py
 
 params = {'LG14modelID':9,
-          'GMSN':              6.,   # Adjusted from baseParams.py
-          'GFSI':               1.3, # Same as baseParams.py
-          'GSTN':              1.38, # ^
-          'GGPe':               1.3, # ^
-          'GGPi':                1., # ^
-          'IeGPe':              13., # ^
-          'IeGPi':              11., # ^
+          'GMSN':     1., # no gain
+          'GFSI':     1., # ^ 
+          'GSTN':     1., # ^
+          'GGPe':     1., # ^
+          'GGPi':     1., # ^
+          'THETA_MSN':  5.0, # overrides the parameter theta from mean-field models
+          'THETA_FSI': 12.5, # ^
+          'THETA_STN': 19.5, # ^
+          'THETA_GPe':  10., # ^
+          'IeGPe':   13.,
+          'IeGPi':   11.,
           'nbMSN':            2644., # original number of neurons, possibly scaled
           'nbFSI':              53., # ^
           'nbSTN':               8., # ^
@@ -27,4 +31,3 @@ params = {'LG14modelID':9,
           'inDegPTNFSI':   3., # ^
           'parrotCMPf': True, # use parrot neurons for CMPf as well
           }
-
