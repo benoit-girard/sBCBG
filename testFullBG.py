@@ -19,12 +19,15 @@ def createBG():
 
   nbSim['MSN'] = params['nbMSN']
   create('MSN')
+  nest.SetStatus(Pop['MSN'],{"I_e":params['IeMSN']})
 
   nbSim['FSI'] = params['nbFSI']
   create('FSI')
+  nest.SetStatus(Pop['FSI'],{"I_e":params['IeFSI']})
 
   nbSim['STN'] = params['nbSTN']
   create('STN')
+  nest.SetStatus(Pop['STN'],{"I_e":params['IeSTN']})
 
   nbSim['GPe'] = params['nbGPe']
   create('GPe')
@@ -174,7 +177,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
 
   # We check that all the necessary parameters have been defined. They should be in the modelParams.py file.
   # If one of them misses, we exit the program.
-  necessaryParams=['nbCh','nbMSN','nbFSI','nbSTN','nbGPe','nbGPi','nbCSN','nbPTN','nbCMPf','IeGPe','IeGPi','GMSN','GFSI','GSTN','GGPe','GGPi','inDegCSNMSN','inDegPTNMSN','inDegCMPfMSN','inDegMSNMSN','inDegFSIMSN','inDegSTNMSN','inDegGPeMSN','inDegCSNFSI','inDegPTNFSI','inDegSTNFSI','inDegGPeFSI','inDegCMPfFSI','inDegFSIFSI','inDegPTNSTN','inDegCMPfSTN','inDegGPeSTN','inDegCMPfGPe','inDegSTNGPe','inDegMSNGPe','inDegGPeGPe','inDegMSNGPi','inDegSTNGPi','inDegGPeGPi','inDegCMPfGPi',]
+  necessaryParams=['nbCh','nbMSN','nbFSI','nbSTN','nbGPe','nbGPi','nbCSN','nbPTN','nbCMPf','IeMSN','IeFSI','IeSTN','IeGPe','IeGPi','GMSN','GFSI','GSTN','GGPe','GGPi','inDegCSNMSN','inDegPTNMSN','inDegCMPfMSN','inDegMSNMSN','inDegFSIMSN','inDegSTNMSN','inDegGPeMSN','inDegCSNFSI','inDegPTNFSI','inDegSTNFSI','inDegGPeFSI','inDegCMPfFSI','inDegFSIFSI','inDegPTNSTN','inDegCMPfSTN','inDegGPeSTN','inDegCMPfGPe','inDegSTNGPe','inDegMSNGPe','inDegGPeGPe','inDegMSNGPi','inDegSTNGPi','inDegGPeGPi','inDegCMPfGPi',]
   for np in necessaryParams:
     if np not in params:
       raise KeyError('Missing parameter: '+np)
