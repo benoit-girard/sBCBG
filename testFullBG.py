@@ -267,6 +267,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   # measures
   #-------------------------
   spkDetect={} # spike detectors used to record the experiment
+  multimeters={} # multimeters used to record one neuron in each population
   expeRate={}
 
   #if logFileName == '':
@@ -281,6 +282,9 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
     # 1000ms offset period for network stabilization
     spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": antagStr+N, "to_file": True, 'start':offsetDuration+simulationOffset,'stop':offsetDuration+simDuration+simulationOffset})
     nest.Connect(Pop[N], spkDetect[N])
+    # multimeter records only the last 200ms in one neuron in each population
+    multimeters[N] = nest.Create('multimeter', params = {"withgid": True, 'withtime': True, 'interval': 0.1, 'record_from': ['V_m'], "label": antagStr+N, "to_file": True, 'start':offsetDuration+simulationOffset+simDuration-200.,'stop':offsetDuration+simDuration+simulationOffset})
+    nest.Connect(multimeters[N], [Pop[N][0]])
 
   #-------------------------
   # Simulation
@@ -374,7 +378,16 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
     for N in NUCLEI:
       nest.raster_plot.from_device(spkDetect[N],hist=True,title=N+displayStr)
 
-    nest.raster_plot.show()
+    #nest.raster_plot.show()
+
+    pl.figure()
+    nsub = 231
+    for N in NUCLEI:
+      pl.subplot(nsub)
+      nest.voltage_trace.from_device(multimeters[N],title=N+displayStr+' #0')
+      pl.axhline(y=BGparams[N]['V_th'], color='r', linestyle='-')
+      nsub += 1
+    pl.show()
 
   return score, 5 if antagInjectionSite == 'none' else 1
 
