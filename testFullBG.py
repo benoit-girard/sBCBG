@@ -1,11 +1,14 @@
 #!/apps/free/python/2.7.10/bin/python
+
+import nstrand
+
 from LGneurons import *
 from modelParams import *
 import nest.raster_plot
 import nest.voltage_trace
 import pylab as pl
-#import time
 import sys
+
 
 
 #------------------------------------------
@@ -219,6 +222,9 @@ def instantiate_BG(params={}, antagInjectionSite='none', antag=''):
   dataPath='log/'
   if 'nbcpu' in params:
     nest.SetKernelStatus({'local_num_threads': params['nbcpu']})
+
+  nstrand.set_seed(params['nestSeed'], params['pythonSeed']) # sets the seed for the BG construction
+
   nest.SetKernelStatus({"data_path": dataPath})
   initNeurons()
 
@@ -259,6 +265,8 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
 
   dataPath='log/'
   nest.SetKernelStatus({"overwrite_files":True}) # when we redo the simulation, we erase the previous traces
+
+  nstrand.set_seed(params['nestSeed'], params['pythonSeed']) # sets the seed for the simulation
 
   simulationOffset = nest.GetKernelStatus('time')
   print('Simulation Offset: '+str(simulationOffset))

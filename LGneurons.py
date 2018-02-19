@@ -6,6 +6,8 @@ interactive = False # avoid loading X dependent things
 if interactive :
   import pylab
 
+import nstrand
+
 import nest
 import numpy as np
 import numpy.random as rnd
@@ -181,6 +183,9 @@ def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1., verbose=True):
   # To ensure that for excitatory connections, Tgt neurons receive AMPA and NMDA projections from the same Src neurons, 
   # we have to handle the "indegree" connectivity ourselves:
   for nTgt in range(int(nbSim[nameTgt])):
+    #node_info   = nest.GetStatus([Pop[nameTgt][nTgt]])[0] # use the process-specific random number generator
+    #nrnd = nstrand.pyRngs[node_info['vp']]                # ^
+    nrnd = nstrand.pyMasterRng # use the master python seed
     if loadConnectMap:
       # use previously created connectivity map
       inputTable = ConnectMap[nameSrc+'->'+nameTgt][nTgt]
@@ -188,8 +193,8 @@ def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1., verbose=True):
     else:
       # if no connectivity map exists between the two populations, let's create one
       r = inDegree - int(inDegree)
-      inDeg = int(inDegree) if rnd.rand() > r else int(inDegree)+1
-      inputTable = pop_array[rnd.choice(int(nbSim[nameSrc]), size=inDeg, replace=False)]
+      inDeg = int(inDegree) if nrnd.rand() > r else int(inDegree)+1
+      inputTable = pop_array[nrnd.choice(int(nbSim[nameSrc]), size=inDeg, replace=False)]
       ConnectMap[nameSrc+'->'+nameTgt] += [tuple(inputTable)]
 
     connect_queue = np.concatenate((connect_queue, np.array([[Pop[nameTgt][nTgt]]*inDeg, inputTable])), axis=1)
@@ -367,10 +372,6 @@ def computeW(listRecType,nameSrc,nameTgt,inDegree,gain=1.,verbose=False):
   return w
 
 #-------------------------------------------------------------------------------
-
-rnd.seed(17)
-#nest.SetKernelStatus({'local_num_threads':2, "data_path": "log/", "overwrite_files":True})
-nest.SetKernelStatus({'local_num_threads':2, "data_path": "log/"})
 
 dt = 0.01 # ms
 simDuration = 10000. # in ms

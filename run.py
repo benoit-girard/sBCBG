@@ -83,7 +83,7 @@ class JobDispatcher:
 
   def load_cmdline_config(self, cmd_args):
     # Loads the options from the commandline, overriding all previous parameterizations
-    self.params.update({k: v for k, v in vars(cmd_args).items() if k in ['LG14modelID', 'whichTest', 'nbcpu', 'nbCh', 'email'] if v != None})
+    self.params.update({k: v for k, v in vars(cmd_args).items() if k in ['LG14modelID', 'whichTest', 'nbcpu', 'nbCh', 'email', 'nestSeed', 'pythonSeed'] if v != None})
 
   def create_workspace(self, IDstring):
     # Initialize the experiment-specific directory named with IDstring and populate it with the required files
@@ -92,7 +92,7 @@ class JobDispatcher:
     os.system('cp LGneurons.py '+IDstring+'/')
     os.system('cp testFullBG.py '+IDstring+'/')
     os.system('cp testChannelBG.py '+IDstring+'/')
-#    os.system('cp plot_tools.py '+IDstring+'/')
+    os.system('cp nstrand.py '+IDstring+'/')
     os.system('cp solutions_simple_unique.csv '+IDstring+'/')
     os.system('cp __init__.py '+IDstring+'/')
     os.system('mkdir '+IDstring+'/log')
@@ -278,6 +278,8 @@ def main():
     Optional.add_argument('--interactive', action="store_true", help='Set to enable the display of debug plots', default=False)
     Optional.add_argument('--email', type=str, help='To receive emails when Sango cluster simulations are done', default=None)
     Optional.add_argument('--tag', type=str, help='optional tag for this experiment, to be added to the directory name (avoid special characters like "/" or "\\")', default='')
+    Optional.add_argument('--nestSeed', type=int, help='Nest seed (affects the Poisson spike train generator)', default=None)
+    Optional.add_argument('--pythonSeed', type=int, help='Python seed (affects connection map)', default=None)
     
     cmd_args = parser.parse_args()
     
