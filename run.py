@@ -24,6 +24,7 @@ import string
 
 # load base and custom parameterizations
 import importlib
+import numpy as np
 
 # write run parameterization
 import json
@@ -75,7 +76,6 @@ class JobDispatcher:
     # Loads an optional .py file which specifies custom parameters
     # this file overrides the base parameters
     try:
-      #params = importlib.import_module(custom).params # fails when in other directories
       exec(open(custom).read()) 
       self.params.update(params)
     except:
