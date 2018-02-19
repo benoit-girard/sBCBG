@@ -124,7 +124,7 @@ class JobDispatcher:
 
   def launchOneParameterizedRun(self, counter, params):
     # Generates the sub-directory and queue the run
-    IDstring = self.timeString+'_xp%04d' % (counter)
+    IDstring = self.timeString+'_xp%06d' % (counter)
     if self.tag != '':
       IDstring += '_'+self.tag
     # 1: initialize the directory
