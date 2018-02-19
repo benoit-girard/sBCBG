@@ -137,12 +137,16 @@ def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1., verbose=True):
     if verbose:
       print(text)
 
-  printv("* connecting "+nameSrc+" -> "+nameTgt+" with "+type+" connection and "+str(inDegree)+ " inputs")
+  if inDegree > 0. and inDegree < 1.:
+    # fractional inDegree is expressed as a fraction of max number of neurons
+    inDegree = get_frac(inDegree, nameSrc, nameTgt, verbose=verbose)
 
   # check if in degree acceptable (not larger than number of neurons in the source nucleus)
   if inDegree  > nbSim[nameSrc]:
     printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(nbSim[nameSrc])+"), thus reduced to the latter value")
     inDegree = nbSim[nameSrc]
+
+  printv("* connecting "+nameSrc+" -> "+nameTgt+" with "+type+" connection and "+str(inDegree)+ " inputs")
 
   # process receptor types
   if type == 'ex':
@@ -173,8 +177,6 @@ def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1., verbose=True):
   pop_array = np.array(Pop[nameSrc]) # convert to numpy array to allow indexing
   connect_queue = np.array([[],[]], dtype=int) # the connection queue
   max_chunk_size = 1000 # what is the max number of connections to add simultaneously?
-
-  oldway_connec = False
 
   # To ensure that for excitatory connections, Tgt neurons receive AMPA and NMDA projections from the same Src neurons, 
   # we have to handle the "indegree" connectivity ourselves:
@@ -321,21 +323,37 @@ def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1., ver
 
         nest.Connect(pre=inputPop, post=(Pop[nameTgt][tgtChannel][nTgt],),syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
 
+
+#-------------------------------------------------------------------------------
+# returns the maximal number of distinct input neurons for one connection
+#-------------------------------------------------------------------------------
+def get_max_inputs(nameSrc, nameTgt, verbose=False):
+  if nameSrc=='CSN' or nameSrc=='PTN':
+    nu = alpha[nameSrc+'->'+nameTgt]
+    if verbose:
+      print('\tMaximal number of distinct input neurons (nu): '+str(nu))
+      print('\tMinimal number of distinct input neurons     : unknown')
+  else:
+    nu = neuronCounts[nameSrc] / float(neuronCounts[nameTgt]) * P[nameSrc+'->'+nameTgt] * alpha[nameSrc+'->'+nameTgt]
+    if verbose:
+      print('\tMaximal number of distinct input neurons (nu): '+str(nu))
+      print('\tMinimal number of distinct input neurons     : '+str(neuronCounts[nameSrc] / float(neuronCounts[nameTgt]) * P[nameSrc+'->'+nameTgt]))
+  return nu
+
+#-------------------------------------------------------------------------------
+# computes the inDegree as a fraction of maximal possible inDegree
+#-------------------------------------------------------------------------------
+def get_frac(inDegree, nameSrc, nameTgt, verbose=False):
+  new_inDegree = get_max_inputs(nameSrc, nameTgt, verbose=verbose) * inDegree
+  if verbose:
+    print('\tConverting the fractional inDegree of '+nameSrc+' -> '+nameTgt+' from '+str(inDegree)+' to neuron count: '+str(round(new_inDegree, 2)))
+  return new_inDegree
+
 #-------------------------------------------------------------------------------
 # computes the weight of a connection, based on LG14 parameters
 #-------------------------------------------------------------------------------
 def computeW(listRecType,nameSrc,nameTgt,inDegree,gain=1.,verbose=False):
-  # nu is the average total synaptic inputs a neuron of tgt receives from different neurons of src
-  if nameSrc=='CSN' or nameSrc=='PTN':
-    nu = alpha[nameSrc+'->'+nameTgt]
-    if verbose:
-      print '\tMaximal number of distinct input neurons (nu):',nu
-      print '\tMinimal number of distinct input neurons     : unknown'
-  else:
-    nu = neuronCounts[nameSrc] / float(neuronCounts[nameTgt]) * P[nameSrc+'->'+nameTgt] * alpha[nameSrc+'->'+nameTgt]
-    if verbose:
-      print '\tMaximal number of distinct input neurons (nu):',nu
-      print '\tMinimal number of distinct input neurons     :',str(neuronCounts[nameSrc] / float(neuronCounts[nameTgt]) * P[nameSrc+'->'+nameTgt])
+  nu = get_max_inputs(nameSrc, nameTgt, verbose=verbose)
   if verbose:
     print '\tCompare with the effective chosen inDegree   :',str(inDegree)
 
