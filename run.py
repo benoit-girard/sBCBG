@@ -176,7 +176,7 @@ class JobDispatcher:
         array_file += '_'+self.tag
       # write the slurm array file only once
       if not os.path.exists('../'+array_file):
-        log_dir = '../array_log'
+        log_dir = 'array_log'
         sango_header = '#!/bin/bash\n\n'
         slurmOptions = ['#SBATCH --time='+params['durationH']+':'+params['durationMin']+':00 \n',
                         '#SBATCH --partition=compute \n',
@@ -210,9 +210,9 @@ class JobDispatcher:
         script.close()
         # also creates the array log directories, if not existent
         try:
-          os.makedirs(log_dir)
+          os.makedirs('../'+log_dir)
         except OSError:
-          if not os.path.isdir(log_dir):
+          if not os.path.isdir('../'+log_dir):
             raise
       # execute the script file: sbatch --array=0-10 array.slurm
       command = '## run manually:   sbatch --array=0-'+str(counter)+' '+array_file
