@@ -28,6 +28,7 @@ import numpy as np
 
 # write run parameterization
 import json
+import os.path
 
 #import shlex
 import os
@@ -142,7 +143,7 @@ class JobDispatcher:
       # #SBATCH --mem-per-cpu=1G changed for #SBATCH --mem-per-cpu=200M
       slurmOptions = ['#SBATCH --time='+params['durationH']+':'+params['durationMin']+':00 \n',
                       '#SBATCH --partition=compute \n',
-                      '#SBATCH --mem-per-cpu=1G \n',
+                      '#SBATCH --mem-per-cpu=500M \n',
                       '#SBATCH --ntasks=1 \n',
                       '#SBATCH --cpus-per-task='+str(params['nbcpu'])+' \n',
                       '#SBATCH --job-name=sBCBG_'+IDstring+'\n',
@@ -166,6 +167,55 @@ class JobDispatcher:
       script.close()
       # execute the script file
       command = 'sbatch go.slurm'
+    elif self.platform == 'SangoArray':
+      #################################
+      # SANGO ARRAY CLUSTER EXECUTION #
+      #################################
+      array_file = 'array_'+self.timeString
+      if self.tag != '':
+        array_file += '_'+self.tag
+      # write the slurm array file only once
+      if not os.path.exists('../'+array_file):
+        log_dir = '../array_log'
+        sango_header = '#!/bin/bash\n\n'
+        slurmOptions = ['#SBATCH --time='+params['durationH']+':'+params['durationMin']+':00 \n',
+                        '#SBATCH --partition=compute \n',
+                        '#SBATCH --mem-per-cpu=500M \n',
+                        '#SBATCH --ntasks=1 \n',
+                        '#SBATCH --cpus-per-task='+str(params['nbcpu'])+' \n',
+                        '#SBATCH --job-name=sBCBG_'+self.timeString+'\n',
+                        '#SBATCH --input=none\n',
+                        '#SBATCH --output="../log/'+array_file+'_%A_%a.out" \n',
+                        '#SBATCH --error="../log/'+array_file+'_%A_%a.err" \n',
+                        '#SBATCH --mail-user='+params['email']+'\n',
+                        '#SBATCH --mail-type=BEGIN,END,FAIL \n\n',
+                        ]
+        moduleUse = ['module use /apps/unit/DoyaU/.modulefiles/ \n']
+        #moduleLoad = ['module load nest/2.12.0 \n']
+        moduleLoad = ['module load nest/2.10 \n']
+        ARRAYstring = self.timeString+'_xp%06d'
+        if self.tag != '':
+          ARRAYstring += '_'+self.tag
+        # write the script file
+        print 'Write slurm script file'
+        script = open('../'+array_file,'w')
+        script.writelines(sango_header)
+        script.writelines(slurmOptions)
+        script.writelines('XPNAME=$(printf "'+ARRAYstring+'" $SLURM_ARRAY_TASK_ID) \n')
+        script.writelines('cd $XPNAME \n')
+        script.writelines(moduleUse)
+        script.writelines(moduleLoad)
+        script.writelines('time srun --mpi=pmi2 python '+params['whichTest']+'.py \n')
+        script.writelines('cd .. \n')
+        script.close()
+        # also creates the array log directories, if not existent
+        try:
+          os.makedirs(log_dir)
+        except OSError:
+          if not os.path.isdir(log_dir):
+            raise
+      # execute the script file: sbatch --array=0-10 array.slurm
+      command = '## run manually:   sbatch --array=0-'+str(counter)+' '+array_file
     elif self.platform == 'K':
       #######################
       # K CLUSTER EXECUTION #
@@ -266,7 +316,7 @@ def main():
     parser = argparse.ArgumentParser(description="Simulation Dispatcher. Argument precedence: Hardcoded default values < Custom initialization file values < commandline-supplied values.", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=27))
     parser._action_groups.pop()
     RequiredNamed = parser.add_argument_group('mandatory arguments')
-    RequiredNamed.add_argument('--platform', type=str, help='Run the experiment on which platform?', required=True, choices=['Local', 'Sango', 'K'])
+    RequiredNamed.add_argument('--platform', type=str, help='Run the experiment on which platform?', required=True, choices=['Local', 'Sango', 'SangoArray', 'K'])
     Optional = parser.add_argument_group('optional arguments')
     Optional.add_argument('--custom', type=str, help='Provide a custom file to initialize parameters - without the .py extension', default=None)
     Optional.add_argument('--LG14modelID', type=int, help='Which LG14 parameterization to use?', default=None)
