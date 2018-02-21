@@ -171,6 +171,7 @@ class JobDispatcher:
       #################################
       # SANGO ARRAY CLUSTER EXECUTION #
       #################################
+      array_size = 10 # how many sub-jobs to submit in each main job of the array?
       array_file = 'array_'+self.timeString
       if self.tag != '':
         array_file += '_'+self.tag
@@ -181,7 +182,7 @@ class JobDispatcher:
         slurmOptions = ['#SBATCH --time='+params['durationH']+':'+params['durationMin']+':00 \n',
                         '#SBATCH --partition=compute \n',
                         '#SBATCH --mem-per-cpu=500M \n',
-                        '#SBATCH --ntasks=1 \n',
+                        '#SBATCH --ntasks='+str(array_size)+' \n',
                         '#SBATCH --cpus-per-task='+str(params['nbcpu'])+' \n',
                         '#SBATCH --job-name=sBCBG_'+self.timeString+'\n',
                         '#SBATCH --input=none\n',
@@ -201,12 +202,16 @@ class JobDispatcher:
         script = open('../'+array_file,'w')
         script.writelines(sango_header)
         script.writelines(slurmOptions)
-        script.writelines('XPNAME=$(printf "'+ARRAYstring+'" $SLURM_ARRAY_TASK_ID) \n')
+        script.writelines('for subtask in `seq $(($SLURM_ARRAY_TASK_ID*'+str(array_size)+')) $(($SLURM_ARRAY_TASK_ID*'+str(array_size)+'-1))` \n')
+        #script.writelines('do XPNAME=$(printf "'+ARRAYstring+'" $SLURM_ARRAY_TASK_ID) \n')
+        script.writelines('do XPNAME=$(printf "'+ARRAYstring+'" $subtask) \n')
         script.writelines('cd $XPNAME \n')
         script.writelines(moduleUse)
         script.writelines(moduleLoad)
-        script.writelines('time srun --mpi=pmi2 python '+params['whichTest']+'.py \n')
+        script.writelines('time srun -c1 --mem-per-cpu=500M --exclusive --mpi=pmi2 python '+params['whichTest']+'.py & \n')
         script.writelines('cd .. \n')
+        script.writelines('done \n')
+        script.writelines('wait \n')
         script.close()
         # also creates the array log directories, if not existent
         try:
@@ -215,7 +220,7 @@ class JobDispatcher:
           if not os.path.isdir('../'+log_dir):
             raise
       # execute the script file: sbatch --array=0-10 array.slurm
-      command = '## run manually:   sbatch --array=0-'+str(counter)+' '+array_file
+      command = '## run manually:   sbatch --array=0-'+str(counter/float(array_size))+'%200 '+array_file
     elif self.platform == 'K':
       #######################
       # K CLUSTER EXECUTION #
