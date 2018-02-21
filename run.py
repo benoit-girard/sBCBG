@@ -206,10 +206,10 @@ class JobDispatcher:
         script.writelines(moduleLoad)
         script.writelines('SECONDS=0 \n')
         script.writelines('PROCESS_STARTED=0 \n')
-        script.writelines('for subtask in `seq $(($SLURM_ARRAY_TASK_ID*'+str(array_size)+')) $((($SLURM_ARRAY_TASK_ID+1)*'+str(array_size)+'-1))` \n')
-        script.writelines('do (>&2 echo "STARTING SUBTASK: $subtask") \n')
+        script.writelines('for subtask in `seq $(($SLURM_ARRAY_TASK_ID*'+str(array_size)+')) $((($SLURM_ARRAY_TASK_ID+1)*'+str(array_size)+'-1))` \ndo \n')
         script.writelines('XPNAME=$(printf "'+ARRAYstring+'" $subtask) \n')
-        script.writelines('do (>&2 echo "XP NAME: $XPNAME") \n')
+        script.writelines('(>&2 echo "STARTING SUBTASK: $subtask") \n')
+        script.writelines('(>&2 echo "XP NAME: $XPNAME") \n')
         script.writelines('cd $XPNAME \n')
         script.writelines('srun -c1 --mem-per-cpu=500M --exclusive --mpi=pmi2 python '+params['whichTest']+'.py & \n')
         script.writelines('PROCESS_STARTED=$(($PROCESS_STARTED+1)) \n')
@@ -225,7 +225,7 @@ class JobDispatcher:
           if not os.path.isdir('../'+log_dir):
             raise
       # execute the script file: sbatch --array=0-10 array.slurm
-      command = '## run manually:   sbatch --array=0-'+str(counter/float(array_size))+'%200 '+array_file
+      command = '## run manually:   sbatch --array=0-'+str(counter/array_size)+'%200 '+array_file
     elif self.platform == 'K':
       #######################
       # K CLUSTER EXECUTION #
