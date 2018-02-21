@@ -89,14 +89,9 @@ class JobDispatcher:
   def create_workspace(self, IDstring):
     # Initialize the experiment-specific directory named with IDstring and populate it with the required files
     print('Create subdirectory: '+IDstring)
-    os.system('mkdir '+IDstring)
-    os.system('cp LGneurons.py '+IDstring+'/')
-    os.system('cp testFullBG.py '+IDstring+'/')
-    os.system('cp testChannelBG.py '+IDstring+'/')
-    os.system('cp nstrand.py '+IDstring+'/')
-    os.system('cp solutions_simple_unique.csv '+IDstring+'/')
-    os.system('cp __init__.py '+IDstring+'/')
-    os.system('mkdir '+IDstring+'/log')
+    os.system('mkdir -p '+IDstring+'/log')
+    files_to_transfer = ['LGneurons.py', 'testFullBG.py', 'testChannelBG.py', 'nstrand.py', 'solutions_simple_unique.csv', '__init__.py']
+    os.system('cp ' + ' '.join(files_to_transfer) + ' ' + IDstring + '/')
 
   def write_modelParams(self, IDstring, params):
     # Write the experiment-specific parameterization file into modelParams.py
