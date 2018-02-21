@@ -9,6 +9,7 @@ import nest.voltage_trace
 import pylab as pl
 import sys
 
+import csv
 
 
 #------------------------------------------
@@ -489,7 +490,6 @@ def main():
   #-------------------------
   # log the results in a file
   #-------------------------
-  #res = open('log/OutSummary_'+timeStr+'.txt','a')
   res = open('log/OutSummary.txt','a')
   for k,v in params.iteritems():
     res.writelines(k+' , '+str(v)+'\n')
@@ -499,6 +499,14 @@ def main():
   res = open('score.txt','w')
   res.writelines(str(score[0])+'\n')
   res.close()
+
+  # combined params+score output, makes it quicker to read the outcome of many experiments
+  params['sim_score'] = score[0]
+  params['max_score'] = score[1]
+  with open('params_score.csv', 'wb') as csv_file:
+    writer = csv.writer(csv_file)
+    for key, value in params.items():
+       writer.writerow([key, value])
 
 #---------------------------
 if __name__ == '__main__':
