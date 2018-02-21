@@ -44,6 +44,7 @@ class JobDispatcher:
     self.platform = cmd_args.platform
     self.interactive = cmd_args.interactive
     self.storeGDF = not cmd_args.nogdf
+    self.mock = cmd_args.mock
     self.tag = cmd_args.tag
     self.sim_counter = 0
     self.get_git_info()
@@ -220,8 +221,11 @@ class JobDispatcher:
       # execute the script file
       command = 'pjsub ./my_job.sh'
     # starting/queuing the simulation
-    print('Executing: '+ command)
-    os.system(command)
+    if self.mock == True:
+      print('Mock simulation: no job is started')
+    else:
+      print('Executing: '+ command)
+      os.system(command)
     print('done.')
     os.chdir('..')
 
@@ -275,6 +279,7 @@ def main():
     Optional.add_argument('--tag', type=str, help='optional tag for this experiment, to be added to the directory name (avoid special characters like "/" or "\\")', default='')
     Optional.add_argument('--nestSeed', type=int, help='Nest seed (affects the Poisson spike train generator)', default=None)
     Optional.add_argument('--pythonSeed', type=int, help='Python seed (affects connection map)', default=None)
+    Optional.add_argument('--mock', action="store_true", help='Does not start the simulation, only writes experiment-specific directories', default=False)
     
     cmd_args = parser.parse_args()
     
