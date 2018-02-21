@@ -53,28 +53,28 @@ params   =       {'durationH':         '04', # used by Sango
                   'inDegCMPfGPi':        9.,
                   'cTypeCSNMSN':  'focused', # defining connection types for channel-based models (focused or diffuse)
                   'cTypePTNMSN':  'focused',
-                  'cTypeCMPfMSN': 'focused',
-                  'cTypeFSIMSN':  'diffuse', 
-                  'cTypeMSNMSN':  'focused', 
+                  'cTypeCMPfMSN': 'focused', # LG14: diffuse
+                  'cTypeFSIMSN':  'diffuse',
+                  'cTypeMSNMSN':  'focused', # LG14: diffuse
                   'cTypeSTNMSN':  'diffuse',
-                  'cTypeGPeMSN':  'diffuse', # diffuse ? focused ?
+                  'cTypeGPeMSN':  'diffuse',
                   'cTypeCSNFSI':  'focused',
                   'cTypePTNFSI':  'focused',
                   'cTypeSTNFSI':  'diffuse',
-                  'cTypeGPeFSI':  'focused',
-                  'cTypeCMPfFSI': 'focused',
-                  'cTypeFSIFSI':  'diffuse', 
+                  'cTypeGPeFSI':  'focused', # LG14: diffuse
+                  'cTypeCMPfFSI': 'focused', # LG14: diffuse
+                  'cTypeFSIFSI':  'diffuse',
                   'cTypePTNSTN':  'focused',
-                  'cTypeCMPfSTN': 'focused',
-                  'cTypeGPeSTN':  'diffuse', # or diffuse, to be in line with the 2008 model?
-                  'cTypeCMPfGPe': 'focused',
+                  'cTypeCMPfSTN': 'focused', # LG14: diffuse
+                  'cTypeGPeSTN':  'diffuse', # LG14: focused
+                  'cTypeCMPfGPe': 'focused', # LG14: diffuse
                   'cTypeSTNGPe':  'diffuse',
                   'cTypeMSNGPe':  'focused',
-                  'cTypeGPeGPe':  'diffuse', # diffuse or focused?
+                  'cTypeGPeGPe':  'diffuse',
                   'cTypeMSNGPi':  'focused',
                   'cTypeSTNGPi':  'diffuse',
-                  'cTypeGPeGPi':  'diffuse',
-                  'cTypeCMPfGPi': 'focused',
+                  'cTypeGPeGPi':  'diffuse', # LG14: no data available to decide; setting to diffuse improve selection properties
+                  'cTypeCMPfGPi': 'focused', # LG14: diffuse
                   'parrotCMPf' :      False,
                   }
 
