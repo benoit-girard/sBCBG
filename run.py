@@ -171,7 +171,7 @@ class JobDispatcher:
       #################################
       # SANGO ARRAY CLUSTER EXECUTION #
       #################################
-      array_size = 10 # how many sub-jobs to submit in each main job of the array?
+      array_size = 100 # how many sub-jobs to submit in each main job of the array?
       array_file = 'array_'+self.timeString
       if self.tag != '':
         array_file += '_'+self.tag
@@ -183,6 +183,7 @@ class JobDispatcher:
                         '#SBATCH --partition=compute \n',
                         '#SBATCH --mem-per-cpu=500M \n',
                         '#SBATCH --ntasks='+str(array_size)+' \n',
+                        '#SBATCH --nodes=1 \n',
                         '#SBATCH --cpus-per-task='+str(params['nbcpu'])+' \n',
                         '#SBATCH --job-name=sBCBG_'+self.timeString+'\n',
                         '#SBATCH --input=none\n',
@@ -211,12 +212,10 @@ class JobDispatcher:
         script.writelines('(>&2 echo "STARTING SUBTASK: $subtask") \n')
         script.writelines('(>&2 echo "XP NAME: $XPNAME") \n')
         script.writelines('PROCESS_STARTED=$(($PROCESS_STARTED+1)) \n')
-        script.writelines('( cd $XPNAME; ')
-        script.writelines('srun -c1 --mem-per-cpu=500M --exclusive --mpi=pmi2 python '+params['whichTest']+'.py; ')
-        script.writelines('cd .. ) & \n')
+        script.writelines('srun -c1 --mem-per-cpu=500M --exclusive --ntasks 1 --mpi=pmi2 ----chdir $XPNAME python '+params['whichTest']+'.py & \n')
         script.writelines('done \n')
         script.writelines('wait \n')
-        script.writelines('echo "Ran n=$PROCESS_STARTED processes in t=$SECONDS seconds" \n')
+        script.writelines('(>&2 echo "SUMMARY: ran n=$PROCESS_STARTED processes in t=$SECONDS seconds overall") \n')
         script.close()
         # also creates the array log directories, if not existent
         try:
