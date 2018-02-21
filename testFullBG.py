@@ -286,7 +286,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
 
   for N in NUCLEI:
     # 1000ms offset period for network stabilization
-    spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": antagStr+N, "to_file": True, 'start':offsetDuration+simulationOffset,'stop':offsetDuration+simDuration+simulationOffset})
+    spkDetect[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": antagStr+N, "to_file": storeGDF, 'start':offsetDuration+simulationOffset,'stop':offsetDuration+simDuration+simulationOffset})
     nest.Connect(Pop[N], spkDetect[N])
     if showPotential:
       # multimeter records only the last 200ms in one neuron in each population

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 interactive = False # avoid loading X dependent things
                    # set to False for simulations on Sango
+storeGDF = True # unless overriden by run.py, keep spike rasters
 
 if interactive :
   import pylab
