@@ -457,25 +457,29 @@ def main():
   score = np.zeros((2))
   score += checkAvgFR(params=params,antagInjectionSite='none',antag='',showRasters=True)
 
-  # The following implements the deactivation tests without re-wiring the BG (faster)
-  for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
-    ww = deactivate('GPe', a)
-    score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
-    reactivate('GPe', a, ww)
+  # don't bother with deactivation tests if activities at rest are not within plausible bounds
+  if score[0] < score[1]:
+    print("Activities at rest do not match: skipping deactivation tests")
+  else:
+    # The following implements the deactivation tests without re-wiring the BG (faster)
+    for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
+      ww = deactivate('GPe', a)
+      score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
+      reactivate('GPe', a, ww)
 
-  for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
-    ww = deactivate('GPi', a)
-    score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
-    reactivate('GPi', a, ww)
+    for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
+      ww = deactivate('GPi', a)
+      score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
+      reactivate('GPi', a, ww)
 
-  ## The following implements the deactivation tests with re-creation of the entire BG every time (slower)
-  #for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
-  #  instantiate_BG(params, antagInjectionSite='GPe', antag=a)
-  #  score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
+    ## The following implements the deactivation tests with re-creation of the entire BG every time (slower)
+    #for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
+    #  instantiate_BG(params, antagInjectionSite='GPe', antag=a)
+    #  score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
 
-  #for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
-  #  instantiate_BG(params, antagInjectionSite='GPi', antag=a)
-  #  score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
+    #for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
+    #  instantiate_BG(params, antagInjectionSite='GPi', antag=a)
+    #  score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
 
   #-------------------------
   print "******************"
