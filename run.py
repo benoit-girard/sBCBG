@@ -44,7 +44,7 @@ class JobDispatcher:
     self.cmd_args = cmd_args
     self.platform = cmd_args.platform
     self.interactive = cmd_args.interactive
-    self.storeGDF = not cmd_args.nogdf
+    self.storeGDF = cmd_args.gdf
     self.mock = cmd_args.mock
     self.tag = cmd_args.tag
     self.sim_counter = 0
@@ -368,7 +368,7 @@ def main():
     Optional.add_argument('--nbcpu', type=int, help='Number of CPU to use (-1 to guess)', default=None)
     Optional.add_argument('--nbCh', type=int, help='Number of Basal Ganglia channels to simulate', default=None)
     Optional.add_argument('--interactive', action="store_true", help='Set to enable the display of debug plots', default=False)
-    Optional.add_argument('--nogdf', action="store_true", help='Set to not store spike rasters (gdf files) of the simulation', default=False)
+    Optional.add_argument('--gdf', action="store_true", help='Set to store spike rasters (gdf files) of the simulation', default=False)
     Optional.add_argument('--email', type=str, help='To receive emails when Sango cluster simulations are done', default='')
     Optional.add_argument('--tag', type=str, help='optional tag for this experiment, to be added to the directory name (avoid special characters like "/" or "\\")', default='')
     Optional.add_argument('--nestSeed', type=int, help='Nest seed (affects the Poisson spike train generator)', default=None)
