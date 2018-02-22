@@ -41,16 +41,15 @@ done
 ##########
 
 declare -A offset
-prod=1
 remxp=$xpnumber
 for p in "${!parameters[@]}"
 do
   offset["$p"]=$(($remxp%${parameters[$p]}))
-  #echo " offset for $pi is ${offset[$p]}"
-  remxp=$(($remxp-${offset[$p]}*$prod))
+  #echo " offset for $p is ${offset[$p]}"
+  remxp=$(($remxp-${offset[$p]}))
   #echo " remainder is $remxp"
-  prod=$(($prod*${parameters[$p]}))
-  #echo " $p prod is $prod"
+  remxp=$(($remxp/${parameters[$p]}))
+  #echo " next value: $remxp"
 done
 
 ##########
