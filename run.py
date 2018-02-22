@@ -92,10 +92,9 @@ class JobDispatcher:
     # Initialize the experiment-specific directory named with IDstring and populate it with the required files
     print('Create subdirectory: '+IDstring)
     os.system('mkdir -p '+IDstring+'/log')
-    files_to_transfer = ['LGneurons.py', 'testFullBG.py', 'testChannelBG.py', 'nstrand.py', 'solutions_simple_unique.csv', '__init__.py']
-    os.system('cp ' + ' '.join(files_to_transfer) + ' ' + IDstring + '/')
+    os.system('cp ' + ' '.join(self.files_to_transfer) + ' ' + IDstring + '/')
 
-  def write_modelParams(self, IDstring, params):
+  def write_modelParams(self, IDstring, params, path='./modelParams.py'):
     # Write the experiment-specific parameterization file into modelParams.py
     print 'Write modelParams.py'
     header = ['#!/apps/free/python/2.7.10/bin/python \n\n',
@@ -108,7 +107,7 @@ class JobDispatcher:
               '#  '+self.commit_id+'\n',
               '#  '+self.status_line+'\n\n',
              ]
-    paramsFile = open('modelParams.py','w')
+    paramsFile = open(path,'w')
     paramsFile.writelines(header)
     json_params = json.dumps(params, indent=4, separators=(',', ': '), sort_keys=True)
     json_params = json_params.replace(': true',': True').replace(': false', ': False').replace(': null', ': None') # more robust would be to use json.loads()
@@ -123,12 +122,15 @@ class JobDispatcher:
     IDstring = self.timeString+'_xp%06d' % (counter)
     if self.tag != '':
       IDstring += '_'+self.tag
-    # 1: initialize the directory
-    self.create_workspace(IDstring)
-    os.chdir(IDstring)
-    # 2: write the modelParams.py file
-    self.write_modelParams(IDstring, params)
-    # 3: specific actions for different platforms
+    # The first 3 steps initialize the directory and populate it with the configurations files
+    # Due to limitations of Sango filesystem, when platform == 'SangoArray', we postpone the creation of directories until the job is actually run
+    if self.platform != 'SangoArray':
+      # 1: initialize the directory
+      self.create_workspace(IDstring)
+      os.chdir(IDstring)
+      # 2: write the modelParams.py file
+      self.write_modelParams(IDstring, params)
+    # Then, specific actions are taken for different platforms
     if self.platform == 'Local':
       ###################
       # LOCAL EXECUTION #
@@ -171,13 +173,32 @@ class JobDispatcher:
       #################################
       # SANGO ARRAY CLUSTER EXECUTION #
       #################################
-      array_size = 100 # how many sub-jobs to submit in each main job of the array?
-      array_file = 'array_'+self.timeString
+      array_size = 100 # how many jobs to submit in each array task?
+      arrayID = 'array_'+self.timeString
       if self.tag != '':
-        array_file += '_'+self.tag
-      # write the slurm array file only once
-      if not os.path.exists('../'+array_file):
+        arrayID += '_'+self.tag
+      if self.sim_counter == 1:
+        #---
+        # initialize the master directory and log directory
+        #---
         log_dir = 'array_log'
+        os.system('mkdir -p '+arrayID+'/'+log_dir)
+        varied_params = self.variedParams()
+        for p in varied_params.keys():
+          pf = open(arrayID+'/'+p+'.txt','w')
+          pf.writelines('\n'.join(varied_params[p])+'\n')
+          pf.close()
+        self.write_modelParams(IDstring, self.params, path=arrayID+'/baseModelParams.py')
+        #---
+        # write the firestarter file
+        #---
+        os.system('cp sango_firestarter.sh ' + arrayID + '/firestarter.sh')
+        for f in self.files_to_transfer:
+          os.system('echo "cp \$xpbase/../' + f + ' \$(pwd)/" >> ' + arrayID + '/firestarter.sh')
+        os.system('echo "python ' + params['whichTest'] + '.py" >> ' + arrayID + '/firestarter.sh')
+        #---
+        # write the slurm array file
+        #---
         sango_header = '#!/bin/bash\n\n'
         slurmOptions = ['#SBATCH --time='+params['durationH']+':'+params['durationMin']+':00 \n',
                         '#SBATCH --partition=compute \n',
@@ -186,20 +207,17 @@ class JobDispatcher:
                         '#SBATCH --cpus-per-task='+str(params['nbcpu'])+' \n',
                         '#SBATCH --job-name=sBCBG_'+self.timeString+'\n',
                         '#SBATCH --input=none\n',
-                        '#SBATCH --output="'+log_dir+'/'+array_file+'_%A_%a.out" \n',
-                        '#SBATCH --error="'+log_dir+'/'+array_file+'_%A_%a.err" \n',
+                        '#SBATCH --output="'+log_dir+'/'+arrayID+'_%A_%a.out" \n',
+                        '#SBATCH --error="'+log_dir+'/'+arrayID+'_%A_%a.err" \n',
                         '#SBATCH --mail-user='+params['email']+'\n',
                         '#SBATCH --mail-type=BEGIN,END,FAIL \n\n',
                         ]
         moduleUse = ['module use /apps/unit/DoyaU/.modulefiles/ \n']
         #moduleLoad = ['module load nest/2.12.0 \n']
         moduleLoad = ['module load nest/2.10 \n']
-        ARRAYstring = self.timeString+'_xp%06d'
-        if self.tag != '':
-          ARRAYstring += '_'+self.tag
         # write the script file
         print 'Write slurm script file'
-        script = open('../'+array_file,'w')
+        script = open(arrayID+'/'+arrayID+'.slurm','w')
         script.writelines(sango_header)
         script.writelines(slurmOptions)
         script.writelines(moduleUse)
@@ -207,23 +225,27 @@ class JobDispatcher:
         script.writelines('SECONDS=0 \n')
         script.writelines('PROCESS_STARTED=0 \n')
         script.writelines('for subtask in `seq $(($SLURM_ARRAY_TASK_ID*'+str(array_size)+')) $((($SLURM_ARRAY_TASK_ID+1)*'+str(array_size)+'-1))` \ndo \n')
-        script.writelines('XPNAME=$(printf "'+ARRAYstring+'" $subtask) \n')
+        script.writelines('XPNAME=$(printf "%09d" $subtask) \n')
+        script.writelines('XPDIR="${XPNAME: -3}" \n')
+        script.writelines('XPDIR="$XPDIR$/{XPNAME: -6:3}" \n')
+        script.writelines('XPDIR="$XPDIR$/{XPNAME: -9:3}" \n')
         script.writelines('(>&2 echo "STARTING SUBTASK: $subtask") \n')
         script.writelines('(>&2 echo "XP NAME: $XPNAME") \n')
+        script.writelines('(>&2 echo "XP DIR: $XPDIR") \n')
         script.writelines('PROCESS_STARTED=$(($PROCESS_STARTED+1)) \n')
-        script.writelines('srun -c1 --mem-per-cpu=500M --exclusive --ntasks 1 --mpi=pmi2 --chdir $XPNAME python '+params['whichTest']+'.py & \n')
+        script.writelines('srun -c1 --mem-per-cpu=500M --exclusive --ntasks 1 --mpi=pmi2 --chdir $XPDIR ../../../firestarter.sh & \n')
         script.writelines('done \n')
         script.writelines('wait \n')
         script.writelines('(>&2 echo "SUMMARY: ran n=$PROCESS_STARTED processes in t=$SECONDS seconds overall") \n')
         script.close()
-        # also creates the array log directories, if not existent
-        try:
-          os.makedirs('../'+log_dir)
-        except OSError:
-          if not os.path.isdir('../'+log_dir):
-            raise
-      # execute the script file: sbatch --array=0-10 array.slurm
-      command = '## run manually:   sbatch --array=0-'+str(counter/array_size)+'%200 '+array_file
+      # creates the (for now empty) sub-directories
+      subdir = arrayID + '/' + '/'.join([('%09d' % self.sim_counter)[9-(i+1)*3:9-i*3] for i in range(3)])
+      try:
+        os.makedirs(subdir)
+      except OSError:
+        if not os.path.isdir(subdir):
+          raise
+      command = '## run manually:   sbatch --array=0-'+str(counter/array_size)+'%200 '+arrayID
     elif self.platform == 'K':
       #######################
       # K CLUSTER EXECUTION #
@@ -284,8 +306,10 @@ class JobDispatcher:
     else:
       print('Executing: '+ command)
       os.system(command)
+    # need to backtrack one directory unless on SangoArray
+    if self.platform != 'SangoArray':
+      os.chdir('..')
     print('done.')
-    os.chdir('..')
 
   def recParamExplo(self, pdict):
     # Performs the recursive exploration of parameters values
@@ -303,6 +327,14 @@ class JobDispatcher:
       self.launchOneParameterizedRun(self.sim_counter, pdict)
       self.sim_counter += 1
 
+  def variedParams(self):
+    varied = {}
+    for param_key in self.params.keys():
+      param_vals = self.params[param_key]
+      if isinstance(param_vals, list):
+        varied[param_key] = [str(p) for p in param_vals]
+    return varied
+
   def expandValues(self):
     # Sugar to get automagically the number of CPUs when nbcpu = -1
     if self.params['nbcpu'] < 0:
@@ -314,7 +346,11 @@ class JobDispatcher:
     if self.cmd_args.custom != None:
       self.load_custom_config(self.cmd_args.custom)
     self.load_cmdline_config(self.cmd_args)
+    # replace values to be set at runtime (for now, only used when "nbcpu=-1")
     self.expandValues()
+    # initialize the file list to transfer
+    self.files_to_transfer = ['LGneurons.py', 'testFullBG.py', 'testChannelBG.py', 'nstrand.py', 'solutions_simple_unique.csv', '__init__.py']
+    # performs the recurrent exploration of parameterizations to run
     self.recParamExplo(self.params)
 
 
