@@ -214,7 +214,7 @@ class JobDispatcher:
                         ]
         moduleUse = ['module use /apps/unit/DoyaU/.modulefiles/ \n']
         #moduleLoad = ['module load nest/2.12.0 \n']
-        moduleLoad = ['module load nest/2.10 \n']
+        moduleLoad = ['module load nest/2.10 \n\n']
         # write the script file
         print 'Write slurm script file'
         script = open(arrayID+'/'+arrayID+'.slurm','w')
@@ -227,8 +227,8 @@ class JobDispatcher:
         script.writelines('for subtask in `seq $(($SLURM_ARRAY_TASK_ID*'+str(array_size)+')) $((($SLURM_ARRAY_TASK_ID+1)*'+str(array_size)+'-1))` \ndo \n')
         script.writelines('XPNAME=$(printf "%09d" $subtask) \n')
         script.writelines('XPDIR="${XPNAME: -3}" \n')
-        script.writelines('XPDIR="$XPDIR$/{XPNAME: -6:3}" \n')
-        script.writelines('XPDIR="$XPDIR$/{XPNAME: -9:3}" \n')
+        script.writelines('XPDIR="$XPDIR/${XPNAME: -6:3}" \n')
+        script.writelines('XPDIR="$XPDIR/${XPNAME: -9:3}" \n')
         script.writelines('(>&2 echo "STARTING SUBTASK: $subtask") \n')
         script.writelines('(>&2 echo "XP NAME: $XPNAME") \n')
         script.writelines('(>&2 echo "XP DIR: $XPDIR") \n')
@@ -245,7 +245,7 @@ class JobDispatcher:
       except OSError:
         if not os.path.isdir(subdir):
           raise
-      command = '## run manually:   sbatch --array=0-'+str(counter/array_size)+'%200 '+arrayID
+      command = '## run manually:   sbatch --array=0-'+str(counter/array_size)+'%200 '+arrayID+'.slurm'
     elif self.platform == 'K':
       #######################
       # K CLUSTER EXECUTION #
