@@ -10,9 +10,9 @@
 #########
 
 dir=$(pwd)
-xpnumber="${dir: -3}"
+xpnumber="${dir: -11:3}"
 xpnumber="$xpnumber${dir: -7:3}"
-xpnumber="$xpnumber${dir: -11:3}"
+xpnumber="$xpnumber${dir: -3}"
 xpnumber=`expr $xpnumber + 0`
 echo "XPNUMBER IS: $xpnumber"
 

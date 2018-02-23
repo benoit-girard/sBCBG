@@ -239,7 +239,7 @@ class JobDispatcher:
         script.writelines('(>&2 echo "SUMMARY: ran n=$PROCESS_STARTED processes in t=$SECONDS seconds overall") \n')
         script.close()
       # creates the (for now empty) sub-directories
-      subdir = arrayID + '/' + '/'.join([('%09d' % self.sim_counter)[9-(i+1)*3:9-i*3] for i in range(3)])
+      subdir = arrayID + '/' + '/'.join([('%09d' % self.sim_counter)[i*3:(i+1)*3] for i in range(3)])
       try:
         os.makedirs(subdir)
       except OSError:
