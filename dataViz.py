@@ -14,7 +14,7 @@ NUCLEI={'MSN':1,'FSI':2,'STN':3,'GPe':4,'GPi':5}
 deactivationList = []
 for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
   deactivationList.append('GPe_'+a+'_')
-for a in ['All','AMPA','NMDA+AMPA','NMDA','GABAA']:
+for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
   deactivationList.append('GPi_'+a+'_')
 
 dataFileNames={'MSN':{},'FSI':{},'STN':{},'GPe':{},'GPi':{}}
