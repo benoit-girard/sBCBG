@@ -142,7 +142,7 @@ def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1., verbose=True):
 
   if inDegree > 0. and inDegree < 1.:
     # fractional inDegree is expressed as a fraction of max number of neurons
-    inDegree = get_frac(inDegree, nameSrc, nameTgt, verbose=verbose)
+    inDegree = get_frac(inDegree, nameSrc, nameTgt, verbose=False)
 
   # check if in degree acceptable (not larger than number of neurons in the source nucleus)
   if inDegree  > nbSim[nameSrc]:
