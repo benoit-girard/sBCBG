@@ -353,6 +353,7 @@ class JobDispatcher:
     # Sugar to get automagically the number of CPUs when nbcpu = -1
     if self.params['nbcpu'] < 0:
       self.params['nbcpu'] = multiprocessing.cpu_count()
+      print('Using guessed number of CPUs: '+str(self.params['nbcpu']))
 
   def dispatch(self):
     # Loads the configurations and launch the runs
