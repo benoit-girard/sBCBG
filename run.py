@@ -206,6 +206,7 @@ class JobDispatcher:
         for f in self.files_to_transfer:
           os.system('echo "cp \$xpbase/../' + f + ' \$(pwd)/" >> ' + IDstring + '/firestarter.sh')
         os.system('echo "python ' + params['whichTest'] + '.py" >> ' + IDstring + '/firestarter.sh')
+        os.system('echo "find \$(pwd)/* ! -name \'params_score.csv\' -exec rm -rf {} +" >> ' + IDstring + '/firestarter.sh')
         #---
         # write the slurm array file
         #---
@@ -364,7 +365,7 @@ class JobDispatcher:
     # replace values to be set at runtime (for now, only used when "nbcpu=-1")
     self.expandValues()
     # initialize the file list to transfer
-    self.files_to_transfer = ['LGneurons.py', 'testFullBG.py', 'testChannelBG.py', 'nstrand.py', 'solutions_simple_unique.csv', '__init__.py']
+    self.files_to_transfer = ['LGneurons.py', 'iniBG.py', self.params['whichTest']+'.py', 'nstrand.py', 'solutions_simple_unique.csv', '__init__.py']
     # performs the recurrent exploration of parameterizations to run
     self.recParamExplo(self.params)
 
