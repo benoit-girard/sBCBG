@@ -216,7 +216,7 @@ class JobDispatcher:
                         '#SBATCH --mem-per-cpu=500M \n',
                         '#SBATCH --ntasks='+str(array_size)+' \n',
                         '#SBATCH --cpus-per-task='+str(params['nbcpu'])+' \n',
-                        '#SBATCH --job-name=sBCBG_'+self.timeString+'\n',
+                        '#SBATCH --job-name=sBCBG_'+IDstring+'\n',
                         '#SBATCH --input=none\n',
                         '#SBATCH --output="'+log_dir+'/'+IDstring+'_%A_%a.out" \n',
                         '#SBATCH --error="'+log_dir+'/'+IDstring+'_%A_%a.err" \n',
