@@ -134,7 +134,7 @@ def createMC(name,nbCh,fake=False,parrot=True):
 # LCGDelays: shall we use the delays obtained by (Liénard, Cos, Girard, in prep) or not (default = True)
 # gain : allows to amplify the weight normally deduced from LG14
 #-------------------------------------------------------------------------------
-def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1., verbose=True):
+def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1., verbose=True, projType=''):
 
   def printv(text):
     if verbose:
