@@ -381,7 +381,7 @@ simDuration = 10000. # in ms
 # extracted from LG14 Table 5
 
 FRRNormal = {'MSN': [0,1],
-             'FSI': [0,20],
+             'FSI': [7.8,14.0], # the refined constraint of 10.9 +/- 3.1 Hz was extracted from the following papers: Adler et al., 2016; Yamada et al., 2016 (summarizing date from three different experiments); and Marche and Apicella, 2017
              'STN': [15.2,22.8],
              'GPe': [55.7,74.5],
              'GPi': [59.1,79.5],
