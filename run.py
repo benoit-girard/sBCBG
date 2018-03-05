@@ -218,8 +218,8 @@ class JobDispatcher:
                         '#SBATCH --cpus-per-task='+str(params['nbcpu'])+' \n',
                         '#SBATCH --job-name=sBCBG_'+IDstring+'\n',
                         '#SBATCH --input=none\n',
-                        '#SBATCH --output="'+log_dir+'/'+IDstring+'_%A_%a.out" \n',
-                        '#SBATCH --error="'+log_dir+'/'+IDstring+'_%A_%a.err" \n',
+                        '#SBATCH --output="'+log_dir+'/'+IDstring+'_%A.out" \n',
+                        '#SBATCH --error="'+log_dir+'/'+IDstring+'_%A.err" \n',
                         '#SBATCH --mail-user='+params['email']+'\n',
                         '#SBATCH --mail-type=BEGIN,END,FAIL \n\n',
                         ]
