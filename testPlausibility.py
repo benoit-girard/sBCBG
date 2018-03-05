@@ -10,6 +10,7 @@
 from iniBG import *
 
 restFR = {} # this will be populated with firing rates of all nuclei, at rest
+oscilPow = oscilFreq = {} # Oscillations power and frequency at rest
 
 #------------------------------------------
 # Checks whether the BG model respects the electrophysiological constaints (firing rate at rest).
@@ -103,6 +104,23 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
       print s
       text.append(s+'\n')
       restFR[N] = str(expeRate[N])
+
+      oscilPow[N] = -1.
+      oscilFreq[N] = -1.
+      try:
+        spikes_N = nest.GetStatus(spkDetect[N], keys="events")[0]['times'] # get the timing of all spikes
+        data = np.bincount([int(i-offsetDuration-simulationOffset) for i in spikes_N], minlength=int(simDuration)) # discretize them in bins of 1ms
+        ps = np.abs(np.fft.fft(data))**2
+        time_step = 1 / 1000. # 1000 ms
+        freqs = np.fft.fftfreq(data.size, time_step)
+        idx = np.argsort(freqs)
+        posi_spectrum = np.where((freqs[idx]>0) & (freqs[idx]<200)) # restrict the analysis to freqs < 200 Hz
+        oscilPow[N] = np.max(ps[idx][posi_spectrum])
+        oscilFreq[N] = freqs[idx][posi_spectrum][np.where(oscilPow[N] == ps[idx][posi_spectrum])[0][0]]
+        #pl.plot(freqs[idx][posi_spectrum], ps[idx][posi_spectrum]) # simple plot
+        #pl.show()
+      except:
+        print("Power spectrum computation failed - skipping")
   else:
     validationStr = ""
     frstr += str(antag) + " , "
@@ -285,7 +303,11 @@ def main():
     for key, value in params.items():
        writer.writerow([key, value])
     for key, value in restFR.items():
-       writer.writerow([key, value])
+       writer.writerow([key+'_Rate', value])
+    for key, value in oscilPow.items():
+       writer.writerow([key+'_Pow', value])
+    for key, value in oscilFreq.items():
+       writer.writerow([key+'_Freq', value])
 
 #---------------------------
 if __name__ == '__main__':
