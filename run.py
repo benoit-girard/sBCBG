@@ -211,9 +211,9 @@ class JobDispatcher:
         # write the slurm array file
         #---
         sango_header = '#!/bin/bash\n\n'
-        slurmOptions = ['#SBATCH --time='+params['durationH']+':'+params['durationMin']+':00 \n',
+        slurmOptions = ['#SBATCH --time='+params['durationH']+':00:00 \n',
                         '#SBATCH --partition=compute \n',
-                        '#SBATCH --mem-per-cpu=500M \n',
+                        '#SBATCH --mem-per-cpu=1000M \n',
                         '#SBATCH --ntasks='+str(array_size)+' \n',
                         '#SBATCH --cpus-per-task='+str(params['nbcpu'])+' \n',
                         '#SBATCH --job-name=sBCBG_'+IDstring+'\n',

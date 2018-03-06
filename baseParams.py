@@ -1,7 +1,6 @@
 # Simulation defaults
 # these defaults can be overrided via a custom python parameter file or via the commandline (in this order: commandline arguments take precedence over customParams.py, which take precendence over the defaults defined here)
-params   =       {'durationH':           '04', # used by Sango
-                  'durationMin':         '00', # used by Sango
+params   =       {'durationH':           '08', # used by Sango
                   'nbnodes':              '1', # used by K
                   'nestSeed':              20, # nest seed (affects input poisson spike trains)
                   'pythonSeed':            10, # python seed (affects connection map)
