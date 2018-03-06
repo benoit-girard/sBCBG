@@ -10,7 +10,8 @@
 from iniBG import *
 
 restFR = {} # this will be populated with firing rates of all nuclei, at rest
-oscilPow = oscilFreq = {} # Oscillations power and frequency at rest
+oscilPow = {} # Oscillations power and frequency at rest
+oscilFreq = {}
 
 #------------------------------------------
 # Checks whether the BG model respects the electrophysiological constaints (firing rate at rest).
