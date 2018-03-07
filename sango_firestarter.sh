@@ -54,6 +54,10 @@ done
 # 4. build the adapted modelParams.py using the skeleton and the offsets
 ##########
 
+# Work in a local temporary directory
+tempdir=`mktemp -d --tmpdir jean-lienard.XXXXXXXXXXXXXXXXXX`
+cd $tempdir
+
 cp $xpbase/baseModelParams.py $(pwd)/modelParams.py
 echo "" >> $(pwd)/modelParams.py
 
@@ -70,5 +74,5 @@ done
 
 mkdir $(pwd)/log # the log directory
 
-#### SHOULD BE AUTO-GENERATED FROM THIS POINT FORWARD
+#### SHOULD BE AUTO-GENERATED FROM THIS POINT FORWARD BY `run.py`
 
