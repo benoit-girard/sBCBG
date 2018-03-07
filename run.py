@@ -207,7 +207,7 @@ class JobDispatcher:
           os.system('echo "cp \$xpbase/../' + f + ' \$(pwd)/" >> ' + IDstring + '/firestarter.sh')
         os.system('echo "python ' + params['whichTest'] + '.py" >> ' + IDstring + '/firestarter.sh')
         os.system('echo "cp params_score.csv \$dir/" >> ' + IDstring + '/firestarter.sh')
-        os.system('echo "rm -rf /scratch/\`basename \$workdir\`" >> ' + IDstring + '/firestarter.sh')
+        os.system('echo "rm -rf /scratch/\`basename \$tempdir\`" >> ' + IDstring + '/firestarter.sh')
         #os.system('echo "find \$(pwd)/* ! -name \'params_score.csv\' -exec rm -rf {} +" >> ' + IDstring + '/firestarter.sh')
         #---
         # write the slurm array file
