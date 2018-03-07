@@ -245,7 +245,7 @@ class JobDispatcher:
         script.writelines('    (>&2 echo "XP NAME: $XPNAME") \n')
         script.writelines('    (>&2 echo "XP DIR: $XPDIR") \n')
         script.writelines('    PROCESS_STARTED=$(($PROCESS_STARTED+1)) \n')
-        script.writelines('    srun -c1 --mem-per-cpu=500M --exclusive --ntasks 1 --mpi=pmi2 --chdir $XPDIR ../../../firestarter.sh & \n')
+        script.writelines('    srun -c1 --mem-per-cpu=500M --exclusive --ntasks 1 --chdir $XPDIR ../../../firestarter.sh & \n')
         script.writelines('  fi \n')
         script.writelines('done \n')
         script.writelines('wait \n')
