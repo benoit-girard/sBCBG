@@ -150,7 +150,7 @@ class JobDispatcher:
       # #SBATCH --mem-per-cpu=1G changed for #SBATCH --mem-per-cpu=200M
       slurmOptions = ['#SBATCH --time='+params['durationH']+':'+params['durationMin']+':00 \n',
                       '#SBATCH --partition=compute \n',
-                      '#SBATCH --mem-per-cpu=500M \n',
+                      '#SBATCH --mem-per-cpu=2000M \n',
                       '#SBATCH --ntasks=1 \n',
                       '#SBATCH --cpus-per-task='+str(params['nbcpu'])+' \n',
                       '#SBATCH --job-name=sBCBG_'+IDstring+'\n',
@@ -169,7 +169,7 @@ class JobDispatcher:
       script.writelines(slurmOptions)
       script.writelines(moduleUse)
       script.writelines(moduleLoad)
-      script.writelines('time srun --mpi=pmi2 python '+params['whichTest']+'.py \n')
+      script.writelines('time srun python '+params['whichTest']+'.py \n')
       script.close()
       # execute the script file
       command = 'sbatch go.slurm'
@@ -214,13 +214,12 @@ class JobDispatcher:
         sango_header = '#!/bin/bash\n\n'
         slurmOptions = ['#SBATCH --time='+params['durationH']+':00:00 \n',
                         '#SBATCH --partition=compute \n',
-                        '#SBATCH --mem-per-cpu=1000M \n',
+                        '#SBATCH --mem-per-cpu=2000M \n',
                         '#SBATCH --ntasks='+str(array_size)+' \n',
                         '#SBATCH --cpus-per-task='+str(params['nbcpu'])+' \n',
                         '#SBATCH --job-name=sBCBG_'+IDstring+'\n',
                         '#SBATCH --input=none\n',
-                        '#SBATCH --output="'+log_dir+'/'+IDstring+'_%A.out" \n',
-                        '#SBATCH --error="'+log_dir+'/'+IDstring+'_%A.err" \n',
+                        '#SBATCH --output=none\n',
                         '#SBATCH --mail-user='+params['email']+'\n',
                         '#SBATCH --mail-type=BEGIN,END,FAIL \n\n',
                         ]
@@ -244,7 +243,7 @@ class JobDispatcher:
         script.writelines('    (>&2 echo "XP NAME: $XPNAME") \n')
         script.writelines('    (>&2 echo "XP DIR: $XPDIR") \n')
         script.writelines('    PROCESS_STARTED=$(($PROCESS_STARTED+1)) \n')
-        script.writelines('    srun -c1 --mem-per-cpu=500M --exclusive --ntasks 1 --chdir $XPDIR ../../../firestarter.sh & \n')
+        script.writelines('    srun -c1 --mem-per-cpu=2000M --exclusive --ntasks 1 --chdir $XPDIR ../../../firestarter.sh & \n')
         script.writelines('  fi \n')
         script.writelines('done \n')
         script.writelines('wait \n')
