@@ -245,6 +245,10 @@ def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1., ver
     if verbose:
       print(text)
 
+  if inDegree > 0. and inDegree < 1.:
+    # fractional inDegree is expressed as a fraction of max number of neurons
+    inDegree = get_frac(inDegree, nameSrc, nameTgt, verbose=False)
+
   printv("* connecting "+nameSrc+" -> "+nameTgt+" with "+projType+type+" connection and "+str(inDegree)+" inputs")
 
   # check if in degree acceptable (not larger than number of neurons in the source nucleus)
@@ -252,7 +256,7 @@ def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1., ver
     printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(nbSim[nameSrc])+"), thus reduced to the latter value")
     inDegree = nbSim[nameSrc]
   if projType == 'diffuse' and inDegree  > nbSim[nameSrc]*len(Pop[nameSrc]):
-    printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(bSim[nameSrc]*len(Pop[nameSrc]))+"), thus reduced to the latter value")
+    printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(nbSim[nameSrc]*len(Pop[nameSrc]))+"), thus reduced to the latter value")
     inDegree = nbSim[nameSrc]*len(Pop[nameSrc])
 
   # prepare receptor type lists:
