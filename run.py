@@ -155,8 +155,7 @@ class JobDispatcher:
                       '#SBATCH --cpus-per-task='+str(params['nbcpu'])+' \n',
                       '#SBATCH --job-name=sBCBG_'+IDstring+'\n',
                       '#SBATCH --input=none\n',
-                      '#SBATCH --output="'+IDstring+'.out" \n',
-                      '#SBATCH --error="'+IDstring+'.err" \n',
+                      '#SBATCH --output=none \n',
                       '#SBATCH --mail-user='+params['email']+'\n',
                       '#SBATCH --mail-type=BEGIN,END,FAIL \n',
                       ]
