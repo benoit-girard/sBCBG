@@ -60,7 +60,12 @@ def createBG():
 
   parrot = True # switch to False at your risks & perils...
   nbSim['CSN'] = params['nbCSN']
-  create_pop('CSN', fake=True, parrot=parrot)
+  if 'nbCues' in params.keys():
+    # cue channels are present
+    CSNchannels = params['nbCh']+params['nbCues']
+  else:
+    CSNchannels = params['nbCh']
+  create_pop('CSN', nbCh=CSNchannels, fake=True, parrot=parrot)
 
   nbSim['PTN'] = params['nbPTN']
   create_pop('PTN', fake=True, parrot=parrot)
@@ -99,7 +104,13 @@ def connectBG(antagInjectionSite,antag):
   print '\nConnecting neurons\n================'
   print "**",antag,"antagonist injection in",antagInjectionSite,"**"
   print '* MSN Inputs'
-  CSN_MSN = connect_pop('ex','CSN','MSN', projType=params['cTypeCSNMSN'], redundancy=params['redundancyCSNMSN'], gain=G['MSN'])
+  if 'nbCues' not in params.keys():
+    # usual case: CSN have as the same number of channels than the BG nuclei
+    CSN_MSN = connect_pop('ex','CSN','MSN', projType=params['cTypeCSNMSN'], redundancy=params['redundancyCSNMSN'], gain=G['MSN'])
+  else:
+    # special case: extra 'cue' channels that target MSN
+    CSN_MSN = connect_pop('ex','CSN','MSN', projType=params['cTypeCSNMSN'], redundancy=params['redundancyCSNMSN'], gain=G['MSN']/2., source_channels=range(params['nbCh']))
+    connect_pop('ex','CSN','MSN', projType='diffuse', redundancy=params['redundancyCSNMSN'], gain=G['MSN']/2., source_channels=range(params['nbCh'], params['nbCh']+params['nbCues']))
   PTN_MSN = connect_pop('ex','PTN','MSN', projType=params['cTypePTNMSN'], redundancy= params['redundancyPTNMSN'], gain=G['MSN'])
   CMPf_MSN = connect_pop('ex','CMPf','MSN',projType=params['cTypeCMPfMSN'],redundancy= params['redundancyCMPfMSN'],gain=G['MSN'])
   connect_pop('in','MSN','MSN', projType=params['cTypeMSNMSN'], redundancy= params['redundancyMSNMSN'], gain=G['MSN'])
@@ -179,6 +190,10 @@ def connectBG(antagInjectionSite,antag):
     connect_pop('ex','STN','GPi', projType=params['cTypeSTNGPi'], redundancy= params['redundancySTNGPi'], gain=G['GPi'])
     connect_pop('in','GPe','GPi', projType=params['cTypeGPeGPi'], redundancy= params['redundancyGPeGPi'], gain=G['GPi'])
     connect_pop('ex','CMPf','GPi',projType=params['cTypeCMPfGPi'],redundancy= params['redundancyCMPfGPi'],gain=G['GPi'])
+
+  base_weights = {'CSN_MSN': CSN_MSN, 'PTN_MSN': PTN_MSN, 'CMPf_MSN': CMPf_MSN}
+
+  return base_weights
 
 
 #------------------------------------------
@@ -276,5 +291,8 @@ def instantiate_BG(params={}, antagInjectionSite='none', antag=''):
   #------------------------
 
   createBG()
-  connectBG(antagInjectionSite,antag)
+  return connectBG(antagInjectionSite,antag)
+
+
+
 

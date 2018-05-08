@@ -281,6 +281,12 @@ def connect(type, nameSrc, nameTgt, redundancy, RedundancyType, LCGDelays=True, 
 # redundancy, RedundancyType : contrains the inDegree - see function `connect` for details
 # LCGDelays : shall we use the delays obtained by (Liénard, Cos, Girard, in prep) or not (default = True)
 # gain : allows to amplify the weight normally deduced from LG14
+# source_channels : By default with `source_channels=None`, the connection is implemented using all source channels
+#                   Specify a custom list of channels to implement connections only from these channels
+#                   For example, calling successively `connectMC(...,projType='focused',source_channels=[0])` and then `connectMC(...,projType='diffuse',source_channels=[1])` would implement first a focused projection using only source channel 0 and then a diffuse connection using only source channel 1:
+#                   Src channels:   (0) (1)
+#                                    | / |
+#                   Tgt channels:   (0) (1)
 #-------------------------------------------------------------------------------
 def connectMC(type, nameSrc, nameTgt, projType, redundancy, RedundancyType, LCGDelays=True, gain=1., source_channels = None, verbose=False):
 
@@ -310,9 +316,9 @@ def connectMC(type, nameSrc, nameTgt, projType, redundancy, RedundancyType, LCGD
   if projType == 'focused' and inDegree > nbSim[nameSrc]:
     printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in individual source channels ("+str(nbSim[nameSrc])+"), thus reduced to the latter value")
     inDegree = nbSim[nameSrc]
-  if projType == 'diffuse' and inDegree  > nbSim[nameSrc]*len(Pop[nameSrc]):
-    printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(nbSim[nameSrc]*len(Pop[nameSrc]))+"), thus reduced to the latter value")
-    inDegree = nbSim[nameSrc]*len(Pop[nameSrc])
+  if projType == 'diffuse' and inDegree  > nbSim[nameSrc]*len(source_channels):
+    printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the overall source population ("+str(nbSim[nameSrc]*len(source_channels))+"), thus reduced to the latter value")
+    inDegree = nbSim[nameSrc]*len(source_channels)
 
   if inDegree == 0.:
     printv("/!\ WARNING: non-existent connection strength, will skip")
