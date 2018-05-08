@@ -85,9 +85,13 @@ def connectBG(antagInjectionSite,antag):
 
   # single or multi-channel?
   if params['nbCh'] == 1:
-    connect_pop = lambda *args, **kwargs: connect(*args, **kwargs)
+    connect_pop = lambda *args, **kwargs: connect(*args, RedundancyType=params['RedundancyType'], **kwargs)
   else:
-    connect_pop = lambda *args, **kwargs: connectMC(*args, **kwargs)
+    def connect_pop(*args, **kwargs):
+      if 'source_channels' not in kwargs.keys():
+        # enforce the default
+        kwargs['source_channels'] = range(params['nbCh'])
+      return connectMC(*args, RedundancyType=params['RedundancyType'], **kwargs)
 
   #-------------------------
   # connection of populations
@@ -95,86 +99,86 @@ def connectBG(antagInjectionSite,antag):
   print '\nConnecting neurons\n================'
   print "**",antag,"antagonist injection in",antagInjectionSite,"**"
   print '* MSN Inputs'
-  connect_pop('ex','CSN','MSN', projType=params['cTypeCSNMSN'], inDegree= params['inDegCSNMSN'], gain=G['MSN'])
-  connect_pop('ex','PTN','MSN', projType=params['cTypePTNMSN'], inDegree= params['inDegPTNMSN'], gain=G['MSN'])
-  connect_pop('ex','CMPf','MSN',projType=params['cTypeCMPfMSN'],inDegree= params['inDegCMPfMSN'],gain=G['MSN'])
-  connect_pop('in','MSN','MSN', projType=params['cTypeMSNMSN'], inDegree= params['inDegMSNMSN'], gain=G['MSN'])
-  connect_pop('in','FSI','MSN', projType=params['cTypeFSIMSN'], inDegree= params['inDegFSIMSN'], gain=G['MSN'])
+  CSN_MSN = connect_pop('ex','CSN','MSN', projType=params['cTypeCSNMSN'], redundancy=params['redundancyCSNMSN'], gain=G['MSN'])
+  PTN_MSN = connect_pop('ex','PTN','MSN', projType=params['cTypePTNMSN'], redundancy= params['redundancyPTNMSN'], gain=G['MSN'])
+  CMPf_MSN = connect_pop('ex','CMPf','MSN',projType=params['cTypeCMPfMSN'],redundancy= params['redundancyCMPfMSN'],gain=G['MSN'])
+  connect_pop('in','MSN','MSN', projType=params['cTypeMSNMSN'], redundancy= params['redundancyMSNMSN'], gain=G['MSN'])
+  connect_pop('in','FSI','MSN', projType=params['cTypeFSIMSN'], redundancy= params['redundancyFSIMSN'], gain=G['MSN'])
   # some parameterizations from LG14 have no STN->MSN or GPe->MSN synaptic contacts
   if alpha['STN->MSN'] != 0:
     print "alpha['STN->MSN']",alpha['STN->MSN']
-    connect_pop('ex','STN','MSN', projType=params['cTypeSTNMSN'], inDegree= params['inDegSTNMSN'], gain=G['MSN'])
+    connect_pop('ex','STN','MSN', projType=params['cTypeSTNMSN'], redundancy= params['redundancySTNMSN'], gain=G['MSN'])
   if alpha['GPe->MSN'] != 0:
     print "alpha['GPe->MSN']",alpha['GPe->MSN']
-    connect_pop('in','GPe','MSN', projType=params['cTypeGPeMSN'], inDegree= params['inDegGPeMSN'], gain=G['MSN'])
+    connect_pop('in','GPe','MSN', projType=params['cTypeGPeMSN'], redundancy= params['redundancyGPeMSN'], gain=G['MSN'])
 
   print '* FSI Inputs'
-  connect_pop('ex','CSN','FSI', projType=params['cTypeCSNFSI'], inDegree= params['inDegCSNFSI'], gain=G['FSI'])
-  connect_pop('ex','PTN','FSI', projType=params['cTypePTNFSI'], inDegree= params['inDegPTNFSI'], gain=G['FSI'])
+  connect_pop('ex','CSN','FSI', projType=params['cTypeCSNFSI'], redundancy= params['redundancyCSNFSI'], gain=G['FSI'])
+  connect_pop('ex','PTN','FSI', projType=params['cTypePTNFSI'], redundancy= params['redundancyPTNFSI'], gain=G['FSI'])
   if alpha['STN->FSI'] != 0:
-    connect_pop('ex','STN','FSI', projType=params['cTypeSTNFSI'],inDegree= params['inDegSTNFSI'],gain=G['FSI'])
-  connect_pop('in','GPe','FSI', projType=params['cTypeGPeFSI'], inDegree= params['inDegGPeFSI'], gain=G['FSI'])
-  connect_pop('ex','CMPf','FSI',projType=params['cTypeCMPfFSI'],inDegree= params['inDegCMPfFSI'],gain=G['FSI'])
-  connect_pop('in','FSI','FSI', projType=params['cTypeFSIFSI'], inDegree= params['inDegFSIFSI'], gain=G['FSI'])
+    connect_pop('ex','STN','FSI', projType=params['cTypeSTNFSI'],redundancy= params['redundancySTNFSI'],gain=G['FSI'])
+  connect_pop('in','GPe','FSI', projType=params['cTypeGPeFSI'], redundancy= params['redundancyGPeFSI'], gain=G['FSI'])
+  connect_pop('ex','CMPf','FSI',projType=params['cTypeCMPfFSI'],redundancy= params['redundancyCMPfFSI'],gain=G['FSI'])
+  connect_pop('in','FSI','FSI', projType=params['cTypeFSIFSI'], redundancy= params['redundancyFSIFSI'], gain=G['FSI'])
 
   print '* STN Inputs'
-  connect_pop('ex','PTN','STN', projType=params['cTypePTNSTN'], inDegree= params['inDegPTNSTN'],  gain=G['STN'])
-  connect_pop('ex','CMPf','STN',projType=params['cTypeCMPfSTN'],inDegree= params['inDegCMPfSTN'], gain=G['STN'])
-  connect_pop('in','GPe','STN', projType=params['cTypeGPeSTN'], inDegree= params['inDegGPeSTN'],  gain=G['STN'])
+  connect_pop('ex','PTN','STN', projType=params['cTypePTNSTN'], redundancy= params['redundancyPTNSTN'],  gain=G['STN'])
+  connect_pop('ex','CMPf','STN',projType=params['cTypeCMPfSTN'],redundancy= params['redundancyCMPfSTN'], gain=G['STN'])
+  connect_pop('in','GPe','STN', projType=params['cTypeGPeSTN'], redundancy= params['redundancyGPeSTN'],  gain=G['STN'])
 
   print '* GPe Inputs'
   if antagInjectionSite == 'GPe':
     if   antag == 'AMPA':
-      connect_pop('NMDA','CMPf','GPe',projType=params['cTypeCMPfGPe'],inDegree= params['inDegCMPfGPe'],gain=G['GPe'])
-      connect_pop('NMDA','STN','GPe', projType=params['cTypeSTNGPe'], inDegree= params['inDegSTNGPe'], gain=G['GPe'])
-      connect_pop('in','MSN','GPe',   projType=params['cTypeMSNGPe'], inDegree= params['inDegMSNGPe'], gain=G['GPe'])
-      connect_pop('in','GPe','GPe',   projType=params['cTypeGPeGPe'], inDegree= params['inDegGPeGPe'], gain=G['GPe'])
+      connect_pop('NMDA','CMPf','GPe',projType=params['cTypeCMPfGPe'],redundancy= params['redundancyCMPfGPe'],gain=G['GPe'])
+      connect_pop('NMDA','STN','GPe', projType=params['cTypeSTNGPe'], redundancy= params['redundancySTNGPe'], gain=G['GPe'])
+      connect_pop('in','MSN','GPe',   projType=params['cTypeMSNGPe'], redundancy= params['redundancyMSNGPe'], gain=G['GPe'])
+      connect_pop('in','GPe','GPe',   projType=params['cTypeGPeGPe'], redundancy= params['redundancyGPeGPe'], gain=G['GPe'])
     elif antag == 'NMDA':
-      connect_pop('AMPA','CMPf','GPe',projType=params['cTypeCMPfGPe'],inDegree= params['inDegCMPfGPe'],gain=G['GPe'])
-      connect_pop('AMPA','STN','GPe', projType=params['cTypeSTNGPe'], inDegree= params['inDegSTNGPe'], gain=G['GPe'])
-      connect_pop('in','MSN','GPe',   projType=params['cTypeMSNGPe'], inDegree= params['inDegMSNGPe'], gain=G['GPe'])
-      connect_pop('in','GPe','GPe',   projType=params['cTypeGPeGPe'], inDegree= params['inDegGPeGPe'], gain=G['GPe'])
+      connect_pop('AMPA','CMPf','GPe',projType=params['cTypeCMPfGPe'],redundancy= params['redundancyCMPfGPe'],gain=G['GPe'])
+      connect_pop('AMPA','STN','GPe', projType=params['cTypeSTNGPe'], redundancy= params['redundancySTNGPe'], gain=G['GPe'])
+      connect_pop('in','MSN','GPe',   projType=params['cTypeMSNGPe'], redundancy= params['redundancyMSNGPe'], gain=G['GPe'])
+      connect_pop('in','GPe','GPe',   projType=params['cTypeGPeGPe'], redundancy= params['redundancyGPeGPe'], gain=G['GPe'])
     elif antag == 'AMPA+GABAA':
-      connect_pop('NMDA','CMPf','GPe',projType=params['cTypeCMPfGPe'],inDegree= params['inDegCMPfGPe'],gain=G['GPe'])
-      connect_pop('NMDA','STN','GPe', projType=params['cTypeSTNGPe'], inDegree= params['inDegSTNGPe'], gain=G['GPe'])
+      connect_pop('NMDA','CMPf','GPe',projType=params['cTypeCMPfGPe'],redundancy= params['redundancyCMPfGPe'],gain=G['GPe'])
+      connect_pop('NMDA','STN','GPe', projType=params['cTypeSTNGPe'], redundancy= params['redundancySTNGPe'], gain=G['GPe'])
     elif antag == 'GABAA':
-      connect_pop('ex','CMPf','GPe',projType=params['cTypeCMPfGPe'],inDegree= params['inDegCMPfGPe'],gain=G['GPe'])
-      connect_pop('ex','STN','GPe', projType=params['cTypeSTNGPe'], inDegree= params['inDegSTNGPe'], gain=G['GPe'])
+      connect_pop('ex','CMPf','GPe',projType=params['cTypeCMPfGPe'],redundancy= params['redundancyCMPfGPe'],gain=G['GPe'])
+      connect_pop('ex','STN','GPe', projType=params['cTypeSTNGPe'], redundancy= params['redundancySTNGPe'], gain=G['GPe'])
     else:
       print antagInjectionSite,": unknown antagonist experiment:",antag
   else:
-    connect_pop('ex','CMPf','GPe',projType=params['cTypeCMPfGPe'],inDegree= params['inDegCMPfGPe'],gain=G['GPe'])
-    connect_pop('ex','STN','GPe', projType=params['cTypeSTNGPe'], inDegree= params['inDegSTNGPe'], gain=G['GPe'])
-    connect_pop('in','MSN','GPe', projType=params['cTypeMSNGPe'], inDegree= params['inDegMSNGPe'], gain=G['GPe'])
-    connect_pop('in','GPe','GPe', projType=params['cTypeGPeGPe'], inDegree= params['inDegGPeGPe'], gain=G['GPe'])
+    connect_pop('ex','CMPf','GPe',projType=params['cTypeCMPfGPe'],redundancy= params['redundancyCMPfGPe'],gain=G['GPe'])
+    connect_pop('ex','STN','GPe', projType=params['cTypeSTNGPe'], redundancy= params['redundancySTNGPe'], gain=G['GPe'])
+    connect_pop('in','MSN','GPe', projType=params['cTypeMSNGPe'], redundancy= params['redundancyMSNGPe'], gain=G['GPe'])
+    connect_pop('in','GPe','GPe', projType=params['cTypeGPeGPe'], redundancy= params['redundancyGPeGPe'], gain=G['GPe'])
 
   print '* GPi Inputs'
   if antagInjectionSite =='GPi':
     if   antag == 'AMPA+NMDA+GABAA':
       pass
     elif antag == 'NMDA':
-      connect_pop('in','MSN','GPi',   projType=params['cTypeMSNGPi'], inDegree= params['inDegMSNGPi'], gain=G['GPi'])
-      connect_pop('AMPA','STN','GPi', projType=params['cTypeSTNGPi'], inDegree= params['inDegSTNGPi'], gain=G['GPi'])
-      connect_pop('in','GPe','GPi',   projType=params['cTypeGPeGPi'], inDegree= params['inDegGPeGPi'], gain=G['GPi'])
-      connect_pop('AMPA','CMPf','GPi',projType=params['cTypeCMPfGPi'],inDegree= params['inDegCMPfGPi'],gain=G['GPi'])
+      connect_pop('in','MSN','GPi',   projType=params['cTypeMSNGPi'], redundancy= params['redundancyMSNGPi'], gain=G['GPi'])
+      connect_pop('AMPA','STN','GPi', projType=params['cTypeSTNGPi'], redundancy= params['redundancySTNGPi'], gain=G['GPi'])
+      connect_pop('in','GPe','GPi',   projType=params['cTypeGPeGPi'], redundancy= params['redundancyGPeGPi'], gain=G['GPi'])
+      connect_pop('AMPA','CMPf','GPi',projType=params['cTypeCMPfGPi'],redundancy= params['redundancyCMPfGPi'],gain=G['GPi'])
     elif antag == 'NMDA+AMPA':
-      connect_pop('in','MSN','GPi', projType=params['cTypeMSNGPi'],inDegree= params['inDegMSNGPi'], gain=G['GPi'])
-      connect_pop('in','GPe','GPi', projType=params['cTypeGPeGPi'],inDegree= params['inDegGPeGPi'], gain=G['GPi'])
+      connect_pop('in','MSN','GPi', projType=params['cTypeMSNGPi'],redundancy= params['redundancyMSNGPi'], gain=G['GPi'])
+      connect_pop('in','GPe','GPi', projType=params['cTypeGPeGPi'],redundancy= params['redundancyGPeGPi'], gain=G['GPi'])
     elif antag == 'AMPA':
-      connect_pop('in','MSN','GPi',   projType=params['cTypeMSNGPi'], inDegree= params['inDegMSNGPi'], gain=G['GPi'])
-      connect_pop('NMDA','STN','GPi', projType=params['cTypeSTNGPi'], inDegree= params['inDegSTNGPi'], gain=G['GPi'])
-      connect_pop('in','GPe','GPi',   projType=params['cTypeGPeGPi'], inDegree= params['inDegGPeGPi'], gain=G['GPi'])
-      connect_pop('NMDA','CMPf','GPi',projType=params['cTypeCMPfGPi'],inDegree= params['inDegCMPfGPi'],gain=G['GPi'])
+      connect_pop('in','MSN','GPi',   projType=params['cTypeMSNGPi'], redundancy= params['redundancyMSNGPi'], gain=G['GPi'])
+      connect_pop('NMDA','STN','GPi', projType=params['cTypeSTNGPi'], redundancy= params['redundancySTNGPi'], gain=G['GPi'])
+      connect_pop('in','GPe','GPi',   projType=params['cTypeGPeGPi'], redundancy= params['redundancyGPeGPi'], gain=G['GPi'])
+      connect_pop('NMDA','CMPf','GPi',projType=params['cTypeCMPfGPi'],redundancy= params['redundancyCMPfGPi'],gain=G['GPi'])
     elif antag == 'GABAA':
-      connect_pop('ex','STN','GPi', projType=params['cTypeSTNGPi'], inDegree= params['inDegSTNGPi'], gain=G['GPi'])
-      connect_pop('ex','CMPf','GPi',projType=params['cTypeCMPfGPi'],inDegree= params['inDegCMPfGPi'],gain=G['GPi'])
+      connect_pop('ex','STN','GPi', projType=params['cTypeSTNGPi'], redundancy= params['redundancySTNGPi'], gain=G['GPi'])
+      connect_pop('ex','CMPf','GPi',projType=params['cTypeCMPfGPi'],redundancy= params['redundancyCMPfGPi'],gain=G['GPi'])
     else:
       print antagInjectionSite,": unknown antagonist experiment:",antag
   else:
-    connect_pop('in','MSN','GPi', projType=params['cTypeMSNGPi'], inDegree= params['inDegMSNGPi'], gain=G['GPi'])
-    connect_pop('ex','STN','GPi', projType=params['cTypeSTNGPi'], inDegree= params['inDegSTNGPi'], gain=G['GPi'])
-    connect_pop('in','GPe','GPi', projType=params['cTypeGPeGPi'], inDegree= params['inDegGPeGPi'], gain=G['GPi'])
-    connect_pop('ex','CMPf','GPi',projType=params['cTypeCMPfGPi'],inDegree= params['inDegCMPfGPi'],gain=G['GPi'])
+    connect_pop('in','MSN','GPi', projType=params['cTypeMSNGPi'], redundancy= params['redundancyMSNGPi'], gain=G['GPi'])
+    connect_pop('ex','STN','GPi', projType=params['cTypeSTNGPi'], redundancy= params['redundancySTNGPi'], gain=G['GPi'])
+    connect_pop('in','GPe','GPi', projType=params['cTypeGPeGPi'], redundancy= params['redundancyGPeGPi'], gain=G['GPi'])
+    connect_pop('ex','CMPf','GPi',projType=params['cTypeCMPfGPi'],redundancy= params['redundancyCMPfGPi'],gain=G['GPi'])
 
 
 #------------------------------------------
@@ -262,7 +266,7 @@ def instantiate_BG(params={}, antagInjectionSite='none', antag=''):
 
   # We check that all the necessary parameters have been defined. They should be in the modelParams.py file.
   # If one of them misses, we exit the program.
-  necessaryParams=['nbCh','nbMSN','nbFSI','nbSTN','nbGPe','nbGPi','nbCSN','nbPTN','nbCMPf','IeMSN','IeFSI','IeSTN','IeGPe','IeGPi','GMSN','GFSI','GSTN','GGPe','GGPi','inDegCSNMSN','inDegPTNMSN','inDegCMPfMSN','inDegMSNMSN','inDegFSIMSN','inDegSTNMSN','inDegGPeMSN','inDegCSNFSI','inDegPTNFSI','inDegSTNFSI','inDegGPeFSI','inDegCMPfFSI','inDegFSIFSI','inDegPTNSTN','inDegCMPfSTN','inDegGPeSTN','inDegCMPfGPe','inDegSTNGPe','inDegMSNGPe','inDegGPeGPe','inDegMSNGPi','inDegSTNGPi','inDegGPeGPi','inDegCMPfGPi',]
+  necessaryParams=['nbCh','nbMSN','nbFSI','nbSTN','nbGPe','nbGPi','nbCSN','nbPTN','nbCMPf','IeMSN','IeFSI','IeSTN','IeGPe','IeGPi','GMSN','GFSI','GSTN','GGPe','GGPi','redundancyCSNMSN','redundancyPTNMSN','redundancyCMPfMSN','redundancyMSNMSN','redundancyFSIMSN','redundancySTNMSN','redundancyGPeMSN','redundancyCSNFSI','redundancyPTNFSI','redundancySTNFSI','redundancyGPeFSI','redundancyCMPfFSI','redundancyFSIFSI','redundancyPTNSTN','redundancyCMPfSTN','redundancyGPeSTN','redundancyCMPfGPe','redundancySTNGPe','redundancyMSNGPe','redundancyGPeGPe','redundancyMSNGPi','redundancySTNGPi','redundancyGPeGPi','redundancyCMPfGPi',]
   for np in necessaryParams:
     if np not in params:
       raise KeyError('Missing parameter: '+np)

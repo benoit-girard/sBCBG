@@ -131,20 +131,33 @@ def createMC(name,nbCh,fake=False,parrot=True):
 # Establishes a connexion between two populations, following the results of LG14
 # type : a string 'ex' or 'in', defining whether it is excitatory or inhibitory
 # nameTgt, nameSrc : strings naming the populations, as defined in NUCLEI list
-# inDegree : number of neurons from Src project to a single Tgt neuron
+# redundancy : value that characterizes the number of repeated axonal contacts from one neuron of Src to one neuron of Tgt (see RedundancyType for interpretation of this value)
+# RedundancyType : string
+#   if 'inDegreeAbs': `redundancy` is the number of neurons from Src that project to a single Tgt neuron
+#   if 'outDegreeAbs': `redundancy` is number of axonal contacts between each neuron from Src onto a single Tgt neuron
+#   if 'outDegreeCons': `redundancy` is a scaled proportion of axonal contacts between each neuron from Src onto a single Tgt neuron given arithmetical constraints, ranging from 0 (minimal number of contacts to achieve required axonal bouton counts) to 1 (maximal number of contacts with respect to population numbers)
 # LCGDelays: shall we use the delays obtained by (Liénard, Cos, Girard, in prep) or not (default = True)
 # gain : allows to amplify the weight normally deduced from LG14
 #-------------------------------------------------------------------------------
-def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1., verbose=True, projType=''):
+def connect(type, nameSrc, nameTgt, redundancy, RedundancyType, LCGDelays=True, gain=1., verbose=False, projType=''):
 
   def printv(text):
     if verbose:
       print(text)
 
-  if inDegree > 0. and inDegree < 1.:
-    # fractional inDegree is expressed as a fraction of max number of neurons
-    printv('Using fractional inDegree (value supplied: '+str(inDegree)+')')
-    inDegree = get_frac(inDegree, nameSrc, nameTgt, verbose=False)
+  printv("* connecting "+nameSrc+" -> "+nameTgt+" with "+type+" connection")
+
+  if RedundancyType == 'inDegreeAbs':
+    # inDegree is already provided in the right form
+    inDegree = float(redundancy)
+  elif RedundancyType == 'outDegreeAbs':
+    #### fractional outDegree is expressed as a fraction of max axo-dendritic contacts
+    inDegree = get_frac(1./redundancy, nameSrc, nameTgt, neuronCounts[nameSrc], neuronCounts[nameTgt], verbose=verbose)
+  elif RedundancyType == 'outDegreeCons':
+    #### fractional outDegree is expressed as a ratio of min/max axo-dendritic contacts
+    inDegree = get_frac(redundancy, nameSrc, nameTgt, neuronCounts[nameSrc], neuronCounts[nameTgt], useMin=True, verbose=verbose)
+  else:
+    raise KeyError('`RedundancyType` should be one of `inDegreeAbs`, `outDegreeAbs`, or `outDegreeCons`.')
 
   # check if in degree acceptable (not larger than number of neurons in the source nucleus)
   if inDegree  > nbSim[nameSrc]:
@@ -169,13 +182,15 @@ def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1., verbose=True, 
   else:
     raise KeyError('Undefined connexion type: '+type)
   
-  W = computeW(lRecType,nameSrc,nameTgt,inDegree,gain,verbose=verbose)
+  W = computeW(lRecType, nameSrc, nameTgt, inDegree, gain, verbose=False)
 
-  if nameSrc+'->'+nameTgt in ConnectMap:
-    loadConnectMap = True
-  else:
-    loadConnectMap = False
-    ConnectMap[nameSrc+'->'+nameTgt] = []
+  printv("  W="+str(W)+" and inDegree="+str(inDegree))
+
+  #if nameSrc+'->'+nameTgt in ConnectMap:
+  #  loadConnectMap = True
+  #else:
+  #  loadConnectMap = False
+  #  ConnectMap[nameSrc+'->'+nameTgt] = []
 
   # determine which transmission delay to use:
   if LCGDelays:
@@ -241,26 +256,37 @@ def empty_queue(l, W, delay, lRecType, n, do_empty = False):
 # nameTgt, nameSrc : strings naming the populations, as defined in NUCLEI list
 # projType : type of projections. For the moment: 'focused' (only channel-to-channel connection) and 
 #            'diffuse' (all-to-one with uniform distribution)
-# inDegree : number of neurons from Src project to a single Tgt neuron
-# LCGDelays: shall we use the delays obtained by (Liénard, Cos, Girard, in prep) or not (default = True)
+# redundancy, RedundancyType : contrains the inDegree - see function `connect` for details
+# LCGDelays : shall we use the delays obtained by (Liénard, Cos, Girard, in prep) or not (default = True)
 # gain : allows to amplify the weight normally deduced from LG14
 #-------------------------------------------------------------------------------
-def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1., verbose=True):
+def connectMC(type, nameSrc, nameTgt, projType, redundancy, RedundancyType, LCGDelays=True, gain=1., source_channels = None, verbose=False):
 
   def printv(text):
     if verbose:
       print(text)
 
-  if inDegree > 0. and inDegree < 1.:
-    # fractional inDegree is expressed as a fraction of max number of neurons
-    printv('Using fractional inDegree (value supplied: '+str(inDegree)+')')
-    inDegree = get_frac(inDegree, nameSrc, nameTgt, verbose=False)
+  printv("* connecting "+nameSrc+" -> "+nameTgt+" with "+projType+" "+type+" connection")
 
-  printv("* connecting "+nameSrc+" -> "+nameTgt+" with "+projType+type+" connection and "+str(inDegree)+" inputs")
+  if source_channels == None:
+    # if not specified, assume that the connection originates from all channels 
+    source_channels = range(len(Pop[nameSrc]))
+
+  if RedundancyType == 'inDegreeAbs':
+    # inDegree is already provided in the right form
+    inDegree = float(redundancy)
+  elif RedundancyType == 'outDegreeAbs':
+    #### fractional outDegree is expressed as a fraction of max axo-dendritic contacts
+    inDegree = get_frac(1./redundancy, nameSrc, nameTgt, neuronCounts[nameSrc], neuronCounts[nameTgt], verbose=verbose)
+  elif RedundancyType == 'outDegreeCons':
+    #### fractional outDegree is expressed as a ratio of min/max axo-dendritic contacts
+    inDegree = get_frac(redundancy, nameSrc, nameTgt, neuronCounts[nameSrc], neuronCounts[nameTgt], useMin=True, verbose=verbose)
+  else:
+    raise KeyError('`RedundancyType` should be one of `inDegreeAbs`, `outDegreeAbs`, or `outDegreeCons`.')
 
   # check if in degree acceptable (not larger than number of neurons in the source nucleus)
   if projType == 'focused' and inDegree > nbSim[nameSrc]:
-    printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(nbSim[nameSrc])+"), thus reduced to the latter value")
+    printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in individual source channels ("+str(nbSim[nameSrc])+"), thus reduced to the latter value")
     inDegree = nbSim[nameSrc]
   if projType == 'diffuse' and inDegree  > nbSim[nameSrc]*len(Pop[nameSrc]):
     printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(nbSim[nameSrc]*len(Pop[nameSrc]))+"), thus reduced to the latter value")
@@ -269,6 +295,8 @@ def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1., ver
   if inDegree == 0.:
     printv("/!\ WARNING: non-existent connection strength, will skip")
     return
+
+  inDegree = inDegree * (float(len(source_channels)) / float(len(Pop[nameSrc])))
 
   # prepare receptor type lists:
   if type == 'ex':
@@ -283,16 +311,18 @@ def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1., ver
     raise KeyError('Undefined connexion type: '+type)
 
   # compute the global weight of the connection, for each receptor type:
-  W = computeW(lRecType,nameSrc,nameTgt,inDegree,gain,verbose=verbose)
+  W = computeW(lRecType, nameSrc, nameTgt, inDegree, gain, verbose=False)
 
-  # check whether a connection map has already been drawn or not:
-  if nameSrc+'->'+nameTgt in ConnectMap:
-    #print "Using existing connection map"
-    loadConnectMap = True
-  else:
-    #print "Will create a connection map"
-    loadConnectMap = False
-    ConnectMap[nameSrc+'->'+nameTgt] = [[] for i in range(len(Pop[nameTgt]))]
+  printv("  W="+str(W)+" and inDegree="+str(inDegree))
+
+  ## check whether a connection map has already been drawn or not:
+  #if nameSrc+'->'+nameTgt in ConnectMap:
+  #  #print "Using existing connection map"
+  #  loadConnectMap = True
+  #else:
+  #  #print "Will create a connection map"
+  #  loadConnectMap = False
+  #  ConnectMap[nameSrc+'->'+nameTgt] = [[] for i in range(len(Pop[nameTgt]))]
 
   # determine which transmission delay to use:
   if LCGDelays:
@@ -346,35 +376,44 @@ def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1., ver
 
 
 #-------------------------------------------------------------------------------
-# returns the maximal number of distinct input neurons for one connection
+# returns the minimal & maximal numbers of distinct input neurons for one connection
 #-------------------------------------------------------------------------------
-def get_max_inputs(nameSrc, nameTgt, verbose=False):
+def get_input_range(nameSrc, nameTgt, cntSrc, cntTgt, verbose=False):
   if nameSrc=='CSN' or nameSrc=='PTN':
     nu = alpha[nameSrc+'->'+nameTgt]
+    nu0 = 0
     if verbose:
       print('\tMaximal number of distinct input neurons (nu): '+str(nu))
-      print('\tMinimal number of distinct input neurons     : unknown')
+      print('\tMinimal number of distinct input neurons     : unknown (set to 0)')
   else:
-    nu = neuronCounts[nameSrc] / float(neuronCounts[nameTgt]) * P[nameSrc+'->'+nameTgt] * alpha[nameSrc+'->'+nameTgt]
+    nu = cntSrc / float(cntTgt) * P[nameSrc+'->'+nameTgt] * alpha[nameSrc+'->'+nameTgt]
+    nu0 = cntSrc / float(cntTgt) * P[nameSrc+'->'+nameTgt]
     if verbose:
       print('\tMaximal number of distinct input neurons (nu): '+str(nu))
-      print('\tMinimal number of distinct input neurons     : '+str(neuronCounts[nameSrc] / float(neuronCounts[nameTgt]) * P[nameSrc+'->'+nameTgt]))
-  return nu
+      print('\tMinimal number of distinct input neurons     : '+str(nu0))
+  return [nu0, nu]
 
 #-------------------------------------------------------------------------------
 # computes the inDegree as a fraction of maximal possible inDegree
+# FractionalOutDegree: outDegree, expressed as a fraction
 #-------------------------------------------------------------------------------
-def get_frac(inDegree, nameSrc, nameTgt, verbose=False):
-  new_inDegree = get_max_inputs(nameSrc, nameTgt, verbose=verbose) * inDegree
+def get_frac(FractionalOutDegree, nameSrc, nameTgt, cntSrc, cntTgt, useMin=False, verbose=False):
+  if useMin == False:
+    # 'FractionalOutDegree' is taken to be relative to the maximal number of axo-dendritic contacts
+    inDegree = get_input_range(nameSrc, nameTgt, cntSrc, cntTgt, verbose=verbose)[1] * FractionalOutDegree
+  else:
+    # 'FractionalOutDegree' is taken to be relative to the maximal number of axo-dendritic contacts and their minimal number
+    r = get_input_range(nameSrc, nameTgt, cntSrc, cntTgt, verbose=verbose)
+    inDegree = (r[1] - r[0]) * FractionalOutDegree + r[0]
   if verbose:
-    print('\tConverting the fractional inDegree of '+nameSrc+' -> '+nameTgt+' from '+str(inDegree)+' to neuron count: '+str(round(new_inDegree, 2)))
-  return new_inDegree
+    print('\tConverting the fractional outDegree of '+nameSrc+' -> '+nameTgt+' from '+str(FractionalOutDegree)+' to inDegree neuron count: '+str(round(inDegree, 2))+' (relative to minimal value possible? '+str(useMin)+')')
+  return inDegree
 
 #-------------------------------------------------------------------------------
 # computes the weight of a connection, based on LG14 parameters
 #-------------------------------------------------------------------------------
-def computeW(listRecType,nameSrc,nameTgt,inDegree,gain=1.,verbose=False):
-  nu = get_max_inputs(nameSrc, nameTgt, verbose=verbose)
+def computeW(listRecType, nameSrc, nameTgt, inDegree, gain=1.,verbose=False):
+  nu = get_input_range(nameSrc, nameTgt, neuronCounts[nameSrc], neuronCounts[nameTgt], verbose=verbose)[1]
   if verbose:
     print '\tCompare with the effective chosen inDegree   :',str(inDegree)
 
