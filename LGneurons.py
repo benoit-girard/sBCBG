@@ -16,6 +16,8 @@ import numpy.random as rnd
 import csv
 from math import sqrt, cosh, exp, pi
 
+AMPASynapseCounter = 0 # counter variable for the fast connect
+
 #-------------------------------------------------------------------------------
 # Loads a given LG14 model parameterization
 # ID must be in [0,14]
@@ -127,6 +129,65 @@ def createMC(name,nbCh,fake=False,parrot=True):
     for i in range(nbCh):
       Pop[name].append(nest.Create("iaf_psc_alpha_multisynapse",int(nbSim[name]),params=BGparams[name]))
 
+
+#------------------------------------------------------------------------------
+# Routine to perform the fast connection using nest built-in `connect` function
+# - `source` & `dest` are lists defining Nest IDs of source & target population
+# - `synapse_label` is used to tag connections and be able to find them quickly
+#   with function `mass_mirror`, that adds NMDA on top of AMPA connections
+# - `inDegree`, `receptor_type`, `weight`, `delay` are Nest connection params
+#------------------------------------------------------------------------------
+def mass_connect(source, dest, synapse_label, inDegree, receptor_type, weight, delay, verbose=False):
+  def printv(text):
+    if verbose:
+      print(text)
+
+  # The first `fixed_indegree` connection ensures that all neurons in `dest`
+  # are targeted by the same number of axons (an integer number)
+  integer_inDegree = np.floor(inDegree)
+  if integer_inDegree>0:
+    printv('Adding '+str(int(integer_inDegree*len(dest)))+' connections with rule `fixed_indegree`\n')
+    nest.Connect(source,
+                 dest,
+                 {'rule': 'fixed_indegree', 'indegree': int(integer_inDegree)},
+                 {'model': 'static_synapse_lbl', 'synapse_label': synapse_label, 'receptor_type': receptor_type, 'weight': weight, 'delay':delay})
+
+  # The second `fixed_total_number` connection distributes remaining axonal
+  # contacts at random (i.e. the remaining fractional part after the first step)
+  float_inDegree = inDegree - integer_inDegree
+  remaining_connections = np.round(float_inDegree * len(dest))
+  if remaining_connections > 0:
+    printv('Adding '+str(remaining_connections)+' remaining connections with rule `fixed_total_number`\n')
+    nest.Connect(source,
+                 dest,
+                 {'rule': 'fixed_total_number', 'N': int(remaining_connections)},
+                 {'model': 'static_synapse_lbl', 'synapse_label': synapse_label, 'receptor_type': receptor_type, 'weight': weight, 'delay':delay})
+
+#------------------------------------------------------------------------------
+# Routine to duplicate a connection made with a specific receptor, with another
+# receptor (typically to add NMDA connections to existing AMPA connections)
+# - `source` & `synapse_label` should uniquely define the connections of
+#   interest - typically, they are the same as in the call to `mass_connect`
+# - `receptor_type`, `weight`, `delay` are Nest connection params
+#------------------------------------------------------------------------------
+def mass_mirror(source, synapse_label, receptor_type, weight, delay, verbose=False):
+  def printv(text):
+    if verbose:
+      print(text)
+
+  # find all AMPA connections for the given projection type
+  printv('looking for AMPA connections to mirror with NMDA...\n')
+  ampa_conns = nest.GetConnections(source=source, synapse_label=synapse_label)
+  # in rare cases, there may be no connections, guard against that
+  if ampa_conns:
+    # extract just source and target GID lists, all other information is irrelevant here
+    printv('found '+str(len(ampa_conns))+' AMPA connections\n')
+    src, tgt, _, _, _ = zip(*ampa_conns)
+    nest.Connect(src, tgt, 'one_to_one',
+                 {'model': 'static_synapse_lbl',
+                  'synapse_label': synapse_label, # tag with the same number (doesn't matter)
+                  'receptor_type': receptor_type, 'weight': weight, 'delay':delay})
+
 #-------------------------------------------------------------------------------
 # Establishes a connexion between two populations, following the results of LG14
 # type : a string 'ex' or 'in', defining whether it is excitatory or inhibitory
@@ -168,20 +229,25 @@ def connect(type, nameSrc, nameTgt, redundancy, RedundancyType, LCGDelays=True, 
     printv("/!\ WARNING: non-existent connection strength, will skip")
     return
 
-  printv("* connecting "+nameSrc+" -> "+nameTgt+" with "+type+" connection and "+str(inDegree)+ " inputs")
+  global AMPASynapseCounter
 
   # process receptor types
   if type == 'ex':
     lRecType = ['AMPA','NMDA']
+    AMPASynapseCounter = AMPASynapseCounter + 1
+    lbl = AMPASynapseCounter # needs to add NMDA later
   elif type == 'AMPA':
     lRecType = ['AMPA']
+    lbl = 0
   elif type == 'NMDA':
     lRecType = ['NMDA']
+    lbl = 0
   elif type == 'in':
     lRecType = ['GABA']
+    lbl = 0
   else:
     raise KeyError('Undefined connexion type: '+type)
-  
+
   W = computeW(lRecType, nameSrc, nameTgt, inDegree, gain, verbose=False)
 
   printv("  W="+str(W)+" and inDegree="+str(inDegree))
@@ -198,63 +264,19 @@ def connect(type, nameSrc, nameTgt, redundancy, RedundancyType, LCGDelays=True, 
   else:
     delay= 1.
 
-  pop_array = np.array(Pop[nameSrc]) # convert to numpy array to allow indexing
-  connect_queue = np.array([[],[]], dtype=int) # the connection queue
-  max_chunk_size = 1000 # what is the max number of connections to add simultaneously?
+  mass_connect(Pop[nameSrc], Pop[nameTgt], lbl, inDegree, recType[lRecType[0]], W[lRecType[0]], delay)
+  if type == 'ex':
+    # mirror the AMPA connection with similarly connected NMDA connections
+    mass_mirror(Pop[nameSrc], lbl, recType['NMDA'], W['NMDA'], delay)
 
-  # To ensure that for excitatory connections, Tgt neurons receive AMPA and NMDA projections from the same Src neurons, 
-  # we have to handle the "indegree" connectivity ourselves:
-  for nTgt in range(int(nbSim[nameTgt])):
-    #node_info   = nest.GetStatus([Pop[nameTgt][nTgt]])[0] # use the process-specific random number generator
-    #nrnd = nstrand.pyRngs[node_info['vp']]                # ^
-    nrnd = nstrand.pyMasterRng # use the master python seed
-    if loadConnectMap:
-      # use previously created connectivity map
-      inputTable = ConnectMap[nameSrc+'->'+nameTgt][nTgt]
-      inDeg = len(inputTable)
-    else:
-      # if no connectivity map exists between the two populations, let's create one
-      r = inDegree - int(inDegree)
-      inDeg = int(inDegree) if nrnd.rand() > r else int(inDegree)+1
-      inputTable = pop_array[nrnd.choice(int(nbSim[nameSrc]), size=inDeg, replace=False)]
-      ConnectMap[nameSrc+'->'+nameTgt] += [tuple(inputTable)]
-
-    connect_queue = np.concatenate((connect_queue, np.array([[Pop[nameTgt][nTgt]]*inDeg, inputTable])), axis=1)
-
-    if connect_queue.shape[1] > max_chunk_size:
-      # space for at least one chunk? => empty the queue
-      connect_queue = empty_queue(connect_queue, W, delay, lRecType, max_chunk_size, do_empty=False)
-
-    # old way of connecting neurons
-    #for r in lRecType:
-    #  w = W[r]
-    #  nest.Connect(pre=ConnectMap[nameSrc+'->'+nameTgt][nTgt], post=(Pop[nameTgt][nTgt],), syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
-
-  empty_queue(connect_queue, W, delay, lRecType, max_chunk_size, do_empty=True)
-
-
-#-------------------------------------------------------------------------------
-# Simple queue mechanism
-# This function makes connections by chunk, until the chunk size is too small
-#-------------------------------------------------------------------------------
-def empty_queue(l, W, delay, lRecType, n, do_empty = False):
-  for connect_chunk in [[l[0][i:i + n], l[1][i:i + n]] for i in xrange(0, len(l[0]), n)]:
-    if len(connect_chunk[0]) < n and not do_empty:
-      # return the incomplete chunk, it will processed next time
-      return connect_chunk
-    else:
-      # call the connect function
-      for r in lRecType:
-        w = W[r]
-        nest.Connect(pre=tuple(connect_chunk[1]), post=tuple(connect_chunk[0]), conn_spec='one_to_one', syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
-  return np.array([[],[]], dtype=int)
+  return W
 
 
 #-------------------------------------------------------------------------------
 # Establishes a connexion between two populations, following the results of LG14, in a MultiChannel context
 # type : a string 'ex' or 'in', defining whether it is excitatory or inhibitory
 # nameTgt, nameSrc : strings naming the populations, as defined in NUCLEI list
-# projType : type of projections. For the moment: 'focused' (only channel-to-channel connection) and 
+# projType : type of projections. For the moment: 'focused' (only channel-to-channel connection) and
 #            'diffuse' (all-to-one with uniform distribution)
 # redundancy, RedundancyType : contrains the inDegree - see function `connect` for details
 # LCGDelays : shall we use the delays obtained by (Liénard, Cos, Girard, in prep) or not (default = True)
@@ -296,17 +318,24 @@ def connectMC(type, nameSrc, nameTgt, projType, redundancy, RedundancyType, LCGD
     printv("/!\ WARNING: non-existent connection strength, will skip")
     return
 
+  global AMPASynapseCounter
+
   inDegree = inDegree * (float(len(source_channels)) / float(len(Pop[nameSrc])))
 
   # prepare receptor type lists:
   if type == 'ex':
     lRecType = ['AMPA','NMDA']
+    AMPASynapseCounter = AMPASynapseCounter + 1
+    lbl = AMPASynapseCounter # needs to add NMDA later
   elif type == 'AMPA':
     lRecType = ['AMPA']
+    lbl = 0
   elif type == 'NMDA':
     lRecType = ['NMDA']
+    lbl = 0
   elif type == 'in':
     lRecType = ['GABA']
+    lbl = 0
   else:
     raise KeyError('Undefined connexion type: '+type)
 
@@ -330,50 +359,20 @@ def connectMC(type, nameSrc, nameTgt, projType, redundancy, RedundancyType, LCGD
   else:
     delay = 1.
 
-  # To ensure that for excitatory connections, Tgt neurons receive AMPA and NMDA projections from the same Src neurons,
-  # we have to handle the "indegree" connectivity ourselves:
-  for tgtChannel in range(len(Pop[nameTgt])): # for each channel of the Target nucleus
-    for nTgt in range(int(nbSim[nameTgt])): # for each neuron in this channel 
-      if not loadConnectMap:
-      # if no connectivity map exists between the two populations, let's create one
-        if projType =='focused': # if projections focused, input come only from the same channel as tgtChannel
-          r = inDegree - int(inDegree)
-          inputTable = rnd.choice(int(nbSim[nameSrc]),size=int(inDegree) if rnd.rand() > r else int(inDegree)+1,replace=False)
-          inputPop = []
-          for i in inputTable:
-            inputPop.append(Pop[nameSrc][tgtChannel][i])
-          inputPop = tuple(inputPop)
+  if projType == 'focused': # if projections focused, input come only from the same channel as tgtChannel
+     for src_channel in source_channels: # for each relevant channel of the Source nucleus
+       mass_connect(Pop[nameSrc][src_channel], Pop[nameTgt][src_channel-source_channels[0]], lbl, inDegree, recType[lRecType[0]], W[lRecType[0]], delay)
+  elif projType == 'diffuse': # if projections diffused, input connections are shared among each possible input channel equally
+    for src_channel in source_channels: # for each relevant channel of the Source nucleus
+      for tgt_channel in range(len(Pop[nameTgt])): # for each channel of the Target nucleus
+        mass_connect(Pop[nameSrc][src_channel], Pop[nameTgt][tgt_channel], lbl, inDegree/len(Pop[nameTgt]), recType[lRecType[0]], W[lRecType[0]], delay)
 
-          ConnectMap[nameSrc+'->'+nameTgt][tgtChannel].append(inputPop)
-        elif projType=='diffuse': # if projections diffused, input connections are shared among each possible input channel equally
-          n = int(inDegree)/int(len(Pop[nameSrc]))
-          r = float(inDegree)/float(len(Pop[nameSrc])) - n
-          inputPop = []
-          #print nameSrc,'->',nameTgt,'#input connections:',n,'(',r,')'
-          for srcChannel in range(len(Pop[nameSrc])):
-            if rnd.rand() < r:
-              nbInPerChannel = n + 1
-            else:
-              nbInPerChannel = n
-            #print '   ',nbInPerChannel
-            inputTable = rnd.choice(int(nbSim[nameSrc]),size=nbInPerChannel,replace=False)
-            for i in inputTable:
-              inputPop.append(Pop[nameSrc][srcChannel][i])
+  if type == 'ex':
+    # mirror the AMPA connection with similarly connected NMDA connections
+    for src_channel in source_channels: # for each relevant channel of the Source nucleus
+      mass_mirror(Pop[nameSrc][src_channel], lbl, recType['NMDA'], W['NMDA'], delay)
 
-          inputPop = tuple(inputPop)
-          ConnectMap[nameSrc+'->'+nameTgt][tgtChannel].append(inputPop)
-        else:
-          print "Unknown multiple channel connection method",projType
-      else:
-      #otherwise, use the existing one
-        #print nameSrc,"->",nameTgt,"using previously defined connection map"
-        inputPop = ConnectMap[nameSrc+'->'+nameTgt][tgtChannel][nTgt]
-
-      for r in lRecType:
-        w = W[r]
-
-        nest.Connect(pre=inputPop, post=(Pop[nameTgt][tgtChannel][nTgt],),syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
-
+  return W
 
 #-------------------------------------------------------------------------------
 # returns the minimal & maximal numbers of distinct input neurons for one connection
