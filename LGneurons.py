@@ -53,7 +53,7 @@ def loadThetaFromCustomparams(params):
       pass
 
 #-------------------------------------------------------------------------------
-# Changes the default of the iaf_psc_alpha_multisynapse neurons 
+# Changes the default of the iaf_psc_alpha_multisynapse neurons
 # Very important because it defines the 3 types of receptors (AMPA, NMDA, GABA) that will be needed
 # Has to be called after any KernelReset
 #-------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ def initNeurons():
 #-------------------------------------------------------------------------------
 # Creates a population of neurons
 # name: string naming the population, as defined in NUCLEI list
-# fake: if fake is True, the neurons will be replaced by Poisson generators, firing 
+# fake: if fake is True, the neurons will be replaced by Poisson generators, firing
 #       at the rate indicated in the "rate" dictionary
 # parrot: do we use parrot neurons or not? If not, there will be no correlations in the inputs, and a waste of computation power...
 #-------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ def create(name,fake=False,parrot=True):
       nest.SetStatus(Fake[name],{'rate':rate[name]})
       Pop[name]  = nest.Create('parrot_neuron',int(nbSim[name]))
       nest.Connect(pre=Fake[name],post=Pop[name],conn_spec={'rule':'one_to_one'})
-    
+
   else:
     print '* '+name+':',nbSim[name],'neurons with parameters:',BGparams[name]
     Pop[name] = nest.Create("iaf_psc_alpha_multisynapse",int(nbSim[name]),params=BGparams[name])
@@ -269,7 +269,7 @@ def connectMC(type, nameSrc, nameTgt, projType, redundancy, RedundancyType, LCGD
   printv("* connecting "+nameSrc+" -> "+nameTgt+" with "+projType+" "+type+" connection")
 
   if source_channels == None:
-    # if not specified, assume that the connection originates from all channels 
+    # if not specified, assume that the connection originates from all channels
     source_channels = range(len(Pop[nameSrc]))
 
   if RedundancyType == 'inDegreeAbs':
@@ -494,7 +494,7 @@ nbSim = {'MSN': 0.,
         }
 
 # P(X->Y): probability that a given neuron from X projects to at least neuron of Y
-P = {'MSN->GPe': 1., 
+P = {'MSN->GPe': 1.,
      'MSN->GPi': 0.82,
      'MSN->MSN': 1.,
      'FSI->MSN': 1.,
@@ -521,7 +521,7 @@ P = {'MSN->GPe': 1.,
     }
 
 # alpha X->Y: average number of synaptic contacts made by one neuron of X to one neuron of Y, when there is a connexion
-# for the moment set from one specific parameterization, should be read from Jean's solution file 
+# for the moment set from one specific parameterization, should be read from Jean's solution file
 alpha = {'MSN->GPe':   171,
          'MSN->GPi':   210,
          'MSN->MSN':   210,
@@ -539,7 +539,7 @@ alpha = {'MSN->GPe':   171,
          'CSN->MSN':   342, # here, represents directly \nu
          'CSN->FSI':   250, # here, represents directly \nu
          'PTN->MSN':     5, # here, represents directly \nu
-         'PTN->FSI':     5, # here, represents directly \nu 
+         'PTN->FSI':     5, # here, represents directly \nu
          'PTN->STN':   259, # here, represents directly \nu
          'CMPf->MSN': 4965,
          'CMPf->FSI': 1053,
@@ -661,7 +661,7 @@ GPiparams = {'tau_m':        14.0, # 20 -> 14 based on Johnson & McIntyre 2008, 
 
 # dictionary of the parameterizations of each neuronal type
 #-------------------------
- 
+
 BGparams = {'MSN':MSNparams,
             'FSI':FSIparams,
             'STN':STNparams,
@@ -681,7 +681,7 @@ rate = {'CSN':   2.  ,
         'STN':  14.3 ,
         'GPe':  62.6 ,
         'GPi':  64.2
-        } 
+        }
 
 #---------------------------
 def main():
@@ -736,7 +736,7 @@ def main():
   Pop['GPe'] = nest.Create('poisson_generator',int(nbSim['GPe']))
   nest.SetStatus(Pop['GPe'],{'rate':rate['GPe']})
 
-  connect('in','GPe','STN', inDegree= int(neuronCounts['GPe']/neuronCounts['STN'])) 
+  connect('in','GPe','STN', inDegree= int(neuronCounts['GPe']/neuronCounts['STN']))
 
   #-------------------------
   # measures
@@ -745,7 +745,7 @@ def main():
   mSTN = nest.Create("multimeter")
   nest.SetStatus(mSTN, {"withtime":True, "record_from":["V_m","currents"]})
   nest.Connect(mSTN, Pop['STN'])
-  
+
   spkDetect = nest.Create("spike_detector", params={"withgid": True, "withtime": True})
   nest.Connect(Pop['STN'], spkDetect)
 
@@ -774,7 +774,7 @@ def main():
   VmSTN = dmSTN["events"]["V_m"]
   ImSTN = dmSTN["events"]["currents"]
   tSTN = dmSTN["events"]["times"]
-  
+
   dSD = nest.GetStatus(spkDetect,keys="events")[0]
   evs = dSD["senders"]
   ts = dSD["times"]
