@@ -1,13 +1,14 @@
-#!/apps/free/python/2.7.10/bin/python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 interactive = False # avoid loading X dependent things
                    # set to False for simulations on Sango
 storeGDF = True # unless overriden by run.py, keep spike rasters
 
-if interactive :
-  import pylab
-
 import nstrand
+
+import pandas as pd
+import pylab
 
 import nest
 import numpy as np
@@ -438,7 +439,8 @@ neuronCounts={'MSN': 26448.0E3,
               'STN':    77.0E3,
               'GPe':   251.0E3,
               'GPi':   143.0E3,
-              'CMPf':   86.0E3
+              'CMPf':   86.0E3,
+              'CSN': None, 'PTN': None # prevents key error
              }
 
 # Number of neurons that will be simulated

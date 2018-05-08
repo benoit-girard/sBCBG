@@ -24,10 +24,18 @@ def createBG():
 
   # single or multi-channel?
   if params['nbCh'] == 1:
-    create_pop = lambda *args, **kwargs: create(*args, **kwargs)
+    def create_pop(*args, **kwargs):
+      if 'nbCh' in kwargs.keys():
+        # remove the extra arg
+        kwargs.pop("nbCh", None)
+      create(*args, **kwargs)
     update_Ie = lambda p: nest.SetStatus(Pop[p],{"I_e":params['Ie'+p]})
   else:
-    create_pop = lambda *args, **kwargs: createMC(nbCh=params['nbCh'], *args, **kwargs)
+    def create_pop(*args, **kwargs):
+      if 'nbCh' not in kwargs.keys():
+        # enforce the default
+        kwargs['nbCh'] = params['nbCh']
+      createMC(*args, **kwargs)
     update_Ie = lambda p: [nest.SetStatus(Pop[p][i],{"I_e":params['Ie'+p]}) for i in range(len(Pop[p]))]
 
   nbSim['MSN'] = params['nbMSN']
@@ -245,6 +253,7 @@ def instantiate_BG(params={}, antagInjectionSite='none', antag=''):
   nstrand.set_seed(params['nestSeed'], params['pythonSeed']) # sets the seed for the BG construction
 
   nest.SetKernelStatus({"data_path": dataPath})
+  #nest.SetKernelStatus({"resolution": 0.005}) # simulates with a higher precision
   initNeurons()
 
   print '/!\ Using the following LG14 parameterization',params['LG14modelID']
