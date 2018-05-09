@@ -138,17 +138,32 @@ def connectBG(antagInjectionSite,antag):
   connect_pop('in','GPe','STN', projType=params['cTypeGPeSTN'], redundancy= params['redundancyGPeSTN'],  gain=G['STN'])
 
   print '* GPe Inputs'
+  if 'fakeGPeRecurrent' not in params.keys():
+    # usual case: GPe's recurrent collaterals are handled normally
+    GPe_recurrent_source = 'GPe'
+  else:
+    # here collaterals are simulated with Poisson train spikes firing at the frequency given by params['fakeGPeRecurrent']
+    rate['Fake_GPe'] = float(params['fakeGPeRecurrent'])
+    for nucleus_dict in [nbSim, neuronCounts]:
+      nucleus_dict['Fake_GPe'] = nucleus_dict['GPe']
+    for connection_dict in [P, alpha, p, tau]:
+      connection_dict['Fake_GPe->GPe'] = connection_dict['GPe->GPe']
+    if params['nbCh'] == 1:
+      create('Fake_GPe', fake=True, parrot=True)
+    else:
+      createMC('Fake_GPe', params['nbCh'], fake=True, parrot=True)
+    GPe_recurrent_source = 'Fake_GPe'
   if antagInjectionSite == 'GPe':
     if   antag == 'AMPA':
       connect_pop('NMDA','CMPf','GPe',projType=params['cTypeCMPfGPe'],redundancy= params['redundancyCMPfGPe'],gain=G['GPe'])
       connect_pop('NMDA','STN','GPe', projType=params['cTypeSTNGPe'], redundancy= params['redundancySTNGPe'], gain=G['GPe'])
       connect_pop('in','MSN','GPe',   projType=params['cTypeMSNGPe'], redundancy= params['redundancyMSNGPe'], gain=G['GPe'])
-      connect_pop('in','GPe','GPe',   projType=params['cTypeGPeGPe'], redundancy= params['redundancyGPeGPe'], gain=G['GPe'])
+      connect_pop('in', GPe_recurrent_source, 'GPe', projType=params['cTypeGPeGPe'], redundancy= params['redundancyGPeGPe'], gain=G['GPe'])
     elif antag == 'NMDA':
       connect_pop('AMPA','CMPf','GPe',projType=params['cTypeCMPfGPe'],redundancy= params['redundancyCMPfGPe'],gain=G['GPe'])
       connect_pop('AMPA','STN','GPe', projType=params['cTypeSTNGPe'], redundancy= params['redundancySTNGPe'], gain=G['GPe'])
       connect_pop('in','MSN','GPe',   projType=params['cTypeMSNGPe'], redundancy= params['redundancyMSNGPe'], gain=G['GPe'])
-      connect_pop('in','GPe','GPe',   projType=params['cTypeGPeGPe'], redundancy= params['redundancyGPeGPe'], gain=G['GPe'])
+      connect_pop('in', GPe_recurrent_source, 'GPe', projType=params['cTypeGPeGPe'], redundancy= params['redundancyGPeGPe'], gain=G['GPe'])
     elif antag == 'AMPA+GABAA':
       connect_pop('NMDA','CMPf','GPe',projType=params['cTypeCMPfGPe'],redundancy= params['redundancyCMPfGPe'],gain=G['GPe'])
       connect_pop('NMDA','STN','GPe', projType=params['cTypeSTNGPe'], redundancy= params['redundancySTNGPe'], gain=G['GPe'])
@@ -161,7 +176,7 @@ def connectBG(antagInjectionSite,antag):
     connect_pop('ex','CMPf','GPe',projType=params['cTypeCMPfGPe'],redundancy= params['redundancyCMPfGPe'],gain=G['GPe'])
     connect_pop('ex','STN','GPe', projType=params['cTypeSTNGPe'], redundancy= params['redundancySTNGPe'], gain=G['GPe'])
     connect_pop('in','MSN','GPe', projType=params['cTypeMSNGPe'], redundancy= params['redundancyMSNGPe'], gain=G['GPe'])
-    connect_pop('in','GPe','GPe', projType=params['cTypeGPeGPe'], redundancy= params['redundancyGPeGPe'], gain=G['GPe'])
+    connect_pop('in', GPe_recurrent_source, 'GPe', projType=params['cTypeGPeGPe'], redundancy= params['redundancyGPeGPe'], gain=G['GPe'])
 
   print '* GPi Inputs'
   if antagInjectionSite =='GPi':

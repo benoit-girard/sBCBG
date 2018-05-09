@@ -30,18 +30,24 @@ def loadLG14params(ID):
     LG14Solutions.append(row)
 
   print '### Parameterization #'+str(ID)+' from (Lienard & Girard, 2014) is used. ###'
-  #print LG14Solutions[ID]['ALPHA_GPe_MSN']
 
   for k,v in alpha.iteritems():
-    #print k,v,round(float(LG14Solutions[ID]['ALPHA_'+k.replace('->','_')]),0)
-    alpha[k] = round(float(LG14Solutions[ID]['ALPHA_'+k.replace('->','_')]),0)
+    try:
+      alpha[k] = round(float(LG14Solutions[ID]['ALPHA_'+k.replace('->','_')]),0)
+    except:
+      print('Could not find LG14 parameters for connection `'+k+'`, trying to run anyway.')
 
   for k,v in p.iteritems():
-    #print 'dist:',k,v,round(float(LG14Solutions[ID]['DIST_'+k.replace('->','_')]),2)
-    p[k] = round(float(LG14Solutions[ID]['DIST_'+k.replace('->','_')]),2)
+    try:
+      p[k] = round(float(LG14Solutions[ID]['DIST_'+k.replace('->','_')]),2)
+    except:
+      print('Could not find LG14 parameters for connection `'+k+'`, trying to run anyway.')
 
   for k,v in BGparams.iteritems():
-    BGparams[k]['V_th'] = round(float(LG14Solutions[ID]['THETA_'+k]),1)
+    try:
+      BGparams[k]['V_th'] = round(float(LG14Solutions[ID]['THETA_'+k]),1)
+    except:
+      print('Could not find LG14 parameters for connection `'+k+'`, trying to run anyway.')
 
 
 def loadThetaFromCustomparams(params):
