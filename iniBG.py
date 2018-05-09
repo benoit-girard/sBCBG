@@ -90,13 +90,13 @@ def connectBG(antagInjectionSite,antag):
 
   # single or multi-channel?
   if params['nbCh'] == 1:
-    connect_pop = lambda *args, **kwargs: connect(*args, RedundancyType=params['RedundancyType'], **kwargs)
+    connect_pop = lambda *args, **kwargs: connect(*args, RedundancyType=params['RedundancyType'], stochastic_delays=params['stochastic_delays'], **kwargs)
   else:
     def connect_pop(*args, **kwargs):
       if 'source_channels' not in kwargs.keys():
         # enforce the default
         kwargs['source_channels'] = range(params['nbCh'])
-      return connectMC(*args, RedundancyType=params['RedundancyType'], **kwargs)
+      return connectMC(*args, RedundancyType=params['RedundancyType'], stochastic_delays=params['stochastic_delays'], **kwargs)
 
   #-------------------------
   # connection of populations

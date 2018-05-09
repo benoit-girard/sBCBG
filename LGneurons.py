@@ -143,10 +143,18 @@ def createMC(name,nbCh,fake=False,parrot=True):
 #   with function `mass_mirror`, that adds NMDA on top of AMPA connections
 # - `inDegree`, `receptor_type`, `weight`, `delay` are Nest connection params
 #------------------------------------------------------------------------------
-def mass_connect(source, dest, synapse_label, inDegree, receptor_type, weight, delay, verbose=False):
+def mass_connect(source, dest, synapse_label, inDegree, receptor_type, weight, delay, stochastic_delays=None, verbose=False):
   def printv(text):
     if verbose:
       print(text)
+
+  # potential initialization of stochastic delays
+  if 'stochastic_delays' != None and delay > 0:
+    printv('Using stochastic delays in mass-connect')
+    low = delay * 0.5
+    high = delay * 1.5
+    sigma = delay * stochastic_delays
+    delay =  {'distribution': 'normal_clipped', 'low': low, 'high': high, 'mu': delay, 'sigma': sigma}
 
   # The first `fixed_indegree` connection ensures that all neurons in `dest`
   # are targeted by the same number of axons (an integer number)
@@ -176,7 +184,7 @@ def mass_connect(source, dest, synapse_label, inDegree, receptor_type, weight, d
 #   interest - typically, they are the same as in the call to `mass_connect`
 # - `receptor_type`, `weight`, `delay` are Nest connection params
 #------------------------------------------------------------------------------
-def mass_mirror(source, synapse_label, receptor_type, weight, delay, verbose=False):
+def mass_mirror(source, synapse_label, receptor_type, weight, delay, stochastic_delays, verbose=False):
   def printv(text):
     if verbose:
       print(text)
@@ -188,6 +196,9 @@ def mass_mirror(source, synapse_label, receptor_type, weight, delay, verbose=Fal
   if ampa_conns:
     # extract just source and target GID lists, all other information is irrelevant here
     printv('found '+str(len(ampa_conns))+' AMPA connections\n')
+    if 'stochastic_delays' != None and delay > 0:
+      printv('Using stochastic delays in mass-miror')
+      delay = np.array(nest.GetStatus(ampa_conns, keys=['delay'])).flatten()
     src, tgt, _, _, _ = zip(*ampa_conns)
     nest.Connect(src, tgt, 'one_to_one',
                  {'model': 'static_synapse_lbl',
@@ -206,7 +217,7 @@ def mass_mirror(source, synapse_label, receptor_type, weight, delay, verbose=Fal
 # LCGDelays: shall we use the delays obtained by (Liénard, Cos, Girard, in prep) or not (default = True)
 # gain : allows to amplify the weight normally deduced from LG14
 #-------------------------------------------------------------------------------
-def connect(type, nameSrc, nameTgt, redundancy, RedundancyType, LCGDelays=True, gain=1., verbose=False, projType=''):
+def connect(type, nameSrc, nameTgt, redundancy, RedundancyType, LCGDelays=True, gain=1., stochastic_delays=None, verbose=False, projType=''):
 
   def printv(text):
     if verbose:
@@ -270,10 +281,10 @@ def connect(type, nameSrc, nameTgt, redundancy, RedundancyType, LCGDelays=True, 
   else:
     delay= 1.
 
-  mass_connect(Pop[nameSrc], Pop[nameTgt], lbl, inDegree, recType[lRecType[0]], W[lRecType[0]], delay)
+  mass_connect(Pop[nameSrc], Pop[nameTgt], lbl, inDegree, recType[lRecType[0]], W[lRecType[0]], delay, stochastic_delays = stochastic_delays)
   if type == 'ex':
     # mirror the AMPA connection with similarly connected NMDA connections
-    mass_mirror(Pop[nameSrc], lbl, recType['NMDA'], W['NMDA'], delay)
+    mass_mirror(Pop[nameSrc], lbl, recType['NMDA'], W['NMDA'], delay, stochastic_delays = stochastic_delays)
 
   return W
 
@@ -294,7 +305,7 @@ def connect(type, nameSrc, nameTgt, redundancy, RedundancyType, LCGDelays=True, 
 #                                    | / |
 #                   Tgt channels:   (0) (1)
 #-------------------------------------------------------------------------------
-def connectMC(type, nameSrc, nameTgt, projType, redundancy, RedundancyType, LCGDelays=True, gain=1., source_channels = None, verbose=False):
+def connectMC(type, nameSrc, nameTgt, projType, redundancy, RedundancyType, LCGDelays=True, gain=1., source_channels = None, stochastic_delays=None, verbose=False):
 
   def printv(text):
     if verbose:
@@ -373,16 +384,16 @@ def connectMC(type, nameSrc, nameTgt, projType, redundancy, RedundancyType, LCGD
 
   if projType == 'focused': # if projections focused, input come only from the same channel as tgtChannel
      for src_channel in source_channels: # for each relevant channel of the Source nucleus
-       mass_connect(Pop[nameSrc][src_channel], Pop[nameTgt][src_channel-source_channels[0]], lbl, inDegree, recType[lRecType[0]], W[lRecType[0]], delay)
+       mass_connect(Pop[nameSrc][src_channel], Pop[nameTgt][src_channel-source_channels[0]], lbl, inDegree, recType[lRecType[0]], W[lRecType[0]], delay, stochastic_delays = stochastic_delays)
   elif projType == 'diffuse': # if projections diffused, input connections are shared among each possible input channel equally
     for src_channel in source_channels: # for each relevant channel of the Source nucleus
       for tgt_channel in range(len(Pop[nameTgt])): # for each channel of the Target nucleus
-        mass_connect(Pop[nameSrc][src_channel], Pop[nameTgt][tgt_channel], lbl, inDegree/len(Pop[nameTgt]), recType[lRecType[0]], W[lRecType[0]], delay)
+        mass_connect(Pop[nameSrc][src_channel], Pop[nameTgt][tgt_channel], lbl, inDegree/len(Pop[nameTgt]), recType[lRecType[0]], W[lRecType[0]], delay, stochastic_delays = stochastic_delays)
 
   if type == 'ex':
     # mirror the AMPA connection with similarly connected NMDA connections
     for src_channel in source_channels: # for each relevant channel of the Source nucleus
-      mass_mirror(Pop[nameSrc][src_channel], lbl, recType['NMDA'], W['NMDA'], delay)
+      mass_mirror(Pop[nameSrc][src_channel], lbl, recType['NMDA'], W['NMDA'], delay, stochastic_delays = stochastic_delays)
 
   return W
 
