@@ -196,7 +196,7 @@ def mass_mirror(source, synapse_label, receptor_type, weight, delay, stochastic_
   if ampa_conns:
     # extract just source and target GID lists, all other information is irrelevant here
     printv('found '+str(len(ampa_conns))+' AMPA connections\n')
-    if 'stochastic_delays' != None and delay > 0:
+    if stochastic_delays != None and delay > 0:
       printv('Using stochastic delays in mass-miror')
       delay = np.array(nest.GetStatus(ampa_conns, keys=['delay'])).flatten()
     src, tgt, _, _, _ = zip(*ampa_conns)
