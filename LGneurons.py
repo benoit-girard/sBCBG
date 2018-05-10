@@ -149,7 +149,7 @@ def mass_connect(source, dest, synapse_label, inDegree, receptor_type, weight, d
       print(text)
 
   # potential initialization of stochastic delays
-  if 'stochastic_delays' != None and delay > 0:
+  if stochastic_delays != None and delay > 0:
     printv('Using stochastic delays in mass-connect')
     low = delay * 0.5
     high = delay * 1.5
