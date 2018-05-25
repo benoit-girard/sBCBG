@@ -21,35 +21,47 @@ def createBG():
   #-------------------------
   print '\nCreating neurons\n================'
 
+  if params['nbCh'] == 1:
+    create_pop = lambda *args, **kwargs: create(*args, **kwargs)
+    update_Ie = lambda p: nest.SetStatus(Pop[p],{"I_e":params['Ie'+p]})
+  else:
+    create_pop = lambda *args, **kwargs: createMC(nbCh=params['nbCh'], *args, **kwargs)
+    update_Ie = lambda p: [nest.SetStatus(Pop[p][i],{"I_e":params['Ie'+p]}) for i in range(len(Pop[p]))]
+
   nbSim['MSN'] = params['nbMSN']
-  create('MSN')
-  nest.SetStatus(Pop['MSN'],{"I_e":params['IeMSN']})
+  create_pop('MSN')
+  update_Ie('MSN')
+  #nest.SetStatus(Pop['MSN'],{"I_e":params['IeMSN']})
 
   nbSim['FSI'] = params['nbFSI']
-  create('FSI')
-  nest.SetStatus(Pop['FSI'],{"I_e":params['IeFSI']})
+  create_pop('FSI')
+  #nest.SetStatus(Pop['FSI'],{"I_e":params['IeFSI']})
+  update_Ie('FSI')
 
   nbSim['STN'] = params['nbSTN']
-  create('STN')
-  nest.SetStatus(Pop['STN'],{"I_e":params['IeSTN']})
+  create_pop('STN')
+  #nest.SetStatus(Pop['STN'],{"I_e":params['IeSTN']})
+  update_Ie('STN')
 
   nbSim['GPe'] = params['nbGPe']
-  create('GPe')
-  nest.SetStatus(Pop['GPe'],{"I_e":params['IeGPe']})
+  create_pop('GPe')
+  #nest.SetStatus(Pop['GPe'],{"I_e":params['IeGPe']})
+  update_Ie('GPe')
 
   nbSim['GPi'] = params['nbGPi']
-  create('GPi')
-  nest.SetStatus(Pop['GPi'],{"I_e":params['IeGPi']})
+  create_pop('GPi')
+  #nest.SetStatus(Pop['GPi'],{"I_e":params['IeGPi']})
+  update_Ie('GPi')
 
   parrot = True # switch to False at your risks & perils...
   nbSim['CSN'] = params['nbCSN']
-  create('CSN', fake=True, parrot=parrot)
+  create_pop('CSN', fake=True, parrot=parrot)
 
   nbSim['PTN'] = params['nbPTN']
-  create('PTN', fake=True, parrot=parrot)
+  create_pop('PTN', fake=True, parrot=parrot)
 
   nbSim['CMPf'] = params['nbCMPf']
-  create('CMPf', fake=True, parrot=params['parrotCMPf']) # was: False
+  create_pop('CMPf', fake=True, parrot=params['parrotCMPf']) # was: False
 
   print "Number of simulated neurons:", nbSim
 

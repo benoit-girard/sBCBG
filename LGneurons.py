@@ -1,19 +1,22 @@
-#!/apps/free/python/2.7.10/bin/python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 interactive = False # avoid loading X dependent things
                    # set to False for simulations on Sango
 storeGDF = True # unless overriden by run.py, keep spike rasters
 
-if interactive :
-  import pylab
-
 import nstrand
+
+import pandas as pd
+import pylab
 
 import nest
 import numpy as np
 import numpy.random as rnd
 import csv
 from math import sqrt, cosh, exp, pi
+
+AMPASynapseCounter = 0 # counter variable for the fast connect
 
 #-------------------------------------------------------------------------------
 # Loads a given LG14 model parameterization
@@ -27,18 +30,24 @@ def loadLG14params(ID):
     LG14Solutions.append(row)
 
   print '### Parameterization #'+str(ID)+' from (Lienard & Girard, 2014) is used. ###'
-  #print LG14Solutions[ID]['ALPHA_GPe_MSN']
 
   for k,v in alpha.iteritems():
-    #print k,v,round(float(LG14Solutions[ID]['ALPHA_'+k.replace('->','_')]),0)
-    alpha[k] = round(float(LG14Solutions[ID]['ALPHA_'+k.replace('->','_')]),0)
+    try:
+      alpha[k] = round(float(LG14Solutions[ID]['ALPHA_'+k.replace('->','_')]),0)
+    except:
+      print('Could not find LG14 parameters for connection `'+k+'`, trying to run anyway.')
 
   for k,v in p.iteritems():
-    #print 'dist:',k,v,round(float(LG14Solutions[ID]['DIST_'+k.replace('->','_')]),2)
-    p[k] = round(float(LG14Solutions[ID]['DIST_'+k.replace('->','_')]),2)
+    try:
+      p[k] = round(float(LG14Solutions[ID]['DIST_'+k.replace('->','_')]),2)
+    except:
+      print('Could not find LG14 parameters for connection `'+k+'`, trying to run anyway.')
 
   for k,v in BGparams.iteritems():
-    BGparams[k]['V_th'] = round(float(LG14Solutions[ID]['THETA_'+k]),1)
+    try:
+      BGparams[k]['V_th'] = round(float(LG14Solutions[ID]['THETA_'+k]),1)
+    except:
+      print('Could not find LG14 parameters for connection `'+k+'`, trying to run anyway.')
 
 
 def loadThetaFromCustomparams(params):
@@ -52,7 +61,7 @@ def loadThetaFromCustomparams(params):
       pass
 
 #-------------------------------------------------------------------------------
-# Changes the default of the iaf_psc_alpha_multisynapse neurons 
+# Changes the default of the iaf_psc_alpha_multisynapse neurons
 # Very important because it defines the 3 types of receptors (AMPA, NMDA, GABA) that will be needed
 # Has to be called after any KernelReset
 #-------------------------------------------------------------------------------
@@ -62,7 +71,7 @@ def initNeurons():
 #-------------------------------------------------------------------------------
 # Creates a population of neurons
 # name: string naming the population, as defined in NUCLEI list
-# fake: if fake is True, the neurons will be replaced by Poisson generators, firing 
+# fake: if fake is True, the neurons will be replaced by Poisson generators, firing
 #       at the rate indicated in the "rate" dictionary
 # parrot: do we use parrot neurons or not? If not, there will be no correlations in the inputs, and a waste of computation power...
 #-------------------------------------------------------------------------------
@@ -83,7 +92,7 @@ def create(name,fake=False,parrot=True):
       nest.SetStatus(Fake[name],{'rate':rate[name]})
       Pop[name]  = nest.Create('parrot_neuron',int(nbSim[name]))
       nest.Connect(pre=Fake[name],post=Pop[name],conn_spec={'rule':'one_to_one'})
-    
+
   else:
     print '* '+name+':',nbSim[name],'neurons with parameters:',BGparams[name]
     Pop[name] = nest.Create("iaf_psc_alpha_multisynapse",int(nbSim[name]),params=BGparams[name])
@@ -126,50 +135,145 @@ def createMC(name,nbCh,fake=False,parrot=True):
     for i in range(nbCh):
       Pop[name].append(nest.Create("iaf_psc_alpha_multisynapse",int(nbSim[name]),params=BGparams[name]))
 
+
+#------------------------------------------------------------------------------
+# Routine to perform the fast connection using nest built-in `connect` function
+# - `source` & `dest` are lists defining Nest IDs of source & target population
+# - `synapse_label` is used to tag connections and be able to find them quickly
+#   with function `mass_mirror`, that adds NMDA on top of AMPA connections
+# - `inDegree`, `receptor_type`, `weight`, `delay` are Nest connection params
+#------------------------------------------------------------------------------
+def mass_connect(source, dest, synapse_label, inDegree, receptor_type, weight, delay, stochastic_delays=None, verbose=False):
+  def printv(text):
+    if verbose:
+      print(text)
+
+  # potential initialization of stochastic delays
+  if stochastic_delays != None and delay > 0:
+    printv('Using stochastic delays in mass-connect')
+    low = delay * 0.5
+    high = delay * 1.5
+    sigma = delay * stochastic_delays
+    delay =  {'distribution': 'normal_clipped', 'low': low, 'high': high, 'mu': delay, 'sigma': sigma}
+
+  # The first `fixed_indegree` connection ensures that all neurons in `dest`
+  # are targeted by the same number of axons (an integer number)
+  integer_inDegree = np.floor(inDegree)
+  if integer_inDegree>0:
+    printv('Adding '+str(int(integer_inDegree*len(dest)))+' connections with rule `fixed_indegree`\n')
+    nest.Connect(source,
+                 dest,
+                 {'rule': 'fixed_indegree', 'indegree': int(integer_inDegree)},
+                 {'model': 'static_synapse_lbl', 'synapse_label': synapse_label, 'receptor_type': receptor_type, 'weight': weight, 'delay':delay})
+
+  # The second `fixed_total_number` connection distributes remaining axonal
+  # contacts at random (i.e. the remaining fractional part after the first step)
+  float_inDegree = inDegree - integer_inDegree
+  remaining_connections = np.round(float_inDegree * len(dest))
+  if remaining_connections > 0:
+    printv('Adding '+str(remaining_connections)+' remaining connections with rule `fixed_total_number`\n')
+    nest.Connect(source,
+                 dest,
+                 {'rule': 'fixed_total_number', 'N': int(remaining_connections)},
+                 {'model': 'static_synapse_lbl', 'synapse_label': synapse_label, 'receptor_type': receptor_type, 'weight': weight, 'delay':delay})
+
+#------------------------------------------------------------------------------
+# Routine to duplicate a connection made with a specific receptor, with another
+# receptor (typically to add NMDA connections to existing AMPA connections)
+# - `source` & `synapse_label` should uniquely define the connections of
+#   interest - typically, they are the same as in the call to `mass_connect`
+# - `receptor_type`, `weight`, `delay` are Nest connection params
+#------------------------------------------------------------------------------
+def mass_mirror(source, synapse_label, receptor_type, weight, delay, stochastic_delays, verbose=False):
+  def printv(text):
+    if verbose:
+      print(text)
+
+  # find all AMPA connections for the given projection type
+  printv('looking for AMPA connections to mirror with NMDA...\n')
+  ampa_conns = nest.GetConnections(source=source, synapse_label=synapse_label)
+  # in rare cases, there may be no connections, guard against that
+  if ampa_conns:
+    # extract just source and target GID lists, all other information is irrelevant here
+    printv('found '+str(len(ampa_conns))+' AMPA connections\n')
+    if stochastic_delays != None and delay > 0:
+      printv('Using stochastic delays in mass-miror')
+      delay = np.array(nest.GetStatus(ampa_conns, keys=['delay'])).flatten()
+    src, tgt, _, _, _ = zip(*ampa_conns)
+    nest.Connect(src, tgt, 'one_to_one',
+                 {'model': 'static_synapse_lbl',
+                  'synapse_label': synapse_label, # tag with the same number (doesn't matter)
+                  'receptor_type': receptor_type, 'weight': weight, 'delay':delay})
+
 #-------------------------------------------------------------------------------
 # Establishes a connexion between two populations, following the results of LG14
 # type : a string 'ex' or 'in', defining whether it is excitatory or inhibitory
 # nameTgt, nameSrc : strings naming the populations, as defined in NUCLEI list
-# inDegree : number of neurons from Src project to a single Tgt neuron
+# redundancy : value that characterizes the number of repeated axonal contacts from one neuron of Src to one neuron of Tgt (see RedundancyType for interpretation of this value)
+# RedundancyType : string
+#   if 'inDegreeAbs': `redundancy` is the number of neurons from Src that project to a single Tgt neuron
+#   if 'outDegreeAbs': `redundancy` is number of axonal contacts between each neuron from Src onto a single Tgt neuron
+#   if 'outDegreeCons': `redundancy` is a scaled proportion of axonal contacts between each neuron from Src onto a single Tgt neuron given arithmetical constraints, ranging from 0 (minimal number of contacts to achieve required axonal bouton counts) to 1 (maximal number of contacts with respect to population numbers)
 # LCGDelays: shall we use the delays obtained by (Liénard, Cos, Girard, in prep) or not (default = True)
 # gain : allows to amplify the weight normally deduced from LG14
 #-------------------------------------------------------------------------------
-def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1., verbose=True):
+def connect(type, nameSrc, nameTgt, redundancy, RedundancyType, LCGDelays=True, gain=1., stochastic_delays=None, verbose=False, projType=''):
 
   def printv(text):
     if verbose:
       print(text)
 
-  if inDegree > 0. and inDegree < 1.:
-    # fractional inDegree is expressed as a fraction of max number of neurons
-    inDegree = get_frac(inDegree, nameSrc, nameTgt, verbose=verbose)
+  printv("* connecting "+nameSrc+" -> "+nameTgt+" with "+type+" connection")
+
+  if RedundancyType == 'inDegreeAbs':
+    # inDegree is already provided in the right form
+    inDegree = float(redundancy)
+  elif RedundancyType == 'outDegreeAbs':
+    #### fractional outDegree is expressed as a fraction of max axo-dendritic contacts
+    inDegree = get_frac(1./redundancy, nameSrc, nameTgt, neuronCounts[nameSrc], neuronCounts[nameTgt], verbose=verbose)
+  elif RedundancyType == 'outDegreeCons':
+    #### fractional outDegree is expressed as a ratio of min/max axo-dendritic contacts
+    inDegree = get_frac(redundancy, nameSrc, nameTgt, neuronCounts[nameSrc], neuronCounts[nameTgt], useMin=True, verbose=verbose)
+  else:
+    raise KeyError('`RedundancyType` should be one of `inDegreeAbs`, `outDegreeAbs`, or `outDegreeCons`.')
 
   # check if in degree acceptable (not larger than number of neurons in the source nucleus)
   if inDegree  > nbSim[nameSrc]:
     printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(nbSim[nameSrc])+"), thus reduced to the latter value")
     inDegree = nbSim[nameSrc]
 
-  printv("* connecting "+nameSrc+" -> "+nameTgt+" with "+type+" connection and "+str(inDegree)+ " inputs")
+  if inDegree == 0.:
+    printv("/!\ WARNING: non-existent connection strength, will skip")
+    return
+
+  global AMPASynapseCounter
 
   # process receptor types
   if type == 'ex':
     lRecType = ['AMPA','NMDA']
+    AMPASynapseCounter = AMPASynapseCounter + 1
+    lbl = AMPASynapseCounter # needs to add NMDA later
   elif type == 'AMPA':
     lRecType = ['AMPA']
+    lbl = 0
   elif type == 'NMDA':
     lRecType = ['NMDA']
+    lbl = 0
   elif type == 'in':
     lRecType = ['GABA']
+    lbl = 0
   else:
     raise KeyError('Undefined connexion type: '+type)
-  
-  W = computeW(lRecType,nameSrc,nameTgt,inDegree,gain,verbose=verbose)
 
-  if nameSrc+'->'+nameTgt in ConnectMap:
-    loadConnectMap = True
-  else:
-    loadConnectMap = False
-    ConnectMap[nameSrc+'->'+nameTgt] = []
+  W = computeW(lRecType, nameSrc, nameTgt, inDegree, gain, verbose=False)
+
+  printv("  W="+str(W)+" and inDegree="+str(inDegree))
+
+  #if nameSrc+'->'+nameTgt in ConnectMap:
+  #  loadConnectMap = True
+  #else:
+  #  loadConnectMap = False
+  #  ConnectMap[nameSrc+'->'+nameTgt] = []
 
   # determine which transmission delay to use:
   if LCGDelays:
@@ -177,107 +281,100 @@ def connect(type,nameSrc,nameTgt,inDegree,LCGDelays=True,gain=1., verbose=True):
   else:
     delay= 1.
 
-  pop_array = np.array(Pop[nameSrc]) # convert to numpy array to allow indexing
-  connect_queue = np.array([[],[]], dtype=int) # the connection queue
-  max_chunk_size = 1000 # what is the max number of connections to add simultaneously?
+  mass_connect(Pop[nameSrc], Pop[nameTgt], lbl, inDegree, recType[lRecType[0]], W[lRecType[0]], delay, stochastic_delays = stochastic_delays)
+  if type == 'ex':
+    # mirror the AMPA connection with similarly connected NMDA connections
+    mass_mirror(Pop[nameSrc], lbl, recType['NMDA'], W['NMDA'], delay, stochastic_delays = stochastic_delays)
 
-  # To ensure that for excitatory connections, Tgt neurons receive AMPA and NMDA projections from the same Src neurons, 
-  # we have to handle the "indegree" connectivity ourselves:
-  for nTgt in range(int(nbSim[nameTgt])):
-    #node_info   = nest.GetStatus([Pop[nameTgt][nTgt]])[0] # use the process-specific random number generator
-    #nrnd = nstrand.pyRngs[node_info['vp']]                # ^
-    nrnd = nstrand.pyMasterRng # use the master python seed
-    if loadConnectMap:
-      # use previously created connectivity map
-      inputTable = ConnectMap[nameSrc+'->'+nameTgt][nTgt]
-      inDeg = len(inputTable)
-    else:
-      # if no connectivity map exists between the two populations, let's create one
-      r = inDegree - int(inDegree)
-      inDeg = int(inDegree) if nrnd.rand() > r else int(inDegree)+1
-      inputTable = pop_array[nrnd.choice(int(nbSim[nameSrc]), size=inDeg, replace=False)]
-      ConnectMap[nameSrc+'->'+nameTgt] += [tuple(inputTable)]
-
-    connect_queue = np.concatenate((connect_queue, np.array([[Pop[nameTgt][nTgt]]*inDeg, inputTable])), axis=1)
-
-    if connect_queue.shape[1] > max_chunk_size:
-      # space for at least one chunk? => empty the queue
-      connect_queue = empty_queue(connect_queue, W, delay, lRecType, max_chunk_size, do_empty=False)
-
-    # old way of connecting neurons
-    #for r in lRecType:
-    #  w = W[r]
-    #  nest.Connect(pre=ConnectMap[nameSrc+'->'+nameTgt][nTgt], post=(Pop[nameTgt][nTgt],), syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
-
-  empty_queue(connect_queue, W, delay, lRecType, max_chunk_size, do_empty=True)
-
-
-#-------------------------------------------------------------------------------
-# Simple queue mechanism
-# This function makes connections by chunk, until the chunk size is too small
-#-------------------------------------------------------------------------------
-def empty_queue(l, W, delay, lRecType, n, do_empty = False):
-  for connect_chunk in [[l[0][i:i + n], l[1][i:i + n]] for i in xrange(0, len(l[0]), n)]:
-    if len(connect_chunk[0]) < n and not do_empty:
-      # return the incomplete chunk, it will processed next time
-      return connect_chunk
-    else:
-      # call the connect function
-      for r in lRecType:
-        w = W[r]
-        nest.Connect(pre=tuple(connect_chunk[1]), post=tuple(connect_chunk[0]), conn_spec='one_to_one', syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
-  return np.array([[],[]], dtype=int)
+  return W
 
 
 #-------------------------------------------------------------------------------
 # Establishes a connexion between two populations, following the results of LG14, in a MultiChannel context
 # type : a string 'ex' or 'in', defining whether it is excitatory or inhibitory
 # nameTgt, nameSrc : strings naming the populations, as defined in NUCLEI list
-# projType : type of projections. For the moment: 'focused' (only channel-to-channel connection) and 
+# projType : type of projections. For the moment: 'focused' (only channel-to-channel connection) and
 #            'diffuse' (all-to-one with uniform distribution)
-# inDegree : number of neurons from Src project to a single Tgt neuron
-# LCGDelays: shall we use the delays obtained by (Liénard, Cos, Girard, in prep) or not (default = True)
+# redundancy, RedundancyType : contrains the inDegree - see function `connect` for details
+# LCGDelays : shall we use the delays obtained by (Liénard, Cos, Girard, in prep) or not (default = True)
 # gain : allows to amplify the weight normally deduced from LG14
+# source_channels : By default with `source_channels=None`, the connection is implemented using all source channels
+#                   Specify a custom list of channels to implement connections only from these channels
+#                   For example, calling successively `connectMC(...,projType='focused',source_channels=[0])` and then `connectMC(...,projType='diffuse',source_channels=[1])` would implement first a focused projection using only source channel 0 and then a diffuse connection using only source channel 1:
+#                   Src channels:   (0) (1)
+#                                    | / |
+#                   Tgt channels:   (0) (1)
 #-------------------------------------------------------------------------------
-def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1., verbose=True):
+def connectMC(type, nameSrc, nameTgt, projType, redundancy, RedundancyType, LCGDelays=True, gain=1., source_channels = None, stochastic_delays=None, verbose=False):
 
   def printv(text):
     if verbose:
       print(text)
 
-  printv("* connecting "+nameSrc+" -> "+nameTgt+" with "+projType+type+" connection and "+str(inDegree)+" inputs")
+  printv("* connecting "+nameSrc+" -> "+nameTgt+" with "+projType+" "+type+" connection")
+
+  if source_channels == None:
+    # if not specified, assume that the connection originates from all channels
+    source_channels = range(len(Pop[nameSrc]))
+
+  if RedundancyType == 'inDegreeAbs':
+    # inDegree is already provided in the right form
+    inDegree = float(redundancy)
+  elif RedundancyType == 'outDegreeAbs':
+    #### fractional outDegree is expressed as a fraction of max axo-dendritic contacts
+    inDegree = get_frac(1./redundancy, nameSrc, nameTgt, neuronCounts[nameSrc], neuronCounts[nameTgt], verbose=verbose)
+  elif RedundancyType == 'outDegreeCons':
+    #### fractional outDegree is expressed as a ratio of min/max axo-dendritic contacts
+    inDegree = get_frac(redundancy, nameSrc, nameTgt, neuronCounts[nameSrc], neuronCounts[nameTgt], useMin=True, verbose=verbose)
+  else:
+    raise KeyError('`RedundancyType` should be one of `inDegreeAbs`, `outDegreeAbs`, or `outDegreeCons`.')
 
   # check if in degree acceptable (not larger than number of neurons in the source nucleus)
   if projType == 'focused' and inDegree > nbSim[nameSrc]:
-    printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(nbSim[nameSrc])+"), thus reduced to the latter value")
+    printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in individual source channels ("+str(nbSim[nameSrc])+"), thus reduced to the latter value")
     inDegree = nbSim[nameSrc]
-  if projType == 'diffuse' and inDegree  > nbSim[nameSrc]*len(Pop[nameSrc]):
-    printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the source population ("+str(bSim[nameSrc]*len(Pop[nameSrc]))+"), thus reduced to the latter value")
-    inDegree = nbSim[nameSrc]*len(Pop[nameSrc])
+  if projType == 'diffuse' and inDegree  > nbSim[nameSrc]*len(source_channels):
+    printv("/!\ WARNING: required 'in degree' ("+str(inDegree)+") larger than number of neurons in the overall source population ("+str(nbSim[nameSrc]*len(source_channels))+"), thus reduced to the latter value")
+    inDegree = nbSim[nameSrc]*len(source_channels)
+
+  if inDegree == 0.:
+    printv("/!\ WARNING: non-existent connection strength, will skip")
+    return
+
+  global AMPASynapseCounter
+
+  inDegree = inDegree * (float(len(source_channels)) / float(len(Pop[nameSrc])))
 
   # prepare receptor type lists:
   if type == 'ex':
     lRecType = ['AMPA','NMDA']
+    AMPASynapseCounter = AMPASynapseCounter + 1
+    lbl = AMPASynapseCounter # needs to add NMDA later
   elif type == 'AMPA':
     lRecType = ['AMPA']
+    lbl = 0
   elif type == 'NMDA':
     lRecType = ['NMDA']
+    lbl = 0
   elif type == 'in':
     lRecType = ['GABA']
+    lbl = 0
   else:
     raise KeyError('Undefined connexion type: '+type)
 
   # compute the global weight of the connection, for each receptor type:
-  W = computeW(lRecType,nameSrc,nameTgt,inDegree,gain,verbose=verbose)
+  W = computeW(lRecType, nameSrc, nameTgt, inDegree, gain, verbose=False)
 
-  # check whether a connection map has already been drawn or not:
-  if nameSrc+'->'+nameTgt in ConnectMap:
-    #print "Using existing connection map"
-    loadConnectMap = True
-  else:
-    #print "Will create a connection map"
-    loadConnectMap = False
-    ConnectMap[nameSrc+'->'+nameTgt] = [[] for i in range(len(Pop[nameTgt]))]
+  printv("  W="+str(W)+" and inDegree="+str(inDegree))
+
+  ## check whether a connection map has already been drawn or not:
+  #if nameSrc+'->'+nameTgt in ConnectMap:
+  #  #print "Using existing connection map"
+  #  loadConnectMap = True
+  #else:
+  #  #print "Will create a connection map"
+  #  loadConnectMap = False
+  #  ConnectMap[nameSrc+'->'+nameTgt] = [[] for i in range(len(Pop[nameTgt]))]
 
   # determine which transmission delay to use:
   if LCGDelays:
@@ -285,81 +382,60 @@ def connectMC(type,nameSrc,nameTgt,projType,inDegree,LCGDelays=True,gain=1., ver
   else:
     delay = 1.
 
-  # To ensure that for excitatory connections, Tgt neurons receive AMPA and NMDA projections from the same Src neurons,
-  # we have to handle the "indegree" connectivity ourselves:
-  for tgtChannel in range(len(Pop[nameTgt])): # for each channel of the Target nucleus
-    for nTgt in range(int(nbSim[nameTgt])): # for each neuron in this channel 
-      if not loadConnectMap:
-      # if no connectivity map exists between the two populations, let's create one
-        if projType =='focused': # if projections focused, input come only from the same channel as tgtChannel
-          r = inDegree - int(inDegree)
-          inputTable = rnd.choice(int(nbSim[nameSrc]),size=int(inDegree) if rnd.rand() > r else int(inDegree)+1,replace=False)
-          inputPop = []
-          for i in inputTable:
-            inputPop.append(Pop[nameSrc][tgtChannel][i])
-          inputPop = tuple(inputPop)
+  if projType == 'focused': # if projections focused, input come only from the same channel as tgtChannel
+     for src_channel in source_channels: # for each relevant channel of the Source nucleus
+       mass_connect(Pop[nameSrc][src_channel], Pop[nameTgt][src_channel-source_channels[0]], lbl, inDegree, recType[lRecType[0]], W[lRecType[0]], delay, stochastic_delays = stochastic_delays)
+  elif projType == 'diffuse': # if projections diffused, input connections are shared among each possible input channel equally
+    for src_channel in source_channels: # for each relevant channel of the Source nucleus
+      for tgt_channel in range(len(Pop[nameTgt])): # for each channel of the Target nucleus
+        mass_connect(Pop[nameSrc][src_channel], Pop[nameTgt][tgt_channel], lbl, inDegree/len(Pop[nameTgt]), recType[lRecType[0]], W[lRecType[0]], delay, stochastic_delays = stochastic_delays)
 
-          ConnectMap[nameSrc+'->'+nameTgt][tgtChannel].append(inputPop)
-        elif projType=='diffuse': # if projections diffused, input connections are shared among each possible input channel equally
-          n = int(inDegree)/int(len(Pop[nameSrc]))
-          r = float(inDegree)/float(len(Pop[nameSrc])) - n
-          inputPop = []
-          #print nameSrc,'->',nameTgt,'#input connections:',n,'(',r,')'
-          for srcChannel in range(len(Pop[nameSrc])):
-            if rnd.rand() < r:
-              nbInPerChannel = n + 1
-            else:
-              nbInPerChannel = n
-            #print '   ',nbInPerChannel
-            inputTable = rnd.choice(int(nbSim[nameSrc]),size=nbInPerChannel,replace=False)
-            for i in inputTable:
-              inputPop.append(Pop[nameSrc][srcChannel][i])
+  if type == 'ex':
+    # mirror the AMPA connection with similarly connected NMDA connections
+    for src_channel in source_channels: # for each relevant channel of the Source nucleus
+      mass_mirror(Pop[nameSrc][src_channel], lbl, recType['NMDA'], W['NMDA'], delay, stochastic_delays = stochastic_delays)
 
-          inputPop = tuple(inputPop)
-          ConnectMap[nameSrc+'->'+nameTgt][tgtChannel].append(inputPop)
-        else:
-          print "Unknown multiple channel connection method",projType
-      else:
-      #otherwise, use the existing one
-        #print nameSrc,"->",nameTgt,"using previously defined connection map"
-        inputPop = ConnectMap[nameSrc+'->'+nameTgt][tgtChannel][nTgt]
-
-      for r in lRecType:
-        w = W[r]
-
-        nest.Connect(pre=inputPop, post=(Pop[nameTgt][tgtChannel][nTgt],),syn_spec={'receptor_type':recType[r],'weight':w,'delay':delay})
-
+  return W
 
 #-------------------------------------------------------------------------------
-# returns the maximal number of distinct input neurons for one connection
+# returns the minimal & maximal numbers of distinct input neurons for one connection
 #-------------------------------------------------------------------------------
-def get_max_inputs(nameSrc, nameTgt, verbose=False):
+def get_input_range(nameSrc, nameTgt, cntSrc, cntTgt, verbose=False):
   if nameSrc=='CSN' or nameSrc=='PTN':
     nu = alpha[nameSrc+'->'+nameTgt]
+    nu0 = 0
     if verbose:
       print('\tMaximal number of distinct input neurons (nu): '+str(nu))
-      print('\tMinimal number of distinct input neurons     : unknown')
+      print('\tMinimal number of distinct input neurons     : unknown (set to 0)')
   else:
-    nu = neuronCounts[nameSrc] / float(neuronCounts[nameTgt]) * P[nameSrc+'->'+nameTgt] * alpha[nameSrc+'->'+nameTgt]
+    nu = cntSrc / float(cntTgt) * P[nameSrc+'->'+nameTgt] * alpha[nameSrc+'->'+nameTgt]
+    nu0 = cntSrc / float(cntTgt) * P[nameSrc+'->'+nameTgt]
     if verbose:
       print('\tMaximal number of distinct input neurons (nu): '+str(nu))
-      print('\tMinimal number of distinct input neurons     : '+str(neuronCounts[nameSrc] / float(neuronCounts[nameTgt]) * P[nameSrc+'->'+nameTgt]))
-  return nu
+      print('\tMinimal number of distinct input neurons     : '+str(nu0))
+  return [nu0, nu]
 
 #-------------------------------------------------------------------------------
 # computes the inDegree as a fraction of maximal possible inDegree
+# FractionalOutDegree: outDegree, expressed as a fraction
 #-------------------------------------------------------------------------------
-def get_frac(inDegree, nameSrc, nameTgt, verbose=False):
-  new_inDegree = get_max_inputs(nameSrc, nameTgt, verbose=verbose) * inDegree
+def get_frac(FractionalOutDegree, nameSrc, nameTgt, cntSrc, cntTgt, useMin=False, verbose=False):
+  if useMin == False:
+    # 'FractionalOutDegree' is taken to be relative to the maximal number of axo-dendritic contacts
+    inDegree = get_input_range(nameSrc, nameTgt, cntSrc, cntTgt, verbose=verbose)[1] * FractionalOutDegree
+  else:
+    # 'FractionalOutDegree' is taken to be relative to the maximal number of axo-dendritic contacts and their minimal number
+    r = get_input_range(nameSrc, nameTgt, cntSrc, cntTgt, verbose=verbose)
+    inDegree = (r[1] - r[0]) * FractionalOutDegree + r[0]
   if verbose:
-    print('\tConverting the fractional inDegree of '+nameSrc+' -> '+nameTgt+' from '+str(inDegree)+' to neuron count: '+str(round(new_inDegree, 2)))
-  return new_inDegree
+    print('\tConverting the fractional outDegree of '+nameSrc+' -> '+nameTgt+' from '+str(FractionalOutDegree)+' to inDegree neuron count: '+str(round(inDegree, 2))+' (relative to minimal value possible? '+str(useMin)+')')
+  return inDegree
 
 #-------------------------------------------------------------------------------
 # computes the weight of a connection, based on LG14 parameters
 #-------------------------------------------------------------------------------
-def computeW(listRecType,nameSrc,nameTgt,inDegree,gain=1.,verbose=False):
-  nu = get_max_inputs(nameSrc, nameTgt, verbose=verbose)
+def computeW(listRecType, nameSrc, nameTgt, inDegree, gain=1.,verbose=False):
+  nu = get_input_range(nameSrc, nameTgt, neuronCounts[nameSrc], neuronCounts[nameTgt], verbose=verbose)[1]
   if verbose:
     print '\tCompare with the effective chosen inDegree   :',str(inDegree)
 
@@ -381,7 +457,7 @@ simDuration = 10000. # in ms
 # extracted from LG14 Table 5
 
 FRRNormal = {'MSN': [0,1],
-             'FSI': [0,20],
+             'FSI': [7.8,14.0], # the refined constraint of 10.9 +/- 3.1 Hz was extracted from the following papers: Adler et al., 2016; Yamada et al., 2016 (summarizing date from three different experiments); and Marche and Apicella, 2017
              'STN': [15.2,22.8],
              'GPe': [55.7,74.5],
              'GPi': [59.1,79.5],
@@ -424,7 +500,8 @@ neuronCounts={'MSN': 26448.0E3,
               'STN':    77.0E3,
               'GPe':   251.0E3,
               'GPi':   143.0E3,
-              'CMPf':   86.0E3
+              'CMPf':   86.0E3,
+              'CSN': None, 'PTN': None # prevents key error
              }
 
 # Number of neurons that will be simulated
@@ -439,7 +516,7 @@ nbSim = {'MSN': 0.,
         }
 
 # P(X->Y): probability that a given neuron from X projects to at least neuron of Y
-P = {'MSN->GPe': 1., 
+P = {'MSN->GPe': 1.,
      'MSN->GPi': 0.82,
      'MSN->MSN': 1.,
      'FSI->MSN': 1.,
@@ -466,7 +543,7 @@ P = {'MSN->GPe': 1.,
     }
 
 # alpha X->Y: average number of synaptic contacts made by one neuron of X to one neuron of Y, when there is a connexion
-# for the moment set from one specific parameterization, should be read from Jean's solution file 
+# for the moment set from one specific parameterization, should be read from Jean's solution file
 alpha = {'MSN->GPe':   171,
          'MSN->GPi':   210,
          'MSN->MSN':   210,
@@ -484,7 +561,7 @@ alpha = {'MSN->GPe':   171,
          'CSN->MSN':   342, # here, represents directly \nu
          'CSN->FSI':   250, # here, represents directly \nu
          'PTN->MSN':     5, # here, represents directly \nu
-         'PTN->FSI':     5, # here, represents directly \nu 
+         'PTN->FSI':     5, # here, represents directly \nu
          'PTN->STN':   259, # here, represents directly \nu
          'CMPf->MSN': 4965,
          'CMPf->FSI': 1053,
@@ -606,7 +683,7 @@ GPiparams = {'tau_m':        14.0, # 20 -> 14 based on Johnson & McIntyre 2008, 
 
 # dictionary of the parameterizations of each neuronal type
 #-------------------------
- 
+
 BGparams = {'MSN':MSNparams,
             'FSI':FSIparams,
             'STN':STNparams,
@@ -626,7 +703,7 @@ rate = {'CSN':   2.  ,
         'STN':  14.3 ,
         'GPe':  62.6 ,
         'GPi':  64.2
-        } 
+        }
 
 #---------------------------
 def main():
@@ -681,7 +758,7 @@ def main():
   Pop['GPe'] = nest.Create('poisson_generator',int(nbSim['GPe']))
   nest.SetStatus(Pop['GPe'],{'rate':rate['GPe']})
 
-  connect('in','GPe','STN', inDegree= int(neuronCounts['GPe']/neuronCounts['STN'])) 
+  connect('in','GPe','STN', inDegree= int(neuronCounts['GPe']/neuronCounts['STN']))
 
   #-------------------------
   # measures
@@ -690,7 +767,7 @@ def main():
   mSTN = nest.Create("multimeter")
   nest.SetStatus(mSTN, {"withtime":True, "record_from":["V_m","currents"]})
   nest.Connect(mSTN, Pop['STN'])
-  
+
   spkDetect = nest.Create("spike_detector", params={"withgid": True, "withtime": True})
   nest.Connect(Pop['STN'], spkDetect)
 
@@ -719,7 +796,7 @@ def main():
   VmSTN = dmSTN["events"]["V_m"]
   ImSTN = dmSTN["events"]["currents"]
   tSTN = dmSTN["events"]["times"]
-  
+
   dSD = nest.GetStatus(spkDetect,keys="events")[0]
   evs = dSD["senders"]
   ts = dSD["times"]
