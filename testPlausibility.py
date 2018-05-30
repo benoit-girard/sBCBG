@@ -8,6 +8,7 @@
 ## Works both in single-channel and multi-channels cases
 
 from iniBG import *
+from modelParams import *
 
 restFR = {} # this will be populated with firing rates of all nuclei, at rest
 oscilPow = {} # Oscillations power and frequency at rest
@@ -36,7 +37,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   simulationOffset = nest.GetKernelStatus('time')
   print('Simulation Offset: '+str(simulationOffset))
   offsetDuration = 1000.
-  simDuration = 5000. # ms
+  simDuration = params['tsimu'] # ms
 
   # single or multi-channel?
   if params['nbCh'] == 1:
@@ -257,26 +258,51 @@ def main():
   if score[0] < score[1]:
     print("Activities at rest do not match: skipping deactivation tests")
   else:
-    if params['nbCh'] == 1:
-      # The following implements the deactivation tests without re-wiring the BG (faster but implemented only in single-channel case)
-      for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
-        ww = deactivate('GPe', a)
-        score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
-        reactivate('GPe', a, ww)
-
-      for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
-        ww = deactivate('GPi', a)
-        score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
-        reactivate('GPi', a, ww)
+    if params['splitGPe']:
+        if params['nbCh'] == 1:
+          # The following implements the deactivation tests without re-wiring the BG (faster but implemented only in single-channel case)
+          for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
+            wwA = deactivate('Arky', a)
+            wwP = deactivate('Prot', a)
+            score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
+            reactivate('Arky', a, wwA)
+            reactivate('Prot', a, wwP)
+    
+          for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
+            ww = deactivate('GPi', a)
+            score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
+            reactivate('GPi', a, ww)
+        else:
+          # The following implements the deactivation tests with re-creation of the entire BG every time (slower but also implemented for multi-channels)
+          for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
+            instantiate_BG(params, antagInjectionSite='GPe', antag=a)
+            score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
+    
+          for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
+            instantiate_BG(params, antagInjectionSite='GPi', antag=a)
+            score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
+        
     else:
-      # The following implements the deactivation tests with re-creation of the entire BG every time (slower but also implemented for multi-channels)
-      for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
-        instantiate_BG(params, antagInjectionSite='GPe', antag=a)
-        score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
-
-      for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
-        instantiate_BG(params, antagInjectionSite='GPi', antag=a)
-        score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
+        if params['nbCh'] == 1:
+          # The following implements the deactivation tests without re-wiring the BG (faster but implemented only in single-channel case)
+          for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
+            ww = deactivate('GPe', a)
+            score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
+            reactivate('GPe', a, ww)
+    
+          for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
+            ww = deactivate('GPi', a)
+            score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
+            reactivate('GPi', a, ww)
+        else:
+          # The following implements the deactivation tests with re-creation of the entire BG every time (slower but also implemented for multi-channels)
+          for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
+            instantiate_BG(params, antagInjectionSite='GPe', antag=a)
+            score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
+    
+          for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
+            instantiate_BG(params, antagInjectionSite='GPi', antag=a)
+            score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
 
   #-------------------------
   print "******************"
