@@ -486,8 +486,12 @@ def main():
   
   Directory = os.getcwd()
   os.system('mkdir NoeArchGdf')  # save the .gdf files before antagonist desaster 
-  os.system('cp log/MSN* log/STN* log/Arky* log/Prot* log/GPi* log/FSI* NoeArchGdf/ ')
-  os.system('rm log/MSN* log/STN* log/Arky* log/Prot* log/FSI* log/GPi*')
+  if params['splitGPe']:
+    os.system('cp log/MSN* log/STN* log/Arky* log/Prot* log/GPi* log/FSI* NoeArchGdf/ ')
+    os.system('rm log/MSN* log/STN* log/Arky* log/Prot* log/FSI* log/GPi*')
+  else:
+    os.system('cp log/MSN* log/STN* log/GPe* log/GPi* log/FSI* NoeArchGdf/ ')
+    os.system('rm log/MSN* log/STN* log/GPe* log/FSI* log/GPi*')
   gdfExploitation(Directory)
 
   # don't bother with deactivation tests if activities at rest are not within plausible bounds
