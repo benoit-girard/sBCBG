@@ -37,7 +37,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   simulationOffset = nest.GetKernelStatus('time')
   print('Simulation Offset: '+str(simulationOffset))
   offsetDuration = 1000.
-  simDuration = params['tsimu'] # ms
+  simDuration = params['tSimu'] # ms
 
   # single or multi-channel?
   if params['nbCh'] == 1:

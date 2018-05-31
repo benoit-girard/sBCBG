@@ -3,7 +3,8 @@
 
 the_scale = 4.
 
-params = {'LG14modelID':9 ,
+params = {'tSimu':  5000.,
+          'LG14modelID':9 ,
           'IeMSN':  24.5,
           'IeFSI':  8.  ,
           'IeSTN':  9.5 ,

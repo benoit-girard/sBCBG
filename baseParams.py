@@ -179,6 +179,6 @@ params = {
 'nbcpu':                         1, # number of CPUs to be used by nest
 'durationH':                  '08', # max duration of a simulation, used by Sango cluster
 'nbnodes':                     '1', # number of nodes, used by K computer
-'tsimu':                     5000., # time duration of one simulation
+'tSimu':                     5000., # time duration of one simulation
 }
 
