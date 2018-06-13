@@ -45,6 +45,7 @@ class JobDispatcher:
     self.platform = cmd_args.platform
     self.interactive = cmd_args.interactive
     self.storeGDF = cmd_args.gdf
+    self.splitGPe = cmd_args.splitGPe
     self.mock = cmd_args.mock
     self.tag = cmd_args.tag
     self.sim_counter = self.last_sim = 0
@@ -86,7 +87,7 @@ class JobDispatcher:
 
   def load_cmdline_config(self, cmd_args):
     # Loads the options from the commandline, overriding all previous parameterizations
-    self.params.update({k: v for k, v in vars(cmd_args).items() if k in ['LG14modelID', 'whichTest', 'nbcpu', 'nbCh', 'email', 'nestSeed', 'pythonSeed'] if v != None})
+    self.params.update({k: v for k, v in vars(cmd_args).items() if k in ['LG14modelID', 'whichTest', 'nbcpu', 'nbCh', 'email', 'nestSeed', 'pythonSeed', 'splitGPe'] if v != None})
 
   def create_workspace(self, IDstring):
     # Initialize the experiment-specific directory named with IDstring and populate it with the required files
@@ -380,11 +381,12 @@ def main():
     Optional = parser.add_argument_group('optional arguments')
     Optional.add_argument('--custom', type=str, help='Provide a custom file to initialize parameters - without the .py extension', default=None)
     Optional.add_argument('--LG14modelID', type=int, help='Which LG14 parameterization to use?', default=None)
-    Optional.add_argument('--whichTest', type=str, help='Which test to run?', choices=['testPlausibility', 'testGPR01', 'testChannel', 'testChannelBG'], default=None)
+    Optional.add_argument('--whichTest', type=str, help='Which test to run?', choices=['testPlausibility', 'testGPR01', 'testPauses', 'testChannelBG'], default=None)
     Optional.add_argument('--nbcpu', type=int, help='Number of CPU to use (-1 to guess)', default=None)
     Optional.add_argument('--nbCh', type=int, help='Number of Basal Ganglia channels to simulate', default=None)
     Optional.add_argument('--interactive', action="store_true", help='Set to enable the display of debug plots', default=False)
     Optional.add_argument('--gdf', action="store_true", help='Set to store spike rasters (gdf files) of the simulation', default=False)
+    Optional.add_argument('--splitGPe', action="store_true", help='Set to split the GPe into 2 populations', default=False)
     Optional.add_argument('--email', type=str, help='To receive emails when Sango cluster simulations are done', default='')
     Optional.add_argument('--tag', type=str, help='optional tag for this experiment, to be added to the directory name (avoid special characters like "/" or "\\")', default='')
     Optional.add_argument('--nestSeed', type=int, help='Nest seed (affects the Poisson spike train generator)', default=None)
