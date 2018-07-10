@@ -5,9 +5,9 @@ import nstrand
 
 from LGneurons import *
 from modelParams import *
+import os
 import nest.raster_plot
 import nest.voltage_trace
-import pylab as pl
 import sys
 
 import csv

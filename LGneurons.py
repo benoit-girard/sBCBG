@@ -8,7 +8,6 @@ storeGDF = True # unless overriden by run.py, keep spike rasters
 import nstrand
 
 import pandas as pd
-import pylab
 from modelParams import *
 import nest
 import numpy as np
@@ -210,13 +209,27 @@ def mass_connect(source, dest, synapse_label, inDegree, receptor_type, weight, d
   def printv(text):
     if verbose:
       print(text)
+  
+  sigmaDependentInterval = True # Hugo's method
 
   # potential initialization of stochastic delays
-  if stochastic_delays != None and delay > 0:
+  if stochastic_delays != None and delay > 0 and stochastic_delays > 0.:
     printv('Using stochastic delays in mass-connect')
-    low = delay * 0.5
-    high = delay * 1.5
     sigma = delay * stochastic_delays
+    if sigmaDependentInterval:
+      n = 2 # number of standard deviation to include in the distribution
+      if stochastic_delays >= 1./n:
+        print 'Error : stochastic_delays >= 1/n and the distribution of delays therefore includes 0 which is not possible -> Jean\'s method is used'
+        sigmaDependentInterval = False
+      else:
+        low = delay - n*sigma
+        high = delay + n*sigma
+
+      
+    if not sigmaDependentInterval:
+      low = .5*delay
+      high = 1.5*delay
+
     delay =  {'distribution': 'normal_clipped', 'low': low, 'high': high, 'mu': delay, 'sigma': sigma}
 
   # The first `fixed_indegree` connection ensures that all neurons in `dest`
@@ -260,7 +273,7 @@ def mass_mirror(source, synapse_label, receptor_type, weight, delay, stochastic_
     # extract just source and target GID lists, all other information is irrelevant here
     printv('found '+str(len(ampa_conns))+' AMPA connections\n')
     if stochastic_delays != None and delay > 0:
-      printv('Using stochastic delays in mass-miror')
+      printv('Using stochastic delays in mass-mirror')
       delay = np.array(nest.GetStatus(ampa_conns, keys=['delay'])).flatten()
     src, tgt, _, _, _ = zip(*ampa_conns)
     nest.Connect(src, tgt, 'one_to_one',

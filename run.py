@@ -50,7 +50,7 @@ class JobDispatcher:
     self.tag = cmd_args.tag
     self.sim_counter = self.last_sim = 0
     self.get_git_info()
-    self.params = {} # will be filled later
+    self.params = [] # will be filled later
 
   def get_git_info(self):
     # Retrieve info on the code version (git commit ID and git status), to ensure reproducibility
@@ -72,22 +72,22 @@ class JobDispatcher:
       self.status_line = 'Git status not available'
 
   def load_base_config(self, base='baseParams'):
-    # Loads the base parameterization, initializing all parameters to sensible defaults
-    params = importlib.import_module(base).params
-    self.params.update(params)
+    # Loads the base parameterization, initializing all parameters to sensible defaults    
+    self.params = [importlib.import_module(base).params.copy() for _ in self.cmd_args.custom]
 
   def load_custom_config(self, custom):
     # Loads an optional .py file which specifies custom parameters
     # this file overrides the base parameters
-    try:
-      exec(open(custom).read()) 
-      self.params.update(params)
-    except:
-      raise ImportError('The custom parameters could not be loaded. Please make sure that the custom parameters are provided in a python file defining the variable "params".')
-
+    for i in range(len(custom)):
+      print i
+      try:
+        exec(open(custom[i]).read()) 
+        self.params[i].update(params)
+      except:
+        raise ImportError('The custom parameters could not be loaded. Please make sure that the custom parameters are provided in a python file defining the variable "params".')
   def load_cmdline_config(self, cmd_args):
     # Loads the options from the commandline, overriding all previous parameterizations
-    self.params.update({k: v for k, v in vars(cmd_args).items() if k in ['LG14modelID', 'whichTest', 'nbcpu', 'nbCh', 'email', 'nestSeed', 'pythonSeed', 'splitGPe'] if v != None})
+    [param.update({k: v for k, v in vars(cmd_args).items() if k in ['LG14modelID', 'whichTest', 'nbcpu', 'nbCh', 'email', 'nestSeed', 'pythonSeed', 'splitGPe'] if v != None}) for param in self.params]
 
   def create_workspace(self, IDstring):
     # Initialize the experiment-specific directory named with IDstring and populate it with the required files
@@ -143,6 +143,31 @@ class JobDispatcher:
       ###################
       # just launch the script
       command = 'python '+params['whichTest']+'.py'
+    elif self.platform == 'ISIR':
+      ##########################
+      # ISIR CLUSTER EXECUTION #
+      ##########################
+
+      scriptBase =  ['#!/bin/sh\n',
+
+                    '#PBS -N BGsim\n',
+                    '#PBS -o out\n',
+                    '#PBS -e err\n',
+                    '#PBS -l walltime=00:59:00\n',
+                    '#PBS -l nodes=1:ppn='+str(params['nbcpu'])+'\n',
+                    '#PBS -d '+os.getcwd()+'\n\n',
+                
+                    'export PYTHONPATH=$PYTHONPATH:/opt/nest/lib/python2.7\n',
+                    'export PYTHONPATH=$PYTHONPATH:/opt/nest/lib/python2.7/site-packages\n',
+                    'export PYTHONPATH=$PYTHONPATH:/opt/nest/lib/python2.7/site-packages/nest\n',
+                    'python '+params['whichTest']+'.py']
+      with open('BGsim.sh', 'w') as script:
+        script.writelines(scriptBase)
+
+      command = 'qsub BGsim.sh'
+
+
+
     elif self.platform == 'Sango':
       ###########################
       # SANGO CLUSTER EXECUTION #
@@ -353,11 +378,17 @@ class JobDispatcher:
 
   def expandValues(self):
     # Sugar to get automagically the number of CPUs when nbcpu = -1
-    if self.params['nbcpu'] < 0:
-      self.params['nbcpu'] = multiprocessing.cpu_count()
-      print('Using guessed number of CPUs: '+str(self.params['nbcpu']))
+    if self.params[0]['nbcpu'] < 0:
+      for param in self.params:
+        param['nbcpu'] = multiprocessing.cpu_count()
+      print('Using guessed number of CPUs: '+str(self.params[0]['nbcpu']))
 
-  def dispatch(self):
+  def dispatch(self, multipleParams):
+    if self.cmd_args.custom != None:
+      if multipleParams:
+        self.cmd_args.custom = [self.cmd_args.custom+'/'+file for file in os.listdir(self.cmd_args.custom)]
+      else:
+        self.cmd_args.custom = [self.cmd_args.custom]
     # Loads the configurations and launch the runs
     self.load_base_config()
     if self.cmd_args.custom != None:
@@ -366,9 +397,12 @@ class JobDispatcher:
     # replace values to be set at runtime (for now, only used when "nbcpu=-1")
     self.expandValues()
     # initialize the file list to transfer
-    self.files_to_transfer = ['LGneurons.py', 'iniBG.py', self.params['whichTest']+'.py', 'nstrand.py', 'solutions_simple_unique.csv', '__init__.py']
+    self.files_to_transfer = ['LGneurons.py', 'iniBG.py', self.params[0]['whichTest']+'.py', 'nstrand.py', 'solutions_simple_unique.csv', '__init__.py', 'spikeProcessing.py', 'filter.py']
+    
     # performs the recurrent exploration of parameterizations to run
-    self.recParamExplo(self.params)
+    for param in self.params:
+      param['platform'] = self.cmd_args.platform
+      self.recParamExplo(param)
 
 
 
@@ -377,7 +411,7 @@ def main():
     parser = argparse.ArgumentParser(description="Simulation Dispatcher. Argument precedence: Hardcoded default values < Custom initialization file values < commandline-supplied values.", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=27))
     parser._action_groups.pop()
     RequiredNamed = parser.add_argument_group('mandatory arguments')
-    RequiredNamed.add_argument('--platform', type=str, help='Run the experiment on which platform?', required=True, choices=['Local', 'Sango', 'SangoArray', 'K'])
+    RequiredNamed.add_argument('--platform', type=str, help='Run the experiment on which platform?', required=True, choices=['Local', 'Sango', 'SangoArray', 'K', 'ISIR'])
     Optional = parser.add_argument_group('optional arguments')
     Optional.add_argument('--custom', type=str, help='Provide a custom file to initialize parameters - without the .py extension', default=None)
     Optional.add_argument('--LG14modelID', type=int, help='Which LG14 parameterization to use?', default=None)
@@ -392,13 +426,19 @@ def main():
     Optional.add_argument('--nestSeed', type=int, help='Nest seed (affects the Poisson spike train generator)', default=None)
     Optional.add_argument('--pythonSeed', type=int, help='Python seed (affects connection map)', default=None)
     Optional.add_argument('--mock', action="store_true", help='Does not start the simulation, only writes experiment-specific directories', default=False)
+
     
     cmd_args = parser.parse_args()
+    custom = cmd_args.custom
     
     dispatcher = JobDispatcher(cmd_args)
-
-    dispatcher.dispatch()
-
+    #If the given parameter item is a directory, run a simulation for each file of the dir
+    if os.path.isdir(custom):
+      multipleParams = True
+    #If the given parameter item is a file, run a simulation with this file
+    else:
+      multipleParams = False
+    dispatcher.dispatch(multipleParams)
 if __name__ == '__main__':
     main()
 
