@@ -398,7 +398,7 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
   #----------------------------------
   for timeStep in range(5):
     #-------------------------
-    # measures                                                                                                                                                  
+    # measures                                  
     #-------------------------
     spkDetect=[{},{},{}] # list of spike detector dictionaries used to record the experiment in the first 3 channels
 
