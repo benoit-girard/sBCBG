@@ -43,13 +43,13 @@ def loadLG14params(ID):
     try:
       #print 'dist:',k,v,round(float(LG14Solutions[ID]['DIST_'+k.replace('->','_')]),2)
       p[k] = round(float(LG14Solutions[ID]['DIST_'+k.replace('->','_')]),2)
-  except:
+    except:
       print('Could not find LG14 distance (p) parameters for connection `'+k+'`, trying to run anyway.')
 
   for k,v in BGparams.iteritems():
     try:
       BGparams[k]['V_th'] = round(float(LG14Solutions[ID]['THETA_'+k]),1)
-  except:
+    except:
       print('Could not find LG14 theta parameters for connection `'+k+'`, trying to run anyway.')
 
 #-------------------------------------------------------------------------------
@@ -787,7 +787,8 @@ neuronCounts={'MSN': 26448.0E3,
               'STN':    77.0E3,
               'GPe':   251.0E3,
               'GPi':   143.0E3,
-              'CMPf':   86.0E3
+              'CMPf':   86.0E3,
+              'CSN': None, 'PTN': None # prevents key error
              }
 
 # Number of neurons that will be simulated
@@ -1015,7 +1016,6 @@ def main():
   #-------------------------
   #Pop['CSN']  = nest.Create('poisson_generator')
   #nest.SetStatus(Pop['CSN'],{'rate': 2.0})
-
 
   # PTN
   #-------------------------
