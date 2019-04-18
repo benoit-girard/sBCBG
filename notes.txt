@@ -74,7 +74,7 @@ AUCUN bon paramétrage !
 Meilleur score de  13/14, on note que :
 * ieGPE est à 13. -> tester 14. ?
 * aucun des autres param n'est à une valeur extrème. 
-  Mais certains des 12/14 on IeGPi à 8: tester 7.? 
+  Mais certains des 12/14 ont IeGPi à 8: tester 7.? 
   Et beaucoup ont GMSN à 5. (plus que les autres valeurs) : tester 5.5 et 6. ?
   GSTN à 1.3 ou 1.4 -> 1.5 ?
 
