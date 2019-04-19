@@ -45,6 +45,7 @@ class JobDispatcher:
     self.platform = cmd_args.platform
     self.interactive = cmd_args.interactive
     self.storeGDF = cmd_args.gdf
+    self.splitGPe = cmd_args.splitGPe
     self.mock = cmd_args.mock
     self.data_folder = cmd_args.folder
     if self.data_folder != '' and self.data_folder[-1] != '/':
@@ -94,7 +95,7 @@ class JobDispatcher:
 
   def load_cmdline_config(self, cmd_args):
     # Loads the options from the commandline, overriding all previous parameterizations
-    self.params.update({k: v for k, v in vars(cmd_args).items() if k in ['LG14modelID', 'whichTest', 'nbcpu', 'nbCh', 'email', 'nestSeed', 'pythonSeed'] if v != None})
+    self.params.update({k: v for k, v in vars(cmd_args).items() if k in ['LG14modelID', 'whichTest', 'nbcpu', 'nbCh', 'email', 'nestSeed', 'pythonSeed', 'splitGPe'] if v != None})
 
   def create_workspace(self, IDstring):
     # Initialize the experiment-specific directory named with IDstring and populate it with the required files
@@ -167,6 +168,28 @@ class JobDispatcher:
         command = 'python '+params['whichTest']+'.py &'
       else:
         command = 'python '+params['whichTest']+'.py'
+    elif self.platform == 'ISIRcluster':
+      ##########################
+      # ISIR CLUSTER EXECUTION #
+      ##########################
+
+      scriptBase =  ['#!/bin/sh\n',
+
+                    '#PBS -N sBCBG_'+IDstring+'\n',
+                    '#PBS -o out\n',
+                    '#PBS -e err\n',
+                    '#PBS -l walltime='+params['durationH']+':'+params['durationMin']+':00 \n',
+                    '#PBS -l nodes=1:ppn='+str(params['nbcpu'])+'\n',
+                    '#PBS -d '+os.getcwd()+'\n\n',
+
+                    'export PYTHONPATH=$PYTHONPATH:/opt/nest/lib/python2.7\n',
+                    'export PYTHONPATH=$PYTHONPATH:/opt/nest/lib/python2.7/site-packages\n',
+                    'export PYTHONPATH=$PYTHONPATH:/opt/nest/lib/python2.7/site-packages/nest\n',
+                    'python '+params['whichTest']+'.py']
+      with open('BGsim.sh', 'w') as script:
+        script.writelines(scriptBase)
+
+      command = 'qsub BGsim.sh'
     elif self.platform == 'Sango':
       ###########################
       # SANGO CLUSTER EXECUTION #
@@ -408,11 +431,12 @@ def main():
     Optional = parser.add_argument_group('optional arguments')
     Optional.add_argument('--custom', type=str, help='Provide a custom file to initialize parameters - without the .py extension', default=None)
     Optional.add_argument('--LG14modelID', type=int, help='Which LG14 parameterization to use?', default=None)
-    Optional.add_argument('--whichTest', type=str, help='Which test to run?', choices=['testPlausibility', 'testGPR01', 'testGPR01Deact', 'testChannel', 'testChannelBG', 'testSelec', 'testSelec2D', 'testReaching', 'testDA'], default=None)
+    Optional.add_argument('--whichTest', type=str, help='Which test to run?', choices=['testPlausibility', 'testGPR01', 'testGPR01Deact', 'testChannel', 'testChannelBG', 'testSelec', 'testSelec2D', 'testReaching', 'testDA', 'testPauses'], default=None)
     Optional.add_argument('--nbcpu', type=int, help='Number of CPU to use (-1 to guess)', default=None)
     Optional.add_argument('--nbCh', type=int, help='Number of Basal Ganglia channels to simulate', default=None)
     Optional.add_argument('--interactive', action="store_true", help='Set to enable the display of debug plots', default=False)
     Optional.add_argument('--gdf', action="store_true", help='Set to store spike rasters (gdf files) of the simulation', default=False)
+    Optional.add_argument('--splitGPe', action="store_true", help='Set to split the GPe into 2 populations', default=False)
     Optional.add_argument('--email', type=str, help='To receive emails when Sango cluster simulations are done', default='')
     Optional.add_argument('--tag', type=str, help='optional tag for this experiment, to be added to the directory name (avoid special characters like "/" or "\\")', default='')
     Optional.add_argument('--offsetDuration', type=int, help='non-recorded stabilization period (in ms, default 1000 ms)', default=1000)
