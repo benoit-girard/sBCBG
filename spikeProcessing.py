@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import numpy as np
@@ -46,7 +46,7 @@ def process(filePath, nbCpu):
         if data[N] is None:
           data[N] = newdata
         else:
-          data[N] = np.concatenate((data[N],newdata))  
+          data[N] = np.concatenate((data[N],newdata))
     ts[N] = []
     gids[N] = []
     try:
@@ -54,7 +54,7 @@ def process(filePath, nbCpu):
       gids[N] = data[N][:,0] # corresponding list of firing neuron ID
     except:
       TypeError('No spikes')
-    
+
   print 'Continuing'
   # prepare signal : histogram of spiking events
   #---------------------------------------------
@@ -63,7 +63,7 @@ def process(filePath, nbCpu):
   t_bins = np.arange(np.amin(ts[NUCLEI[0]]),np.amax(ts[NUCLEI[0]]),binPeriod)
   for N in NUCLEI:
     signal[N],bins = raster._histogram(ts[N], bins=t_bins)
-  
+
   '''
   # show/save histogram
   #---------------
@@ -75,7 +75,7 @@ def process(filePath, nbCpu):
     nbNeurons = len(np.unique(gids[N]))
     #heights = 1000 * signal[N] / nbNeurons # Normalize
     heights = signal[N]
-    ax[N] = plt.subplot(3,2,i)  
+    ax[N] = plt.subplot(3,2,i)
 
     ax[N].bar(t_bins, heights, width=2.0, color="black")
     plt.subplots_adjust(left=None, bottom=None, right=None, top=2.0, wspace=None, hspace=0.8)
@@ -85,7 +85,7 @@ def process(filePath, nbCpu):
   if not os.path.exists("plots/"):
       os.makedirs("plots/")
   plt.savefig('plots/ActHisto.pdf', bbox_inches='tight')
-  
+
   plt.clf()'''
 
   if not os.path.exists("plots/"):
@@ -173,7 +173,7 @@ def FanoFactor(raster):
 #------------------------------------------
 def OscIndex(PS, freqs, a=15, b=30):
   tot = PS.sum()
-  
+
   if tot != 0:
     idx = np.argsort(freqs)
     posi_spectrum = np.where((freqs[idx]>a) & (freqs[idx]<b)) # restrict the analysis to freqs [a-b] Hz

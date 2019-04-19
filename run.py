@@ -416,7 +416,7 @@ class JobDispatcher:
     # replace values to be set at runtime (for now, only used when "nbcpu=-1")
     self.expandValues()
     # initialize the file list to transfer
-    self.files_to_transfer = ['LGneurons.py', 'iniBG.py', self.params['whichTest']+'.py', 'nstrand.py', 'solutions_simple_unique.csv', '__init__.py']
+    self.files_to_transfer = ['LGneurons.py', 'iniBG.py', self.params['whichTest']+'.py', 'nstrand.py', 'solutions_simple_unique.csv', '__init__.py','spikeProcessing.py','filter.py']
     # performs the recurrent exploration of parameterizations to run
     self.recParamExplo(self.params)
 

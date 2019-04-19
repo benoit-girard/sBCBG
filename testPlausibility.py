@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 #!/usr/bin/env python
-=======
-#!/usr/bin/python
->>>>>>> master
 # -*- coding: utf-8 -*-
 
 ##
@@ -448,7 +444,6 @@ def main():
     if len(sys.argv) == len(paramKeys)+1:
       print("Using command line parameters")
       print(str(sys.argv))
-    print sys.argv
       i = 0
       for k in paramKeys:
         i+=1
@@ -487,8 +482,6 @@ def main():
       for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
         instantiate_BG(params, antagInjectionSite='GPi', antag=a)
         score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
-  else:
-    print 'Normal simulation : skipping deactivation tests'
 
   #-------------------------
   print "******************"
@@ -512,9 +505,6 @@ def main():
   params['sim_score'] = score[0]
   params['max_score'] = score[1]
   with open('params_score.csv', 'wb') as csv_file:
-=======
-  with open('params_score.csv', 'wb') as csv_file:
->>>>>>> master
     writer = csv.writer(csv_file)
     for key, value in params.items():
        writer.writerow([key, value])
