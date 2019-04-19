@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import nest
@@ -16,4 +16,3 @@ def set_seed(nest_seed, python_seed):
   pyRngs = [rnd.RandomState(s) for s in range(python_seed+N_vp+1, python_seed+2*N_vp+1)]
   global pyMasterRng
   pyMasterRng = rnd.RandomState(python_seed)
-

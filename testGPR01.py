@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 ##
@@ -33,10 +33,10 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
 
   #-------------------------
   # prepare the firing rates of the inputs for the 5 steps of the experiment
-  #-------------------------  
+  #-------------------------
   gCSN = CSNFR[1]-CSNFR[0]
   gPTN = PTNFR[1]-PTNFR[0]
-  activityLevels = np.array([[0,0.4,0.4,0.6,0.4], [0.,0.,0.6,0.6,0.6]]) 
+  activityLevels = np.array([[0,0.4,0.4,0.6,0.4], [0.,0.,0.6,0.6,0.6]])
 
   CSNrate= gCSN * activityLevels + np.ones((5)) * CSNFR[0]
   PTNrate= gPTN * activityLevels + np.ones((5)) * PTNFR[0]
@@ -89,7 +89,7 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
   #----------------------------------
   for timeStep in range(5):
     #-------------------------
-    # measures                                                                                                                                                  
+    # measures
     #-------------------------
     spkDetect=[{},{},{}] # list of spike detector dictionaries used to record the experiment in the first 3 channels
 
@@ -128,7 +128,7 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
       for Ch in range(params['nbCh']):
         nest.SetStatus(ActPop['CMPf'][Ch],{'rate': CMPfFR[0]})
       nest.Simulate((simDuration+offsetDuration)*(1.-transientCMPf))
-        
+
 
     for i in range(nbRecord):
       print '------ Channel',i,'-------'
@@ -309,7 +309,7 @@ def checkGeorgopoulosTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN
   # step 1 : stimulation without inputs, to calibrate the GPi activity at rest :
   nest.Simulate(simDuration+offsetDuration)
 
-  print '------ Rest Period ------'  
+  print '------ Rest Period ------'
   frstr = 'rest, , , , ,' # only GPi is recorded at rest, and on all channels
   GPiRestRate = nest.GetStatus(GPiRestSpkDetect, 'n_events')[0] / float(nbSim[N]*simDuration*params['nbCh']) * 1000
   print "GPi rate at rest:",GPiRestRate;"Hz"
@@ -367,14 +367,14 @@ def main():
                  'GFSI',
                  'GSTN',
                  'GGPe',
-                 'GGPi', 
+                 'GGPi',
                  'IeGPe',
                  'IeGPi',
                  'inDegCSNMSN',
                  'inDegPTNMSN',
                  'inDegCMPfMSN',
                  'inDegFSIMSN',
-                 'inDegMSNMSN', 
+                 'inDegMSNMSN',
                  'inDegCSNFSI',
                  'inDegPTNFSI',
                  'inDegSTNFSI',
@@ -404,7 +404,7 @@ def main():
       print "Incorrect number of parameters:",len(sys.argv),"-",len(paramKeys),"expected"
 
   nest.set_verbosity("M_WARNING")
-  
+
   instantiate_BG(params, antagInjectionSite='none', antag='')
   score = np.zeros((2))
 

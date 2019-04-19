@@ -1,4 +1,8 @@
+<<<<<<< HEAD
+#!/usr/bin/env python
+=======
 #!/usr/bin/python
+>>>>>>> master
 # -*- coding: utf-8 -*-
 
 ##
@@ -7,6 +11,7 @@
 ## This script tests the 14 electrophysiological constraints from LG14
 ## Works both in single-channel and multi-channels cases
 
+from iniBG import *
 
 import matplotlib
 matplotlib.use('Agg')
@@ -18,7 +23,7 @@ from spikeProcessing import FanoFactor, OscIndex
 from filter import lowpass
 import os
 import numpy as np
-from modelParams import * 
+from modelParams import *
 restFR = {} # this will be populated with firing rates of all nuclei, at rest
 oscilPow = {} # Oscillations power and frequency at rest
 oscilFreq = {}
@@ -45,9 +50,19 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
 
   simulationOffset = nest.GetKernelStatus('time')
   print('Simulation Offset: '+str(simulationOffset))
-  
-  offsetDuration = 2500. # ms
-  simDuration = 2500. # ms
+  if 'offsetDuration' not in params.keys():
+    offsetDuration = 1000.
+  else:
+    offsetDuration = params['offsetDuration']
+
+  if 'simDuration' not in params.keys():
+    simDuration = 1000. # step duration period
+    #simDuration = 50000. # ms VERY LONG
+    #simDuration = 10000. # ms LONG
+    #simDuration = 3000. # ms NORMAL
+    #simDuration = 1000. * 100. # ms DISTANCE BASED
+  else:
+    simDuration = params['simDuration']
 
   # single or multi-channel?
   if params['nbCh'] == 1:
@@ -104,22 +119,23 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   text=[]
   frstr = "#" + str(params['LG14modelID'])+ " , " + antagInjectionSite + ', '
   s = '----- RESULTS -----'
-  print s
+
+  print(s)
   text.append(s+'\n')
   if antagInjectionSite == 'none':
     validationStr = "\n#" + str(params['LG14modelID']) + " , "
     frstr += "none , "
-    
+
     if not os.path.exists("plots/"):
       os.makedirs("plots/")
     if not os.path.exists("data/"):
       os.makedirs("data/")
-    if computePS:      
+    if computePS:
       #Frequencies of interest (Hz)
       a = 15
       b = 30
       PSmetrics = {}
-      
+
     for N in NUCLEI:
       strTestPassed = 'NO!'
       expeRate[N] = nest.GetStatus(spkDetect[N], 'n_events')[0] / float(nbSim[N]*simDuration*params['nbCh']) * 1000
@@ -139,21 +155,35 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
 
       frstr += '%f , ' %(expeRate[N])
       s = '* '+N+' - Rate: '+str(expeRate[N])+' Hz -> '+strTestPassed+' ('+str(FRRNormal[N][0])+' , '+str(FRRNormal[N][1])+')'
-      print s
+      print(s)
       text.append(s+'\n')
       restFR[N] = str(expeRate[N])
 
       oscilPow[N] = -1.
       oscilFreq[N] = -1.
+      try:
+        spikes_N = nest.GetStatus(spkDetect[N], keys="events")[0]['times'] # get the timing of all spikes
+        data = np.bincount([int(i-offsetDuration-simulationOffset) for i in spikes_N], minlength=int(simDuration)) # discretize them in bins of 1ms
+        ps = np.abs(np.fft.fft(data))**2
+        time_step = 1 / 1000. # 1000 ms
+        freqs = np.fft.fftfreq(data.size, time_step)
+        idx = np.argsort(freqs)
+        posi_spectrum = np.where((freqs[idx]>0) & (freqs[idx]<200)) # restrict the analysis to freqs < 200 Hz
+        oscilPow[N] = np.max(ps[idx][posi_spectrum])
+        oscilFreq[N] = freqs[idx][posi_spectrum][np.where(oscilPow[N] == ps[idx][posi_spectrum])[0][0]]
+        #pl.plot(freqs[idx][posi_spectrum], ps[idx][posi_spectrum]) # simple plot
+        #pl.show()
+      except:
+        print("Power spectrum computation failed - skipping")
 
       if N in focusNuclei:
         #--------------------
         #  Compute pseudo-LFP
         #--------------------
-        if computeLFP:            
+        if computeLFP:
           nbNeurons = len([Pop[N][x] for x in range(len(Pop[N])) if x<maxRecord])
           Vm = nest.GetStatus(voltmeters[N])[0]['events']['V_m']/nbNeurons
-          
+
           # save LFP plots
           if True:
             plt.plot(range(len(Vm[500:1000])), Vm[500:1000],color='black', linewidth=.5) # plot from 500 to 1000ms
@@ -168,9 +198,9 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
             hamming = 0
             fVm = lowpass(Vm, freqCut / samplingRate, freqTrans / samplingRate)
             fVm = fVm[(len(fVm)-len(Vm)) // 2 + hamming : -(len(fVm)-len(Vm)) // 2 - hamming]
-          
-        
-        
+
+
+
 
 
         #--------------------
@@ -187,7 +217,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
           data,bins = raster._histogram(data, bins=bins)
           PSmetrics[N] += [{'name' : 'spikes', 'data' : data}]
 
-          if computeLFP:            
+          if computeLFP:
             #--------------------
             #  Prepare LFP data for PS
             #--------------------
@@ -198,11 +228,11 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
           hanning = False # compute the Hanning window of the time series
           for metric in PSmetrics[N]:
             data = metric['data']
-            if metric['name'] == 'spikes':              
+            if metric['name'] == 'spikes':
               #--------------------
               #  Compute Fano Factor from spikes
               #--------------------
-              metric['FF'] = FanoFactor(data)         
+              metric['FF'] = FanoFactor(data)
 
 
             #--------------------
@@ -213,30 +243,30 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
             ps = np.abs(np.fft.fft(data))**2
             freqs = np.fft.fftfreq(data.size, time_step)
             idx = np.argsort(freqs)
-            posi_spectrum = np.where((freqs[idx]>1) & (freqs[idx]<150)) # restrict the analysis to specified freqs        
+            posi_spectrum = np.where((freqs[idx]>1) & (freqs[idx]<150)) # restrict the analysis to specified freqs
 
             plot = True
             if plot:
               plt.plot(freqs[idx][posi_spectrum], ps[idx][posi_spectrum], color='black', linewidth=.5)
               plt.xlabel('Freq. [Hz]')
               plt.gca().get_yaxis().set_visible(False)
-              plt.title(N+' Power Spectrum.pdf')          
-              plt.savefig("plots/"+N+'_PwSpec_'+metric['name']+'.pdf', bbox_inches='tight',)          
-              plt.close() 
+              plt.title(N+' Power Spectrum.pdf')
+              plt.savefig("plots/"+N+'_PwSpec_'+metric['name']+'.pdf', bbox_inches='tight',)
+              plt.close()
 
             saveData = True
             if saveData:
               with open("data/"+N+'_PwSpec_'+metric['name']+'.py', 'w') as file:
-                file.write('ps = '+str({'power': np.ndarray.tolist(ps[idx][posi_spectrum]), 'freqs': np.ndarray.tolist(freqs[idx][posi_spectrum])})) 
-                file.close         
-            
+                file.write('ps = '+str({'power': np.ndarray.tolist(ps[idx][posi_spectrum]), 'freqs': np.ndarray.tolist(freqs[idx][posi_spectrum])}))
+                file.close
+
             #--------------------
             #  Compute Oscillation Index and absolute power levels
             #--------------------
             metric['OI'] = OscIndex(ps[idx][posi_spectrum], freqs[idx][posi_spectrum], a, b)
             metric['power'] = np.prod(ps[idx][np.where((freqs[idx]>a) & (freqs[idx]<b))])
 
-      
+
 
 
     if computePS:
@@ -253,7 +283,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
         writer.writerow(report[0])
         writer.writerow(report[1])
         csvfile.close()
-      
+
       with open('report/FF.csv', 'wb') as csvfile:
         writer = csv.writer(csvfile, delimiter=';',
                             quotechar="'", quoting=csv.QUOTE_MINIMAL)
@@ -303,16 +333,16 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
             validationStr += N + "_" + antag + "=%.2f , " % difference
 
         s = '* '+N+' with '+antag+' antagonist(s): '+str(expeRate[N])+' Hz -> '+strTestPassed+' ('+str(FRRAnt[N][antag][0])+' , '+str(FRRAnt[N][antag][1])+')'
-        print s
+        print(s)
         text.append(s+'\n')
       else:
         s = '* '+N+' - Rate: '+str(expeRate[N])+' Hz'
-        print s
+        print(s)
         text.append(s+'\n')
       frstr += '%f , ' %(expeRate[N])
 
   s = '-------------------'
-  print s
+  print(s)
   text.append(s+'\n')
 
   frstr+='\n'
@@ -330,7 +360,7 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
   validationFile.write(validationStr)
   validationFile.close()
 
-    
+
 
   #-------------------------
   # Displays
@@ -346,12 +376,12 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
         try:
           plt.plot(ts, evs, "|", color='black', markersize=2)
           plt.title(N+ ' raster plot')
-          plt.savefig("plots/"+N+'_rastePlot.pdf') 
+          plt.savefig("plots/"+N+'_rastePlot.pdf')
           plt.close()
         except AttributeError:
           print 'A neuron of the '+N+' didn\'t spike which caused an error in the raster plot --> skipping'
 
-        
+
   if showRasters and interactive:
     displayStr = ' ('+antagStr[:-1]+')' if (antagInjectionSite != 'none') else ''
     for N in NUCLEI:
@@ -374,10 +404,8 @@ def checkAvgFR(showRasters=False,params={},antagInjectionSite='none',antag='',lo
 
 #-----------------------------------------------------------------------
 def main():
-  deactivationTests = False
-
   if len(sys.argv) >= 2:
-    print "Command Line Parameters"
+    print("Command Line Parameters")
     paramKeys = ['LG14modelID',
                  'nbMSN',
                  'nbFSI',
@@ -391,14 +419,14 @@ def main():
                  'GFSI',
                  'GSTN',
                  'GGPe',
-                 'GGPi', 
+                 'GGPi',
                  'IeGPe',
                  'IeGPi',
                  'inDegCSNMSN',
                  'inDegPTNMSN',
                  'inDegCMPfMSN',
                  'inDegFSIMSN',
-                 'inDegMSNMSN', 
+                 'inDegMSNMSN',
                  'inDegCSNFSI',
                  'inDegPTNFSI',
                  'inDegSTNFSI',
@@ -417,40 +445,40 @@ def main():
                  'inDegGPeGPi',
                  'inDegCMPfGPi',
                  ]
-    print sys.argv
     if len(sys.argv) == len(paramKeys)+1:
-      print "Using command line parameters"
-      print sys.argv
+      print("Using command line parameters")
+      print(str(sys.argv))
+    print sys.argv
       i = 0
       for k in paramKeys:
         i+=1
         params[k] = float(sys.argv[i])
     else :
-      print "Incorrect number of parameters:",len(sys.argv),"-",len(paramKeys),"expected"
+      print("Incorrect number of parameters")
 
   nest.set_verbosity("M_WARNING")
 
   instantiate_BG(params, antagInjectionSite='none', antag='')
   score = np.zeros((2))
   #mapTopology2D(show=True)
-  score += checkAvgFR(params=params,antagInjectionSite='none',antag='',showRasters=False)
+  score += checkAvgFR(params=params,antagInjectionSite='none',antag='',showRasters=True)
 
-  # don't bother with deactivation tests if not wanted or if activities at rest are not within plausible bounds
+  # don't bother with deactivation tests if activities at rest are not within plausible bounds
   if score[0] < score[1]:
     print("Activities at rest do not match: skipping deactivation tests")
-  elif deactivationTests:
-    if params['nbCh'] == 1:
-      # The following implements the deactivation tests without re-wiring the BG (faster but implemented only in single-channel case)
-      for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
-        ww = deactivate('GPe', a)
-        score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
-        reactivate('GPe', a, ww)
+  else:
+      #if params['nbCh'] == 1:
+      #  # The following implements the deactivation tests without re-wiring the BG (faster but implemented only in single-channel case)
+      #  for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
+      #    ww = deactivate('GPe', a)
+      #    score += checkAvgFR(params=params,antagInjectionSite='GPe',antag=a)
+      #    reactivate('GPe', a, ww)
 
-      for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
-        ww = deactivate('GPi', a)
-        score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
-        reactivate('GPi', a, ww)
-    else:
+      #  for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
+      #    ww = deactivate('GPi', a)
+      #    score += checkAvgFR(params=params,antagInjectionSite='GPi',antag=a)
+      #    reactivate('GPi', a, ww)
+      #else:
       # The following implements the deactivation tests with re-creation of the entire BG every time (slower but also implemented for multi-channels)
       for a in ['AMPA','AMPA+GABAA','NMDA','GABAA']:
         instantiate_BG(params, antagInjectionSite='GPe', antag=a)
@@ -484,6 +512,9 @@ def main():
   params['sim_score'] = score[0]
   params['max_score'] = score[1]
   with open('params_score.csv', 'wb') as csv_file:
+=======
+  with open('params_score.csv', 'wb') as csv_file:
+>>>>>>> master
     writer = csv.writer(csv_file)
     for key, value in params.items():
        writer.writerow([key, value])
