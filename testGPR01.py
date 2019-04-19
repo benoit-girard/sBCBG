@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 #!/usr/bin/env python
-=======
-#!/usr/bin/python
->>>>>>> master
 # -*- coding: utf-8 -*-
 
 ##
@@ -37,10 +33,10 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
 
   #-------------------------
   # prepare the firing rates of the inputs for the 5 steps of the experiment
-  #-------------------------  
+  #-------------------------
   gCSN = CSNFR[1]-CSNFR[0]
   gPTN = PTNFR[1]-PTNFR[0]
-  activityLevels = np.array([[0,0.4,0.4,0.6,0.4], [0.,0.,0.6,0.6,0.6]]) 
+  activityLevels = np.array([[0,0.4,0.4,0.6,0.4], [0.,0.,0.6,0.6,0.6]])
 
   CSNrate= gCSN * activityLevels + np.ones((5)) * CSNFR[0]
   PTNrate= gPTN * activityLevels + np.ones((5)) * PTNFR[0]
@@ -71,19 +67,9 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
   for N in NUCLEI:
     expeRate[N]=-1. * np.ones((nbRecord,5))
 
-<<<<<<< HEAD
-  antagStr = ''
-  if antagInjectionSite != 'none':
-    antagStr = antagInjectionSite+'_'+antag+'_'
-
-  inspector = {}
-  for N in NUCLEI:
-    inspector[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": antagStr+N, "to_file": True, 'start':0. ,'stop':offsetDuration+simDuration*6})
-=======
   inspector = {}
   for N in NUCLEI:
     inspector[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": N, "to_file": False})
->>>>>>> master
     for i in range(nbRecord):
       nest.Connect(Pop[N][i],inspector[N])
 
@@ -98,31 +84,12 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
   firingRatesFile=open(dataPath+'firingRates.csv','w')
   firingRatesFile.writelines(frstr)
 
-<<<<<<< HEAD
-  #-------------------------
-  # measures
-  #-------------------------
-  spkDetect=[{},{},{}] # list of spike detector dictionaries used to record the experiment in the first 3 channels
-
-
-  for i in range(nbRecord):
-    for N in NUCLEI:
-      spkDetect[i][N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": antagStr+N, "to_file": False, 'start':offsetDuration ,'stop':offsetDuration+simDuration*6})
-      nest.Connect(Pop[N][i], spkDetect[i][N])
-
-  # stimulation without inputs, to make sure that the NN is at rest
-  nest.Simulate(offsetDuration)
-
-=======
->>>>>>> master
   #----------------------------------
   # Loop over the 5 steps of the test
   #----------------------------------
   for timeStep in range(5):
-<<<<<<< HEAD
-=======
     #-------------------------
-    # measures                                                                                                                                                  
+    # measures
     #-------------------------
     spkDetect=[{},{},{}] # list of spike detector dictionaries used to record the experiment in the first 3 channels
 
@@ -134,7 +101,6 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
       for N in NUCLEI:
         spkDetect[i][N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": str(timeStep)+'_'+antagStr+N, "to_file": True, 'start':offsetDuration + timeStep*(offsetDuration+simDuration),'stop':(timeStep+1)*(offsetDuration+simDuration)})
         nest.Connect(Pop[N][i], spkDetect[i][N])
->>>>>>> master
 
     frstr = str(timeStep) + ', '
 
@@ -152,28 +118,17 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
 
     if PActiveCMPf == 0. or CMPfFR[0] == CMPfFR[1] or transientCMPf == 0.:
       # vanilla GPR01 scenario
-<<<<<<< HEAD
-      nest.Simulate(simDuration)
-=======
       nest.Simulate(simDuration+offsetDuration)
->>>>>>> master
     else:
       # CMPf activity during selection
       print('CMPf activity increased to ' + str(CMPfFR[1]) + ' for ' + str((simDuration+offsetDuration)*transientCMPf) + ' ms\n')
       for Ch in range(params['nbCh']):
         nest.SetStatus(ActPop['CMPf'][Ch],{'rate': CMPfFR[1]})
-<<<<<<< HEAD
-      nest.Simulate(simDuration*transientCMPf)
-      for Ch in range(params['nbCh']):
-        nest.SetStatus(ActPop['CMPf'][Ch],{'rate': CMPfFR[0]})
-      nest.Simulate(simDuration*(1.-transientCMPf))
-=======
       nest.Simulate((simDuration+offsetDuration)*transientCMPf)
       for Ch in range(params['nbCh']):
         nest.SetStatus(ActPop['CMPf'][Ch],{'rate': CMPfFR[0]})
       nest.Simulate((simDuration+offsetDuration)*(1.-transientCMPf))
->>>>>>> master
-        
+
 
     for i in range(nbRecord):
       print '------ Channel',i,'-------'
@@ -354,7 +309,7 @@ def checkGeorgopoulosTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN
   # step 1 : stimulation without inputs, to calibrate the GPi activity at rest :
   nest.Simulate(simDuration+offsetDuration)
 
-  print '------ Rest Period ------'  
+  print '------ Rest Period ------'
   frstr = 'rest, , , , ,' # only GPi is recorded at rest, and on all channels
   GPiRestRate = nest.GetStatus(GPiRestSpkDetect, 'n_events')[0] / float(nbSim[N]*simDuration*params['nbCh']) * 1000
   print "GPi rate at rest:",GPiRestRate;"Hz"
@@ -412,14 +367,14 @@ def main():
                  'GFSI',
                  'GSTN',
                  'GGPe',
-                 'GGPi', 
+                 'GGPi',
                  'IeGPe',
                  'IeGPi',
                  'inDegCSNMSN',
                  'inDegPTNMSN',
                  'inDegCMPfMSN',
                  'inDegFSIMSN',
-                 'inDegMSNMSN', 
+                 'inDegMSNMSN',
                  'inDegCSNFSI',
                  'inDegPTNFSI',
                  'inDegSTNFSI',
@@ -449,7 +404,7 @@ def main():
       print "Incorrect number of parameters:",len(sys.argv),"-",len(paramKeys),"expected"
 
   nest.set_verbosity("M_WARNING")
-  
+
   instantiate_BG(params, antagInjectionSite='none', antag='')
   score = np.zeros((2))
 
