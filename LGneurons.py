@@ -1,14 +1,14 @@
-#!/apps/free/python/2.7.10/bin/python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
-interactive = True # avoid loading X dependent things
+
+interactive = False # avoid loading X dependent things
                    # set to False for simulations on Sango
 storeGDF = True # unless overriden by run.py, keep spike rasters
 
 import nstrand
 
-if interactive :
-  import pylab
-
+import pandas as pd
+from modelParams import *
 import nest
 import numpy as np
 import numpy.random as rnd
@@ -141,6 +141,90 @@ def createMC(name,nbCh,fake=False,parrot=True):
     print '* '+name+':',nbSim[name]*nbCh,'neurons (divided in',nbCh,'channels) with parameters:',BGparams[name]
     for i in range(nbCh):
       Pop[name].append(nest.Create("iaf_psc_alpha_multisynapse",int(nbSim[name]),params=BGparams[name]))
+
+
+#------------------------------------------------------------------------------
+# Routine to perform the fast connection using nest built-in `connect` function
+# - `source` & `dest` are lists defining Nest IDs of source & target population
+# - `synapse_label` is used to tag connections and be able to find them quickly
+#   with function `mass_mirror`, that adds NMDA on top of AMPA connections
+# - `inDegree`, `receptor_type`, `weight`, `delay` are Nest connection params
+#------------------------------------------------------------------------------
+def mass_connect(source, dest, synapse_label, inDegree, receptor_type, weight, delay, stochastic_delays=None, verbose=False):
+  def printv(text):
+    if verbose:
+      print(text)
+
+  sigmaDependentInterval = True # Hugo's method
+
+  # potential initialization of stochastic delays
+  if stochastic_delays != None and delay > 0 and stochastic_delays > 0.:
+    printv('Using stochastic delays in mass-connect')
+    sigma = delay * stochastic_delays
+    if sigmaDependentInterval:
+      n = 2 # number of standard deviation to include in the distribution
+      if stochastic_delays >= 1./n:
+        print 'Error : stochastic_delays >= 1/n and the distribution of delays therefore includes 0 which is not possible -> Jean\'s method is used'
+        sigmaDependentInterval = False
+      else:
+        low = delay - n*sigma
+        high = delay + n*sigma
+
+
+    if not sigmaDependentInterval:
+      low = .5*delay
+      high = 1.5*delay
+
+    delay =  {'distribution': 'normal_clipped', 'low': low, 'high': high, 'mu': delay, 'sigma': sigma}
+
+  # The first `fixed_indegree` connection ensures that all neurons in `dest`
+  # are targeted by the same number of axons (an integer number)
+  integer_inDegree = np.floor(inDegree)
+  if integer_inDegree>0:
+    printv('Adding '+str(int(integer_inDegree*len(dest)))+' connections with rule `fixed_indegree`\n')
+    nest.Connect(source,
+                 dest,
+                 {'rule': 'fixed_indegree', 'indegree': int(integer_inDegree)},
+                 {'model': 'static_synapse_lbl', 'synapse_label': synapse_label, 'receptor_type': receptor_type, 'weight': weight, 'delay':delay})
+
+  # The second `fixed_total_number` connection distributes remaining axonal
+  # contacts at random (i.e. the remaining fractional part after the first step)
+  float_inDegree = inDegree - integer_inDegree
+  remaining_connections = np.round(float_inDegree * len(dest))
+  if remaining_connections > 0:
+    printv('Adding '+str(remaining_connections)+' remaining connections with rule `fixed_total_number`\n')
+    nest.Connect(source,
+                 dest,
+                 {'rule': 'fixed_total_number', 'N': int(remaining_connections)},
+                 {'model': 'static_synapse_lbl', 'synapse_label': synapse_label, 'receptor_type': receptor_type, 'weight': weight, 'delay':delay})
+
+#------------------------------------------------------------------------------
+# Routine to duplicate a connection made with a specific receptor, with another
+# receptor (typically to add NMDA connections to existing AMPA connections)
+# - `source` & `synapse_label` should uniquely define the connections of
+#   interest - typically, they are the same as in the call to `mass_connect`
+# - `receptor_type`, `weight`, `delay` are Nest connection params
+#------------------------------------------------------------------------------
+def mass_mirror(source, synapse_label, receptor_type, weight, delay, stochastic_delays, verbose=False):
+  def printv(text):
+    if verbose:
+      print(text)
+
+  # find all AMPA connections for the given projection type
+  printv('looking for AMPA connections to mirror with NMDA...\n')
+  ampa_conns = nest.GetConnections(source=source, synapse_label=synapse_label)
+  # in rare cases, there may be no connections, guard against that
+  if ampa_conns:
+    # extract just source and target GID lists, all other information is irrelevant here
+    printv('found '+str(len(ampa_conns))+' AMPA connections\n')
+    if stochastic_delays != None and delay > 0:
+      printv('Using stochastic delays in mass-mirror')
+      delay = np.array(nest.GetStatus(ampa_conns, keys=['delay'])).flatten()
+    src, tgt, _, _, _ = zip(*ampa_conns)
+    nest.Connect(src, tgt, 'one_to_one',
+                 {'model': 'static_synapse_lbl',
+                  'synapse_label': synapse_label, # tag with the same number (doesn't matter)
+                  'receptor_type': receptor_type, 'weight': weight, 'delay':delay})
 
 #-------------------------------------------------------------------------------
 # Creates a topological population of neurons subdivided in Multiple Channels
@@ -758,6 +842,8 @@ FRRNormal = {'MSN': [0,1],
              'FSI': [7.8,14.0], # the refined constraint of 10.9 +/- 3.1 Hz was extracted from the following papers: Adler et al., 2016; Yamada et al., 2016 (summarizing date from three different experiments); and Marche and Apicella, 2017 # old values: [0,20]
              'STN': [15.2,22.8],
              'GPe': [55.7,74.5],
+             'Arky': [55.7,74.5],
+             'Prot': [55.7,74.5],
              'GPi': [59.1,79.5],
              }
 FRRGPi = {'AMPA+NMDA+GABAA':[53.4,96.8],
@@ -766,12 +852,14 @@ FRRGPi = {'AMPA+NMDA+GABAA':[53.4,96.8],
           'AMPA':[5.7327,66.0645],
           'GABAA':[44.1477,245.8935],
           }
+
 FRRGPe = {'AMPA':[4.2889,58.7805],
           'AMPA+GABAA':[10.0017148,137.076126],
           'NMDA':[29.5767,61.1645],
           'GABAA':[74.8051,221.4885],
           }
-FRRAnt = {'GPe':FRRGPe,'GPi':FRRGPi}
+
+FRRAnt = {'Arky':FRRGPe,'Prot':FRRGPe,'GPe':FRRGPe,'GPi':FRRGPi}
 
 # imported from Chadoeuf "connexweights"
 # All the parameters needed to replicate Lienard model
@@ -789,7 +877,10 @@ D_NMDA=100./exp(1)
 Ri=200.E-2   # Ohms.m
 Rm=20000.E-4 # Ohms.m^2
 
-NUCLEI=['MSN','FSI','STN','GPe','GPi']
+if params['splitGPe']:
+  NUCLEI=['MSN','FSI','STN','Arky','Prot','GPi']
+else:
+  NUCLEI=['MSN','FSI','STN','GPe','GPi']
 
 # Number of neurons in the real macaque brain
 # one hemisphere only, based on Hardman et al. 2002 paper, except for striatum & CM/Pf
@@ -797,6 +888,8 @@ neuronCounts={'MSN': 26448.0E3,
               'FSI':   532.0E3,
               'STN':    77.0E3,
               'GPe':   251.0E3,
+              'Arky':  251.0E3,
+              'Prot':  251.0E3,
               'GPi':   143.0E3,
               'CMPf':   86.0E3,
               'CSN': None, 'PTN': None # prevents key error
@@ -807,127 +900,213 @@ nbSim = {'MSN': 0.,
          'FSI': 0.,
          'STN': 0.,
          'GPe': 0.,
+         'Arky': 0.,
+         'Prot': 0.,
          'GPi': 0.,
          'CMPf':0.,
          'CSN': 0.,
-         'PTN': 0.,
-        }
+         'PTN': 0.,}
 
 # P(X->Y): probability that a given neuron from X projects to at least neuron of Y
 P = {'MSN->GPe': 1.,
+     'MSN->Arky': 1.,
+     'MSN->Prot': 1.,
      'MSN->GPi': 0.82,
      'MSN->MSN': 1.,
+
      'FSI->MSN': 1.,
      'FSI->FSI': 1.,
-     'STN->GPe': 0.83,
-     'STN->GPi': 0.72,
-     'STN->MSN': 0.17,
-     'STN->FSI': 0.17,
+
+     'STN->GPe':  0.83,
+     'STN->Arky': 0.83,
+     'STN->Prot': 0.83,
+     'STN->GPi':  0.72,
+     'STN->MSN':  0.17,
+     'STN->FSI':  0.17,
+
      'GPe->STN': 1.,
      'GPe->GPe': 0.84,
      'GPe->GPi': 0.84,
      'GPe->MSN': 0.16,
      'GPe->FSI': 0.16,
+
+     'Arky->Arky': 0.84,
+     'Arky->Prot': 0.84,
+     'Arky->MSN': 0.16,
+     'Arky->FSI': 0.16,
+
+     'Prot->STN': 1.,
+     'Prot->Arky': 0.84,
+     'Prot->Prot': 0.84,
+     'Prot->GPi': 0.84,
+
      'CSN->MSN': 1.,
      'CSN->FSI': 1.,
+
      'PTN->MSN': 1.,
      'PTN->FSI': 1.,
      'PTN->STN': 1.,
+
      'CMPf->STN': 1.,
      'CMPf->MSN': 1.,
      'CMPf->FSI': 1.,
      'CMPf->GPe': 1.,
-     'CMPf->GPi': 1.
-    }
+     'CMPf->Arky': 1.,
+     'CMPf->Prot': 1.,
+     'CMPf->GPi': 1.,}
 
 # alpha X->Y: average number of synaptic contacts made by one neuron of X to one neuron of Y, when there is a connexion
 # for the moment set from one specific parameterization, should be read from Jean's solution file
 alpha = {'MSN->GPe':   171,
+         'MSN->Arky':   171,
+         'MSN->Prot':   171,
          'MSN->GPi':   210,
          'MSN->MSN':   210,
+
          'FSI->MSN':  4362,
          'FSI->FSI':   116,
+
          'STN->GPe':   428,
+         'STN->Arky':   428,
+         'STN->Prot':   428,
          'STN->GPi':   233,
          'STN->MSN':     0,
          'STN->FSI':    91,
+
          'GPe->STN':    19,
          'GPe->GPe':    38,
          'GPe->GPi':    16,
          'GPe->MSN':     0,
          'GPe->FSI':   353,
+
+         'Arky->Arky':    38,
+         'Arky->Prot':    38,
+         'Arky->MSN':     0,
+         'Arky->FSI':   353,
+
+         'Prot->STN':    19,
+         'Prot->Arky':    38,
+         'Prot->Prot':    38,
+         'Prot->GPi':    16,
+
          'CSN->MSN':   342, # here, represents directly \nu
          'CSN->FSI':   250, # here, represents directly \nu
+
          'PTN->MSN':     5, # here, represents directly \nu
          'PTN->FSI':     5, # here, represents directly \nu
          'PTN->STN':   259, # here, represents directly \nu
+
          'CMPf->MSN': 4965,
          'CMPf->FSI': 1053,
          'CMPf->STN':   76,
          'CMPf->GPe':   79,
-         'CMPf->GPi':  131
-        }
+         'CMPf->Arky':   79,
+         'CMPf->Prot':   79,
+         'CMPf->GPi':  131,}
 
 # p(X->Y): relative distance on the dendrite from the soma, where neurons rom X projects to neurons of Y
 # Warning: p is not P!
 p = {'MSN->GPe':  0.48,
+     'MSN->Arky':  0.48,
+     'MSN->Prot':  0.48,
      'MSN->GPi':  0.59,
      'MSN->MSN':  0.77,
+
      'FSI->MSN':  0.19,
      'FSI->FSI':  0.16,
+
      'STN->GPe':  0.30,
+     'STN->Prot':  0.30,
+     'STN->Arky':  0.30,
      'STN->GPi':  0.59,
      'STN->MSN':  0.16,
      'STN->FSI':  0.41,
+
      'GPe->STN':  0.58,
      'GPe->GPe':  0.01,
      'GPe->GPi':  0.13,
      'GPe->MSN':  0.06,
      'GPe->FSI':  0.58,
+
+     'Arky->Arky':  0.01,
+     'Arky->Prot':  0.01,
+     'Arky->MSN':  0.06,
+     'Arky->FSI':  0.58,
+
+     'Prot->STN':  0.58,
+     'Prot->Arky':  0.01,
+     'Prot->Prot':  0.01,
+     'Prot->GPi':  0.13,
+
      'CSN->MSN':  0.95,
      'CSN->FSI':  0.82,
+
      'PTN->MSN':  0.98,
      'PTN->FSI':  0.70,
      'PTN->STN':  0.97,
+
      'CMPf->STN': 0.46,
      'CMPf->MSN': 0.27,
      'CMPf->FSI': 0.06,
-     'CMPf->GPe': 0.0,
-     'CMPf->GPi': 0.48
-    }
+     'CMPf->GPe': 0.00,
+     'CMPf->Arky': 0.00,
+     'CMPf->Prot': 0.00,
+     'CMPf->GPi': 0.48,}
 
 # electrotonic constant L computation:
-dx={'MSN':1.E-6,'FSI':1.5E-6,'STN':1.5E-6,'GPe':1.7E-6,'GPi':1.2E-6}
-lx={'MSN':619E-6,'FSI':961E-6,'STN':750E-6,'GPe':865E-6,'GPi':1132E-6}
+dx={'MSN':1.E-6,'FSI':1.5E-6,'STN':1.5E-6,'GPe':1.7E-6,'Arky':1.7E-6,'Prot':1.7E-6,'GPi':1.2E-6}
+lx={'MSN':619E-6,'FSI':961E-6,'STN':750E-6,'GPe':865E-6,'Arky':865E-6,'Prot':865E-6,'GPi':1132E-6}
 LX={}
 for n in NUCLEI:
     LX[n]=lx[n]*sqrt((4*Ri)/(dx[n]*Rm))
 
 # tau: communication delays
 tau = {'MSN->GPe':    7.,
+       'MSN->Arky':    7.,
+       'MSN->Prot':    7.,
        'MSN->GPi':   11.,
        'MSN->MSN':    1.,
+
        'FSI->MSN':    1.,
        'FSI->FSI':    1.,
+
        'STN->GPe':    3.,
+       'STN->Arky':    3.,
+       'STN->Prot':    3.,
        'STN->GPi':    3.,
        'STN->MSN':    3.,
        'STN->FSI':    3.,
+
        'GPe->STN':   10.,
        'GPe->GPe':    1.,
        'GPe->GPi':    3.,
        'GPe->MSN':    3.,
        'GPe->FSI':    3.,
+
+       'Arky->Arky':    1.,
+       'Arky->Prot':    1.,
+       'Arky->MSN':    3.,
+       'Arky->FSI':    3.,
+
+       'Prot->STN':   10.,
+       'Prot->Arky':    1.,
+       'Prot->Prot':    1.,
+       'Prot->GPi':    3.,
+
        'CSN->MSN':    7.,
        'CSN->FSI':    7.,
+
        'PTN->MSN':    3.,
        'PTN->FSI':    3.,
        'PTN->STN':    3.,
+
        'CMPf->MSN':   7.,
        'CMPf->FSI':   7.,
-       'CMPf->STN':   4.,#7
-       'CMPf->GPe':   5.,#7
-       'CMPf->GPi':   6.,#7
+       'CMPf->STN':   7.,#4
+       'CMPf->GPe':   7.,#5
+       'CMPf->Arky':   7.,#5
+       'CMPf->Prot':   7.,#5
+       'CMPf->GPi':   7.,#6
        }
 
 
@@ -949,8 +1128,8 @@ CommonParams = {'t_ref':         2.0,
                 'V_reset':       0.0,
                 'I_e':           0.0,
                 'V_min':       -20.0, # as in HSG06
-                'tau_syn':   tau_syn
-               }
+                'tau_syn':   tau_syn,}
+
 initNeurons() # sets the default params of iaf_alpha_psc_mutisynapse neurons to CommonParams
 
 MSNparams = {'tau_m':        13.0, # according to SBE12
@@ -973,6 +1152,15 @@ GPeparams = {'tau_m':        14.0, # 20 -> 14 based on Johnson & McIntyre 2008, 
              'C_m':          14.0  # so that R_m=1, C_m=tau_m
             }
 
+Arkyparams = {'tau_m':        14.0, # 20 -> 14 based on Johnson & McIntyre 2008, JNphy)
+             'V_th':         11.0, # value of the LG14 example model, table 9
+             'C_m':          14.0  # so that R_m=1, C_m=tau_m
+            }
+
+Protparams = {'tau_m':        14.0, # 20 -> 14 based on Johnson & McIntyre 2008, JNphy)
+             'V_th':         11.0, # value of the LG14 example model, table 9
+             'C_m':          14.0  # so that R_m=1, C_m=tau_m
+            }
 GPiparams = {'tau_m':        14.0, # 20 -> 14 based on Johnson & McIntyre 2008, JNphy)
              'V_th':          6.0, # value of the LG14 example model, table 9
              'C_m':          14.0  # so that R_m=1, C_m=tau_m
@@ -986,6 +1174,8 @@ BGparams = {'MSN':MSNparams,
             'FSI':FSIparams,
             'STN':STNparams,
             'GPe':GPeparams,
+            'Arky':Arkyparams,
+            'Prot':Protparams,
             'GPi':GPiparams}
 
 Pop = {}
@@ -1001,7 +1191,9 @@ rate = {'CSN':   2.  ,
         'FSI':  16.6 ,
         'STN':  14.3 ,
         'GPe':  62.6 ,
-        'GPi':  64.2
+        'Arky':  62.6 ,
+        'Prot':  62.6 ,
+        'GPi':  64.2 ,
         }
 
 #---------------------------

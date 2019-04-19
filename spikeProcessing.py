@@ -1,127 +1,190 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import numpy
-import pylab
+import numpy as np
+import csv
+import matplotlib.pyplot as plt
 import nest.raster_plot as raster
 from scipy import signal as sig
+import os
+import glob
+import re
+import pylab as pl
 
-#filePath = 'oksperiences_02_13-14_modelNo9_x10_PD/2017_2_14_15:5_00000/log/' # GSTN*1.8, GGPe*1.8
-filePath = '2017_3_23_14:26_00000/log/' # GSTN*1.8, GGPe*1.8
-#filePath = '2017_2_13_14:42_00000/log/' # GSTN*1.5, GGPe*1.5
-#filePath = '2017_2_14_11:20_00000/log/' # normal
 
-NUCLEI = ['MSN','FSI','STN','GPe','GPi']
-fileList = {}
+def process(filePath, nbCpu):
 
-rootFID = 71625
+  print '\n\n ===================\n  Processing spikes \n ===================\n\n'
 
-i = 0
-for N in NUCLEI:
-  fileList[N] = [N+'-'+str(rootFID+i)+'-0.gdf',N+'-'+str(rootFID+i)+'-1.gdf']
-  i += 1
+  NUCLEI = ['MSN','FSI','STN','GPe','GPi']
+  fileList = {}
+  rootFID = int(float(re.findall(r'\d+', glob.glob('log/*'+NUCLEI[0]+'*.gdf')[0])[0]))
+  FID = 0
+  for N in NUCLEI:
+    fileList[N] = []
+    cpu = 0
+    while cpu<nbCpu:
+      fileList[N].append(N+'-'+str(rootFID+FID)+'-'+str(cpu)+'.gdf')
+      cpu += 1
+    FID += 1
 
-#fileList['GPe'] = ['GPe-71628-0.gdf','GPe-71628-1.gdf']
-#fileList['FSI'] = ['FSI-71627-0.gdf','STN-71627-1.gdf']
-#fileList['MSN'] = ['STN-71627-0.gdf','STN-71627-1.gdf']
-#fileList['GPi'] = ['STN-71627-0.gdf','STN-71627-1.gdf']
+  showFFT = False
 
-#showFFT = True
+  # read files & combine data :
+  #----------------------------
+  data = {}
+  ts = {}
+  gids = {}
 
-# read files & combine data :
-#----------------------------
-data = {}
-ts = {}
-gids = {}
-for N in NUCLEI:
-  data[N] = None
-  for f in fileList[N]:
-    newdata = numpy.loadtxt(filePath+f)
-    if data[N] is None:
-      data[N] = newdata
-    else:
-      data[N] = numpy.concatenate((data[N],newdata))
+  for N in NUCLEI:
+    cpt=0
+    data[N] = None
+    for f in fileList[N]:
+      cpt+=1
+      newdata = np.loadtxt('log/'+f, ndmin=2)
+      if newdata.any():
+        if data[N] is None:
+          data[N] = newdata
+        else:
+          data[N] = np.concatenate((data[N],newdata))  
+    ts[N] = []
+    gids[N] = []
+    try:
+      ts[N] = [x - 1000 for x in data[N][:,1]] # complete time series of spiking events (-1000 ms to remove initial delay)
+      gids[N] = data[N][:,0] # corresponding list of firing neuron ID
+    except:
+      TypeError('No spikes')
+    
+  print 'Continuing'
+  # prepare signal : histogram of spiking events
+  #---------------------------------------------
+  signal = {}
+  binPeriod = 1.0 # in ms
+  t_bins = np.arange(np.amin(ts[NUCLEI[0]]),np.amax(ts[NUCLEI[0]]),binPeriod)
+  for N in NUCLEI:
+    signal[N],bins = raster._histogram(ts[N], bins=t_bins)
+  
+  '''
+  # show/save histogram
+  #---------------
+  plt.rcParams["figure.figsize"] = (16,6)
+  ax = {}
+  i = 0
+  for N in NUCLEI:
+    i += 1
+    nbNeurons = len(np.unique(gids[N]))
+    #heights = 1000 * signal[N] / nbNeurons # Normalize
+    heights = signal[N]
+    ax[N] = plt.subplot(3,2,i)  
 
-  ts[N] = data[N][:,1] # complete time series of spiking events
-  gids[N] = data[N][:,0] # corresponding list of firing neuron ID
+    ax[N].bar(t_bins, heights, width=2.0, color="black")
+    plt.subplots_adjust(left=None, bottom=None, right=None, top=2.0, wspace=None, hspace=0.8)
+    plt.ylabel('Spikes nb')
+    plt.xlabel('Time [ms]')
+    plt.title(N)
+  if not os.path.exists("plots/"):
+      os.makedirs("plots/")
+  plt.savefig('plots/ActHisto.pdf', bbox_inches='tight')
+  
+  plt.clf()'''
 
-# prepare signal : histogram of spiking events
-#---------------------------------------------
-signal = {}
-t_bins = numpy.arange(numpy.amin(ts[NUCLEI[0]]),numpy.amax(ts[NUCLEI[0]]),1.0)
-for N in NUCLEI:
-  signal[N],bins = raster._histogram(ts[N], bins=t_bins)
+  if not os.path.exists("plots/"):
+    os.makedirs("plots/")
 
-# show/save histogram
-#---------------
-pylab.rcParams["figure.figsize"] = (16,6)
-ax = {}
-i = 0
-for N in NUCLEI:
-  i += 1
-  nbNeurons = len(numpy.unique(gids[N]))
-  heights = 1000 * signal[N] / (1.0 * nbNeurons)
-  ax[N] = pylab.subplot(320+i)  
-  ax[N].bar(t_bins, heights, width=1.0, color="black")
-  pylab.ylabel('Frequency [Hz]')
-  pylab.xlabel('Time [sec]')
+  # compute FFT
+  #------------
+  T = binPeriod/1000 #0.1 ms, sampling period
+  OI = {}
+  FF = {}
+  PS = {}
+  for N in NUCLEI:
+    Nb = signal[N].size # number of sample points
+    yf = np.fft.fft(signal[N])
+    xf = np.linspace(0.,1./(2.*T),Nb//2)
 
-pylab.savefig('ActHisto.pdf', bbox_inches='tight')
-  #pylab.show()
+    # show FFT
+    #---------
+    PS[N] = 2.0/Nb * np.abs(yf[1:Nb//2])**2
+    if showFFT and N in ['STN', 'GPe']:
+      pl.plot(xf[1:], PS[N], linewidth=0.5, color='red') # simple plot
+      pl.show()
+      '''plt.plot(xf[1:], PS[N])
+      plt.xlabel('Freq. [Hz]')
+      plt.show()
+      plt.savefig("plots/"+N+'_PwSpec.pdf', bbox_inches='tight')
+      plt.close()'''
 
-'''
-# compute FFT
-#------------
-T = 0.001 #1 ms, sampling period
-for N in NUCLEI:
-  Nb = signal[N].size
 
-  #ps = numpy.abs(numpy.fft.fft(signal[N]))**2
-  #freqs = numpy.fft.fftfreq(Nb,T)
-  #idx = numpy.argsort(freqs)
-  #idx = numpy.fft.fftshift(freqs)
-
-  yf = numpy.fft.fft(signal[N])
-  xf = numpy.linspace(0.,1./(2.*T),Nb/2)
-
-  # show FFT
-  #---------
-  #pylab.plot(freqs[idx], ps[idx])
-  #pylab.show()
-
-  if showFFT:
-    pylab.plot(xf[1:], 2.0/Nb * numpy.abs(yf[1:Nb//2])**2)
-    #pylab.plot(xf[1:], numpy.abs(yf[1:Nb//2])**2)
-    pylab.savefig(N+'_PwSpec.pdf', bbox_inches='tight')
-    pylab.xlabel('Freq. [Hz]')
-    #pylab.show()
 
   # Oscillation index computation :
   #--------------------------------
-  PS = 2.0/Nb * numpy.abs(yf[1:Nb//2])**2
-  #print PS.size
-  #print xf[15*5:30*5],PS[15*5:30*5]
-  #print PS.sum()
-  print N,"OI[15-30Hz]:",PS[15*5:30*5].sum()/PS.sum()
+  #binPeriod = 5.
+  #t_bins = np.arange(np.amin(ts[NUCLEI[0]]),np.amax(ts[NUCLEI[0]]),binPeriod)
 
-# Fano Factor computation :
-# recompute histogram with 5ms bin size as Kumar
-#--------------------------
-signal2 = {}
-t_bins = numpy.arange(numpy.amin(ts[NUCLEI[0]]),numpy.amax(ts[NUCLEI[0]]),5.0)
-FF={}
-for N in NUCLEI:
-  signal2[N],bins = raster._histogram(ts[N], bins=t_bins)
-  FF[N] = numpy.var(signal2[N]) / numpy.mean(signal2[N])
-  print N,"FF:",FF[N]
+  #Frequencies of interest
+  a = 15
+  b = 30
 
-# spectrogram
-#------------
-for N in NUCLEI:
-  f,t,Sxx = sig.spectrogram(signal['STN'],fs=1000.,nperseg=100)
-  pylab.pcolormesh(t,f,Sxx)
-  pylab.ylabel('Frequency [Hz]')
-  pylab.xlabel('Time [sec]')
-  pylab.savefig(N+'_Spectrogram.pdf', bbox_inches='tight')
-  #pylab.show()
-'''
+  fieldnames = []
+  for N in NUCLEI:
+    fieldnames.append(N+'_FF')
+    fieldnames.append(N+'_OI'+str(a)+"-"+str(b))
+    signal[N],bins = raster._histogram(ts[N], bins=t_bins)
+    FF[N] = FanoFactor(signal[N])
+    OI[N] = OscIndex(PS[N], a, b, binPeriod)
+    print N, FF[N], OI[N]
+
+  if not os.path.exists("report/"):
+    os.makedirs("report/")
+  if os.path.isfile('report/oscillations.csv'):
+    os.remove('report/oscillations.csv')
+  with open('report/oscillations.csv', 'wb') as csvfile:
+    writer = csv.writer(csvfile, delimiter=';',
+                        quotechar="'", quoting=csv.QUOTE_MINIMAL)
+    report = [[],[]]
+    for N in NUCLEI:
+      report[0] += [N+'_FF', N+'_OI('+str(a)+"-"+str(b)+')']
+      report[1] += [FF[N], OI[N]]
+    writer.writerow(report[0])
+    writer.writerow(report[1])
+    csvfile.close()
+
+
+#------------------------------------------
+# Computes Fano Factor from Kumar 2011
+# FF[pop] = Var[pop] / E[pop]
+# returns 0 if E[pop] == 0
+#
+# t_bins = np.arange(np.amin(ts[NUCLEI[0]]),np.amax(ts[NUCLEI[0]]),5.0)
+#------------------------------------------
+def FanoFactor(raster):
+  mean = np.mean(raster)
+  var = np.var(raster)
+  if mean != 0:
+    return var/mean
+  else:
+   return 0
+
+#------------------------------------------
+# Computes Oscillation index from Kumar 2011
+# Integral from a to b (spectrum) / Integral from 0 to (sampling freq. / 2) (spectrum)
+# Note : the given spectrum must already be truncated (i.e. with x < sampling freq. / 2)
+# returns 0 if denominator == 0
+#------------------------------------------
+def OscIndex(PS, freqs, a=15, b=30):
+  tot = PS.sum()
+  
+  if tot != 0:
+    idx = np.argsort(freqs)
+    posi_spectrum = np.where((freqs[idx]>a) & (freqs[idx]<b)) # restrict the analysis to freqs [a-b] Hz
+    return PS[posi_spectrum].sum()/tot
+  else:
+   return 0
+
+def main():
+  process(os.path.split(os.getcwd())[-1])
+  pass
+
+#---------------------------
+if __name__ == '__main__':
+  main()

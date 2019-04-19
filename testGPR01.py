@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 #!/usr/bin/env python
+=======
+#!/usr/bin/python
+>>>>>>> master
 # -*- coding: utf-8 -*-
 
 ##
@@ -67,6 +71,7 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
   for N in NUCLEI:
     expeRate[N]=-1. * np.ones((nbRecord,5))
 
+<<<<<<< HEAD
   antagStr = ''
   if antagInjectionSite != 'none':
     antagStr = antagInjectionSite+'_'+antag+'_'
@@ -74,6 +79,11 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
   inspector = {}
   for N in NUCLEI:
     inspector[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": antagStr+N, "to_file": True, 'start':0. ,'stop':offsetDuration+simDuration*6})
+=======
+  inspector = {}
+  for N in NUCLEI:
+    inspector[N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": N, "to_file": False})
+>>>>>>> master
     for i in range(nbRecord):
       nest.Connect(Pop[N][i],inspector[N])
 
@@ -88,6 +98,7 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
   firingRatesFile=open(dataPath+'firingRates.csv','w')
   firingRatesFile.writelines(frstr)
 
+<<<<<<< HEAD
   #-------------------------
   # measures
   #-------------------------
@@ -102,10 +113,28 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
   # stimulation without inputs, to make sure that the NN is at rest
   nest.Simulate(offsetDuration)
 
+=======
+>>>>>>> master
   #----------------------------------
   # Loop over the 5 steps of the test
   #----------------------------------
   for timeStep in range(5):
+<<<<<<< HEAD
+=======
+    #-------------------------
+    # measures                                                                                                                                                  
+    #-------------------------
+    spkDetect=[{},{},{}] # list of spike detector dictionaries used to record the experiment in the first 3 channels
+
+    antagStr = ''
+    if antagInjectionSite != 'none':
+      antagStr = antagInjectionSite+'_'+antag+'_'
+
+    for i in range(nbRecord):
+      for N in NUCLEI:
+        spkDetect[i][N] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label": str(timeStep)+'_'+antagStr+N, "to_file": True, 'start':offsetDuration + timeStep*(offsetDuration+simDuration),'stop':(timeStep+1)*(offsetDuration+simDuration)})
+        nest.Connect(Pop[N][i], spkDetect[i][N])
+>>>>>>> master
 
     frstr = str(timeStep) + ', '
 
@@ -123,16 +152,27 @@ def checkGurneyTest(showRasters=False,params={},CSNFR=[2.,10.], PActiveCSN=1., P
 
     if PActiveCMPf == 0. or CMPfFR[0] == CMPfFR[1] or transientCMPf == 0.:
       # vanilla GPR01 scenario
+<<<<<<< HEAD
       nest.Simulate(simDuration)
+=======
+      nest.Simulate(simDuration+offsetDuration)
+>>>>>>> master
     else:
       # CMPf activity during selection
       print('CMPf activity increased to ' + str(CMPfFR[1]) + ' for ' + str((simDuration+offsetDuration)*transientCMPf) + ' ms\n')
       for Ch in range(params['nbCh']):
         nest.SetStatus(ActPop['CMPf'][Ch],{'rate': CMPfFR[1]})
+<<<<<<< HEAD
       nest.Simulate(simDuration*transientCMPf)
       for Ch in range(params['nbCh']):
         nest.SetStatus(ActPop['CMPf'][Ch],{'rate': CMPfFR[0]})
       nest.Simulate(simDuration*(1.-transientCMPf))
+=======
+      nest.Simulate((simDuration+offsetDuration)*transientCMPf)
+      for Ch in range(params['nbCh']):
+        nest.SetStatus(ActPop['CMPf'][Ch],{'rate': CMPfFR[0]})
+      nest.Simulate((simDuration+offsetDuration)*(1.-transientCMPf))
+>>>>>>> master
         
 
     for i in range(nbRecord):
