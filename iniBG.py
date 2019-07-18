@@ -176,7 +176,7 @@ def connectBG(antagInjectionSite,antag):
 
   print('* GPe Inputs')
   if params['splitGPe']:
-      print '* Arky Inputs'
+      print('* Arky Inputs')
       if 'fakeArkyRecurrent' not in params.keys():
           # usual case: Arky's recurrent collaterals are handled normally
           Arky_recurrent_source = 'Arky'
@@ -212,7 +212,7 @@ def connectBG(antagInjectionSite,antag):
              connect_pop('ex','CMPf','Arky',projType=params['cTypeCMPfArky'],redundancy= params['redundancyCMPfArky'],gain=params['GCMPfArky'])
              connect_pop('ex','STN','Arky', projType=params['cTypeSTNArky'], redundancy= params['redundancySTNArky'], gain=params['GSTNArky'])
          else:
-             print antagInjectionSite,": unknown antagonist experiment:",antag
+             print(antagInjectionSite,": unknown antagonist experiment:",antag)
       else:
          connect_pop('ex','CMPf','Arky',projType=params['cTypeCMPfArky'],redundancy= params['redundancyCMPfArky'],gain=params['GCMPfArky'])
          connect_pop('ex','STN','Arky', projType=params['cTypeSTNArky'], redundancy= params['redundancySTNArky'], gain=params['GSTNArky'])
@@ -220,7 +220,7 @@ def connectBG(antagInjectionSite,antag):
          connect_pop('in','Prot','Arky', projType=params['cTypeProtArky'], redundancy= params['redundancyProtArky'], gain=params['GProtArky'])
          connect_pop('in', Arky_recurrent_source, 'Arky', projType=params['cTypeArkyArky'], redundancy= params['redundancyArkyArky'], gain=params['GArkyArky'])
 
-      print '* Prot Inputs'
+      print('* Prot Inputs')
       if 'fakeProtRecurrent' not in params.keys():
          # usual case: Prot's recurrent collaterals are handled normally
          Prot_recurrent_source = 'Prot'
@@ -256,7 +256,7 @@ def connectBG(antagInjectionSite,antag):
              connect_pop('ex','CMPf','Prot',projType=params['cTypeCMPfProt'],redundancy= params['redundancyCMPfProt'],gain=params['GCMPfProt'])
              connect_pop('ex','STN','Prot', projType=params['cTypeSTNProt'], redundancy= params['redundancySTNProt'], gain=params['GSTNProt'])
          else:
-             print antagInjectionSite,": unknown antagonist experiment:",antag
+             print(antagInjectionSite,": unknown antagonist experiment:",antag)
       else:
          connect_pop('ex','CMPf','Prot',projType=params['cTypeCMPfProt'],redundancy= params['redundancyCMPfProt'],gain=params['GCMPfProt'])
          connect_pop('ex','STN','Prot', projType=params['cTypeSTNProt'], redundancy= params['redundancySTNProt'], gain=params['GSTNProt'])

@@ -30,23 +30,23 @@ def loadLG14params(ID):
   for row in LG14SolutionsReader:
     LG14Solutions.append(row)
 
-  print '### Parameterization #'+str(ID)+' from (Lienard & Girard, 2014) is used. ###'
+  print('### Parameterization #'+str(ID)+' from (Lienard & Girard, 2014) is used. ###')
 
-  for k,v in alpha.iteritems():
+  for k,v in alpha.items():
     try:
       #print k,v,round(float(LG14Solutions[ID]['ALPHA_'+k.replace('->','_')]),0)
       alpha[k] = round(float(LG14Solutions[ID]['ALPHA_'+k.replace('->','_')]),0)
     except:
       print('Could not find LG14 alpha parameters for connection `'+k+'`, trying to run anyway.')
 
-  for k,v in p.iteritems():
+  for k,v in p.items():
     try:
       #print 'dist:',k,v,round(float(LG14Solutions[ID]['DIST_'+k.replace('->','_')]),2)
       p[k] = round(float(LG14Solutions[ID]['DIST_'+k.replace('->','_')]),2)
     except:
       print('Could not find LG14 distance (p) parameters for connection `'+k+'`, trying to run anyway.')
 
-  for k,v in BGparams.iteritems():
+  for k,v in BGparams.items():
     try:
       BGparams[k]['V_th'] = round(float(LG14Solutions[ID]['THETA_'+k]),1)
     except:
@@ -84,14 +84,14 @@ def initNeurons():
 #-------------------------------------------------------------------------------
 def create(name,fake=False,parrot=True):
   if nbSim[name] == 0:
-    print 'ERROR: create(): nbSim['+name+'] = 0'
+    print('ERROR: create(): nbSim['+name+'] = 0')
     exit()
   if fake:
     if rate[name] == 0:
-      print 'ERROR: create(): rate['+name+'] = 0 Hz'
-    print '* '+name+'(fake):',nbSim[name],'Poisson generators with avg rate:',rate[name]
+      print ('ERROR: create(): rate['+name+'] = 0 Hz')
+    print('* '+name+'(fake):',nbSim[name],'Poisson generators with avg rate:',rate[name])
     if not parrot:
-      print "/!\ /!\ /!\ /!\ \nWARNING: parrot neurons not used, no correlations in inputs\n"
+      print("/!\ /!\ /!\ /!\ \nWARNING: parrot neurons not used, no correlations in inputs\n")
       Pop[name]  = nest.Create('poisson_generator',int(nbSim[name]))
       nest.SetStatus(Pop[name],{'rate':rate[name]})
     else:
@@ -101,7 +101,7 @@ def create(name,fake=False,parrot=True):
       nest.Connect(pre=Fake[name],post=Pop[name],conn_spec={'rule':'one_to_one'})
 
   else:
-    print '* '+name+':',nbSim[name],'neurons with parameters:',BGparams[name]
+    print('* '+name+':',nbSim[name],'neurons with parameters:',BGparams[name])
     Pop[name] = nest.Create("iaf_psc_alpha_multisynapse",int(nbSim[name]),params=BGparams[name])
 
 #-------------------------------------------------------------------------------
@@ -115,7 +115,7 @@ def create(name,fake=False,parrot=True):
 #-------------------------------------------------------------------------------
 def createMC(name,nbCh,fake=False,parrot=True):
   if nbSim[name] == 0:
-    print 'ERROR: create(): nbSim['+name+'] = 0'
+    print('ERROR: create(): nbSim['+name+'] = 0')
     exit()
 
   Pop[name]=[]
@@ -123,10 +123,10 @@ def createMC(name,nbCh,fake=False,parrot=True):
   if fake:
     Fake[name]=[]
     if rate[name] == 0:
-      print 'ERROR: create(): rate['+name+'] = 0 Hz'
-    print '* '+name+'(fake):',nbSim[name]*nbCh,'Poisson generators (divided in',nbCh,'channels) with avg rate:',rate[name]
+      print('ERROR: create(): rate['+name+'] = 0 Hz')
+    print('* '+name+'(fake):',nbSim[name]*nbCh,'Poisson generators (divided in',nbCh,'channels) with avg rate:',rate[name])
     if not parrot:
-      print "/!\ /!\ /!\ /!\ \nWARNING: parrot neurons not used, no correlations in inputs\n"
+      print ("/!\ /!\ /!\ /!\ \nWARNING: parrot neurons not used, no correlations in inputs\n")
       for i in range(nbCh):
         Pop[name].append(nest.Create('poisson_generator',int(nbSim[name])))
         nest.SetStatus(Pop[name][i],{'rate':rate[name]})
@@ -138,7 +138,7 @@ def createMC(name,nbCh,fake=False,parrot=True):
         nest.Connect(pre=Fake[name][i],post=Pop[name][i],conn_spec={'rule':'one_to_one'})
 
   else:
-    print '* '+name+':',nbSim[name]*nbCh,'neurons (divided in',nbCh,'channels) with parameters:',BGparams[name]
+    print ('* '+name+':',nbSim[name]*nbCh,'neurons (divided in',nbCh,'channels) with parameters:',BGparams[name])
     for i in range(nbCh):
       Pop[name].append(nest.Create("iaf_psc_alpha_multisynapse",int(nbSim[name]),params=BGparams[name]))
 
@@ -164,7 +164,7 @@ def mass_connect(source, dest, synapse_label, inDegree, receptor_type, weight, d
     if sigmaDependentInterval:
       n = 2 # number of standard deviation to include in the distribution
       if stochastic_delays >= 1./n:
-        print 'Error : stochastic_delays >= 1/n and the distribution of delays therefore includes 0 which is not possible -> Jean\'s method is used'
+        print('Error : stochastic_delays >= 1/n and the distribution of delays therefore includes 0 which is not possible -> Jean\'s method is used')
         sigmaDependentInterval = False
       else:
         low = delay - n*sigma
@@ -239,7 +239,7 @@ def mass_mirror(source, synapse_label, receptor_type, weight, delay, stochastic_
 #-------------------------------------------------------------------------------
 def createTopoMC(name, nbCh, layout, c=0.3, r=0.25, fake=False, parrot=True):
   if nbSim[name] == 0:
-    print 'ERROR: create(): nbSim['+name+'] = 0'
+    print('ERROR: create(): nbSim['+name+'] = 0')
     exit()
 
   Pop[name]=[]
@@ -293,10 +293,10 @@ def createTopoMC(name, nbCh, layout, c=0.3, r=0.25, fake=False, parrot=True):
   if fake:
     Fake[name]=[]
     if rate[name] == 0:
-      print 'ERROR: create(): rate['+name+'] = 0 Hz'
-    print '* '+name+'(fake):',nbSim[name]*nbCh,'Poisson generators (divided in',nbCh,'channels) with avg rate:',rate[name]
+      print('ERROR: create(): rate['+name+'] = 0 Hz')
+    print ('* '+name+'(fake):',nbSim[name]*nbCh,'Poisson generators (divided in',nbCh,'channels) with avg rate:',rate[name])
     if not parrot:
-      print "/!\ /!\ /!\ /!\ \nWARNING: parrot neurons not used, no correlations in inputs\n"
+      print("/!\ /!\ /!\ /!\ \nWARNING: parrot neurons not used, no correlations in inputs\n")
       Topo[name] = nesttopo.CreateLayer({'positions': [[positions[0][i], positions[1][i]] for i in range(len(positions[0]))], 'elements': 'poisson_generator', 'extent': [2., 2.], 'center':[0., 0.], 'edge_wrap': edge_wrap})
       all_nodes = nest.GetNodes(Topo[name])
       for i in range(nbCh):
@@ -313,7 +313,7 @@ def createTopoMC(name, nbCh, layout, c=0.3, r=0.25, fake=False, parrot=True):
         nest.Connect(pre=Fake[name][i],post=Pop[name][i],conn_spec={'rule':'one_to_one'})
 
   else:
-    print '* '+name+':',nbSim[name]*nbCh,'neurons (divided in',nbCh,'channels) with parameters:',BGparams[name]
+    print('* '+name+':',nbSim[name]*nbCh,'neurons (divided in',nbCh,'channels) with parameters:',BGparams[name])
     nest.SetDefaults('iaf_psc_alpha_multisynapse', BGparams[name])
     Topo[name] = nesttopo.CreateLayer({'positions': [[positions[0][i], positions[1][i]] for i in range(len(positions[0]))], 'elements': 'iaf_psc_alpha_multisynapse', 'extent': [2., 2.], 'center':[0., 0.], 'edge_wrap': edge_wrap})
     all_nodes = nest.GetNodes(Topo[name])
@@ -353,7 +353,7 @@ def mass_connect(source, dest, synapse_label, inDegree, receptor_type, weight, d
     if sigmaDependentInterval:
       n = 2 # number of standard deviation to include in the distribution
       if stochastic_delays >= 1./n:
-        print 'Error : stochastic_delays >= 1/n and the distribution of delays therefore includes 0 which is not possible -> Jean\'s method is used'
+        print ('Error : stochastic_delays >= 1/n and the distribution of delays therefore includes 0 which is not possible -> Jean\'s method is used')
         sigmaDependentInterval = False
       else:
         low = delay - n*sigma
