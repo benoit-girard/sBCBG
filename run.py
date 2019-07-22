@@ -95,7 +95,7 @@ class JobDispatcher:
 
   def load_cmdline_config(self, cmd_args):
     # Loads the options from the commandline, overriding all previous parameterizations
-    self.params.update({k: v for k, v in vars(cmd_args).items() if k in ['LG14modelID', 'whichTest', 'nbcpu', 'nbCh', 'email', 'nestSeed', 'pythonSeed', 'splitGPe'] if v != None})
+    self.params.update({k: v for k, v in vars(cmd_args).items() if k in ['LG14modelID', 'whichTest', 'nbcpu', 'nbCh', 'email', 'nestSeed', 'pythonSeed', 'splitGPe', 'inputPop'] if v != None})
 
   def create_workspace(self, IDstring):
     # Initialize the experiment-specific directory named with IDstring and populate it with the required files
@@ -437,6 +437,7 @@ def main():
     Optional.add_argument('--interactive', action="store_true", help='Set to enable the display of debug plots', default=False)
     Optional.add_argument('--gdf', action="store_true", help='Set to store spike rasters (gdf files) of the simulation', default=False)
     Optional.add_argument('--splitGPe', action="store_true", help='Set to split the GPe into 2 populations', default=False)
+    Optional.add_argument('--inputPop', help='Set to specify which input population will be used in the testReactionToInput test (CSN, PTN or CMPf)', default='CSN')
     Optional.add_argument('--email', type=str, help='To receive emails when Sango cluster simulations are done', default='')
     Optional.add_argument('--tag', type=str, help='optional tag for this experiment, to be added to the directory name (avoid special characters like "/" or "\\")', default='')
     Optional.add_argument('--offsetDuration', type=int, help='non-recorded stabilization period (in ms, default 1000 ms)', default=1000)

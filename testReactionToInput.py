@@ -32,17 +32,25 @@ restFR = {} # this will be populated with firing rates of all nuclei, at rest
 # - nbInNeurons: list of nb of activated neurons to be tested (between 0 and 12000)
 # - activityLevels: list of the levels of activation to be tested (between 0 and 1, in percentage)
 #------------------------------------------
-def ReactionToInput(showRasters=False, params={}, inputName='CSN', nbInNeurons=[4000], activityLevels=[0., 1.], logFileName=''):
-  print ("\nTesting the reactions of model "+str(params['LG14modelID'])+" to varying inputs on the "+inputName+" input.")
-  print ("=================================")
-  print ("- numbers of activated neurons: "+str(nbInNeurons))
-  print ("- levels of activation: "+str(activityLevels))
+def ReactionToInput(showRasters=False, params={}, nbInNeurons=[4000], activityLevels=[0., 1.], logFileName=''):
+
+  if 'inputPop' in params:
+    inputName=params['inputPop']
+  else:
+    print('testReactionToInput.py: inputPop not specified in the params dictionary')
+    exit()
+
+  if inputName not in ['CSN','PTN','CMPf']:
+    print('testReactionToInput.py: '+inputName+' not an input')
+    exit()
+  else:
+    print ("\nTesting the reactions of model "+str(params['LG14modelID'])+" to varying inputs on the "+inputName+" input.")
+    print ("=================================")
+    print ("- numbers of activated neurons: "+str(nbInNeurons))
+    print ("- levels of activation: "+str(activityLevels))
   #nest.ResetNetwork() # pas sur qu'on veuille faire ca
   #initNeurons() # pas sur qu'on veuille faire ca
 
-  if inputName not in ['CSN','PTN','CMPf']:
-    print(inputName+' not an input')
-    exit()
 
   dataPath='log/'
   nest.SetKernelStatus({"overwrite_files":True}) # when we redo the simulation, we erase the previous traces
@@ -201,7 +209,7 @@ def main():
   # the number of channels is expected to be 1, but not enforced here...
   instantiate_BG(params, antagInjectionSite='none', antag='')
 
-  ReactionToInput(params=params,inputName='CMPf', nbInNeurons=[250,500,1000,2000,4000], activityLevels=[0., 0.2, 0.4, 0.6, 0.8, 1.])
+  ReactionToInput(params=params, nbInNeurons=[250,500,1000,2000,4000], activityLevels=[0., 0.2, 0.4, 0.6, 0.8, 1.])
 
   #score = np.zeros((2))
   #mapTopology2D(show=True)
