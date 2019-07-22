@@ -201,7 +201,7 @@ def main():
   # the number of channels is expected to be 1, but not enforced here...
   instantiate_BG(params, antagInjectionSite='none', antag='')
 
-  ReactionToInput(params=params)
+  ReactionToInput(params=params,inputName='CMPf', nbInNeurons=[250,500,1000,2000,4000], activityLevels=[0., 0.2, 0.4, 0.6, 0.8, 1.])
 
   #score = np.zeros((2))
   #mapTopology2D(show=True)
