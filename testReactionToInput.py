@@ -110,7 +110,7 @@ def ReactionToInput(showRasters=False, params={}, nbInNeurons=[4000], activityLe
   # write header in firingRate summary file
   #-------------------------
   firingRatesFile=open(dataPath+'firingRates.csv','a')
-  frstr = 'nb'+inputName+ ' , act. level, FR MSN, FR FSI, FR STN, FR GPe, FR GPi \n' # not adapted to arky/proto at the moment
+  frstr = 'nb'+inputName+ ' , act. level, FR MSN, FR FSI, FR STN, FR GPe, FR GPi\n' # not adapted to arky/proto at the moment
   firingRatesFile.writelines(frstr)
 
   #-------------------------
