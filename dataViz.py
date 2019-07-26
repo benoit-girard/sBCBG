@@ -2,7 +2,7 @@
 import sys
 import nest.raster_plot
 
-# This script loads the data in the gdf files produced by nest, 
+# This script loads the data in the gdf files produced by nest,
 # and then uses the raster_plot module to plot the neural activity.
 # first argument : ID of the files, first four digits chosen by nest when saving the gdf files
 #                  example: file MSN-89621-00.gdf => ID = 8962
@@ -19,30 +19,30 @@ for a in ['AMPA+NMDA+GABAA','AMPA','NMDA+AMPA','NMDA','GABAA']:
 
 dataFileNames={'MSN':{},'FSI':{},'STN':{},'GPe':{},'GPi':{}}
 
-nbCPUs = 10
+nbCPUs = 8
 if len(sys.argv) >= 2:
   fstr = '-'+sys.argv[1]
   if len(sys.argv) >= 3:
     nbCPUs = int(sys.argv[2])
 else:
-  print "please provide file ID"
+  print("please provide file ID")
   exit()
 
-for N,I in NUCLEI.iteritems():
+for N,I in NUCLEI.items():
   dataFileNames[N]['none']=[]
   for i in range(nbCPUs):
     dataFileNames[N]['none'].append(N+fstr+str(I)+'-0'+str(i)+'.gdf')
-  print dataFileNames[N]['none']
+  print(dataFileNames[N]['none'])
 
 for d in deactivationList:
-  for N,I in NUCLEI.iteritems():
+  for N,I in NUCLEI.items():
     dataFileNames[N][d]=[]
     for i in range(nbCPUs):
       dataFileNames[N][d].append(d+N+fstr+str(I)+'-0'+str(i)+'.gdf')
 
 #-----------
 
-for N,I in NUCLEI.iteritems():
+for N,I in NUCLEI.items():
   nest.raster_plot.from_file(dataFileNames[N]['none'],hist=True,title=N)
 
 nest.raster_plot.show()

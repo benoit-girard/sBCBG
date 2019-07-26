@@ -431,7 +431,7 @@ def main():
     Optional = parser.add_argument_group('optional arguments')
     Optional.add_argument('--custom', type=str, help='Provide a custom file to initialize parameters - without the .py extension', default=None)
     Optional.add_argument('--LG14modelID', type=int, help='Which LG14 parameterization to use?', default=None)
-    Optional.add_argument('--whichTest', type=str, help='Which test to run?', choices=['testPlausibility','testReactionToInput', 'testGPR01', 'testGPR01Deact', 'testChannel', 'testChannelBG', 'testSelec', 'testSelec2D', 'testReaching', 'testDA', 'testPauses'], default=None)
+    Optional.add_argument('--whichTest', type=str, help='Which test to run?', choices=['testPlausibility','testReactionToInput', 'testSelection', 'testGPR01', 'testGPR01Deact', 'testChannel', 'testChannelBG', 'testSelec', 'testSelec2D', 'testReaching', 'testDA', 'testPauses'], default=None)
     Optional.add_argument('--nbcpu', type=int, help='Number of CPU to use (-1 to guess)', default=None)
     Optional.add_argument('--nbCh', type=int, help='Number of Basal Ganglia channels to simulate', default=None)
     Optional.add_argument('--interactive', action="store_true", help='Set to enable the display of debug plots', default=False)

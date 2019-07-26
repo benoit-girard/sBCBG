@@ -9,20 +9,11 @@
 
 from iniBG import *
 
-import matplotlib                 # utile ?
-matplotlib.use('Agg')             # utile ?
-import matplotlib.pyplot as plt   # utile ?
-import pylab as pl                # utile ?
-import nest.raster_plot as raster # utile ?
 from iniBG import *
 # from spikeProcessing import FanoFactor, OscIndex
 # from filter import lowpass
-import os
 import numpy as np
 from modelParams import *
-restFR = {} # this will be populated with firing rates of all nuclei, at rest
-#oscilPow = {} # Oscillations power and frequency at rest
-#oscilFreq = {}
 
 #------------------------------------------
 #
@@ -32,7 +23,7 @@ restFR = {} # this will be populated with firing rates of all nuclei, at rest
 # - nbInNeurons: list of nb of activated neurons to be tested (between 0 and 12000)
 # - activityLevels: list of the levels of activation to be tested (between 0 and 1, in percentage)
 #------------------------------------------
-def ReactionToInput(showRasters=False, params={}, nbInNeurons=[4000], activityLevels=[0., 1.], logFileName=''):
+def ReactionToInput(params={}, nbInNeurons=[4000], activityLevels=[0., 1.]):
 
   if 'inputPop' in params:
     inputName=params['inputPop']
@@ -210,10 +201,6 @@ def main():
   instantiate_BG(params, antagInjectionSite='none', antag='')
 
   ReactionToInput(params=params, nbInNeurons=[250,500,1000,2000,4000], activityLevels=[0., 0.2, 0.4, 0.6, 0.8, 1.])
-
-  #score = np.zeros((2))
-  #mapTopology2D(show=True)
-  #score += checkAvgFR(params=params,antagInjectionSite='none',antag='',showRasters=True)
 
 #---------------------------
 if __name__ == '__main__':
