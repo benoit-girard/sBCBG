@@ -235,7 +235,7 @@ def main():
   instantiate_BG(params, antagInjectionSite='none', antag='')
 
   #ReactionToInput(params=params, nbInNeurons=[250,500,1000,2000,4000], activityLevels=[0., 0.2, 0.4, 0.6, 0.8, 1.])
-  twoChannelCompetition(params=params, nbInNeurons=500, nbSteps=5)
+  twoChannelCompetition(params=params, nbInNeurons=500, nbSteps=11)
 
   #score = np.zeros((2))
   #mapTopology2D(show=True)
