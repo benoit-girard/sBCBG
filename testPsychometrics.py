@@ -142,7 +142,7 @@ def twoChannelPsychometricCompetition(params={}, nbInNeurons=1000, nbSteps=11, C
   # Simulation
   #-------------------------
   for i1 in range(nbSteps):
-      print('STEP ',i1*nbSteps,'/',nbSteps)
+      print('STEP ',i1,'/',nbSteps)
       print('* channel 1 act. level '+str(activityLevels[i1])+' (CSN: '+str(rate['CSN'][i1])+' Hz - PTN: '+str(rate['PTN'][i1])+' Hz)')
       print('* channel 2 act. level '+str(activityLevels[nbSteps-i1-1])+' (CSN: '+str(rate['CSN'][nbSteps-i1-1])+' Hz - PTN: '+str(rate['PTN'][nbSteps-i1-1])+' Hz)')
 
