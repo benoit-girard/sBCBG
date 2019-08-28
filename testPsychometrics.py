@@ -152,7 +152,7 @@ def twoChannelPsychometricCompetition(params={}, nbInNeurons=1000, nbSteps=11, C
       stop=offsetDuration+simDuration+simulationOffset
       for N in NUCLEI:
         for C in [0,1,2]:
-          spkDetect[N][C] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label":N+'-'+str(activityLevels[i1])+'-'+str(activityLevels[i2]), "to_file": storeGDF, 'start':start,'stop':stop})
+          spkDetect[N][C] = nest.Create("spike_detector", params={"withgid": True, "withtime": True, "label":N+'-'+str(activityLevels[i1])+'-'+str(activityLevels[nbSteps-i1-1]), "to_file": storeGDF, 'start':start,'stop':stop})
           connect_detector(N,C)
 
       nest.SetStatus(ActPop['CSN'][0],{'rate':rate['CSN'][i1]})
