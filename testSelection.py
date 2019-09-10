@@ -22,7 +22,7 @@ restFR = {} # this will be populated with firing rates of all nuclei, at rest
 #
 #
 #------------------------------------------
-def twoChannelCompetition(params={}, nbInNeurons=1000, nbSteps=11):
+def twoChannelCompetition(params={}, nbInNeurons=1000, nbSteps=11, CMPfLevel=0):
 
   if params['nbCh'] < 3:
     print('testSelection.py: operates on 3 channels minimum. You asked for ',params['nbCh'])
@@ -75,10 +75,11 @@ def twoChannelCompetition(params={}, nbInNeurons=1000, nbSteps=11):
   # prepare the firing rates of the inputs for all the steps of the experiment
   #-------------------------
   # ranges of activation for each input, first value: 0% activation, last value: 100% activation
-  FR={'CSN':[2.,20.],'PTN':[15.,46.]}
+  FR={'CSN':[2.,20.],'PTN':[15.,46.],'CMPf':[4.,34.]}
   g = {}
   g['CSN'] = FR['CSN'][1] - FR['CSN'][0]
   g['PTN'] = FR['PTN'][1] - FR['PTN'][0]
+  g['CMPf'] = FR['CMPf'][1] - FR['CMPf'][0]
   activityLevels=[]
   for i in range(nbSteps-1):
     activityLevels.append(1./(nbSteps-1) * i)
@@ -87,6 +88,7 @@ def twoChannelCompetition(params={}, nbInNeurons=1000, nbSteps=11):
   rate={}
   rate['CSN'] = g['CSN'] * np.array(activityLevels) + FR['CSN'][0]*np.ones((len(activityLevels)))
   rate['PTN'] = g['PTN'] * np.array(activityLevels) + FR['PTN'][0]*np.ones((len(activityLevels)))
+  rate['CMPf'] = g['CMPf'] * CMPfLevel + FR['CMPf'][0] # this rate will be constant obver the whole experiment
   #print('rate CSN',rate['CSN'])
 
   #-------------------------
@@ -103,6 +105,20 @@ def twoChannelCompetition(params={}, nbInNeurons=1000, nbSteps=11):
           ActPop[inputName][i] = src
         else:
           ActPop[inputName][i] = tuple(rnd.choice(a=np.array(src),size=nbInNeurons,replace=False))
+
+  #-------------------------
+  # adjust the level of CMPf activity according to input parameter CMPfLevel
+  # as it won't change, the CMPf level is adjustede here, once.
+  #-------------------------
+  src = Pop['CMPf']
+  if 'Fake' in globals():
+    if 'CMPf' in Fake:
+      src = Fake['CMPf']
+      print ('CMPF: you are fake news!')
+
+  nest.SetStatus(src[0],{'rate':rate['CMPf']})
+  nest.SetStatus(src[1],{'rate':rate['CMPf']})
+  nest.SetStatus(src[2],{'rate':rate['CMPf']})
 
   #print('actpop CSN',ActPop['CSN'][0])
 
@@ -134,6 +150,7 @@ def twoChannelCompetition(params={}, nbInNeurons=1000, nbSteps=11):
   #-------------------------
   # Simulation
   #-------------------------
+  print('Background CMPf activation level:',rate['CMPf'])
   for i2 in range(nbSteps):
     for i1 in range(nbSteps):
       print('STEP ',i1+i2*nbSteps,'/',nbSteps**2)
@@ -235,7 +252,7 @@ def main():
   instantiate_BG(params, antagInjectionSite='none', antag='')
 
   #ReactionToInput(params=params, nbInNeurons=[250,500,1000,2000,4000], activityLevels=[0., 0.2, 0.4, 0.6, 0.8, 1.])
-  twoChannelCompetition(params=params, nbInNeurons=500, nbSteps=11)
+  twoChannelCompetition(params=params, nbInNeurons=500, nbSteps=11, CMPfLevel=0.2)
 
   #score = np.zeros((2))
   #mapTopology2D(show=True)
