@@ -1,7 +1,7 @@
 # Maximal hypersphere of parameters giving a plausibility score of 14/14
 
+#the_scale = 4.
 the_scale = 4.
-#the_scale = 1.
 
 params = {
   # original LG14 parameterization

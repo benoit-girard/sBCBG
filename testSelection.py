@@ -22,7 +22,7 @@ restFR = {} # this will be populated with firing rates of all nuclei, at rest
 #
 #
 #------------------------------------------
-def twoChannelCompetition(params={}, nbInNeurons=1000, nbSteps=11, CMPfLevel=0):
+def twoChannelCompetition(params={}, nbInNeurons=1000, nbSteps=11, CMPfBonus=0.): #CMPfLevel=0):
 
   if params['nbCh'] < 3:
     print('testSelection.py: operates on 3 channels minimum. You asked for ',params['nbCh'])
@@ -79,7 +79,7 @@ def twoChannelCompetition(params={}, nbInNeurons=1000, nbSteps=11, CMPfLevel=0):
   g = {}
   g['CSN'] = FR['CSN'][1] - FR['CSN'][0]
   g['PTN'] = FR['PTN'][1] - FR['PTN'][0]
-  g['CMPf'] = FR['CMPf'][1] - FR['CMPf'][0]
+  #g['CMPf'] = FR['CMPf'][1] - FR['CMPf'][0]
   activityLevels=[]
   for i in range(nbSteps-1):
     activityLevels.append(1./(nbSteps-1) * i)
@@ -88,8 +88,9 @@ def twoChannelCompetition(params={}, nbInNeurons=1000, nbSteps=11, CMPfLevel=0):
   rate={}
   rate['CSN'] = g['CSN'] * np.array(activityLevels) + FR['CSN'][0]*np.ones((len(activityLevels)))
   rate['PTN'] = g['PTN'] * np.array(activityLevels) + FR['PTN'][0]*np.ones((len(activityLevels)))
-  rate['CMPf'] = g['CMPf'] * CMPfLevel + FR['CMPf'][0] # this rate will be constant obver the whole experiment
-  #print('rate CSN',rate['CSN'])
+  rate['CMPf'] = CMPfBonus + FR['CMPf'][0] # this rate will be constant obver the whole experiment
+  #rate['CMPf'] = g['CMPf'] * CMPfLevel + FR['CMPf'][0] # this rate will be constant obver the whole experiment
+  #print('rate CMPf',rate['CMPf'])
 
   #-------------------------
   # and prepare the lists of neurons that will be affected by these activity changes
@@ -151,6 +152,7 @@ def twoChannelCompetition(params={}, nbInNeurons=1000, nbSteps=11, CMPfLevel=0):
   # Simulation
   #-------------------------
   print('Background CMPf activation level:',rate['CMPf'])
+  #for i2 in range(1):
   for i2 in range(nbSteps):
     for i1 in range(nbSteps):
       print('STEP ',i1+i2*nbSteps,'/',nbSteps**2)
@@ -252,7 +254,7 @@ def main():
   instantiate_BG(params, antagInjectionSite='none', antag='')
 
   #ReactionToInput(params=params, nbInNeurons=[250,500,1000,2000,4000], activityLevels=[0., 0.2, 0.4, 0.6, 0.8, 1.])
-  twoChannelCompetition(params=params, nbInNeurons=500, nbSteps=11, CMPfLevel=0.2)
+  twoChannelCompetition(params=params, nbInNeurons=500, nbSteps=11, CMPfBonus=1.)#CMPfLevel=0.1)
 
   #score = np.zeros((2))
   #mapTopology2D(show=True)
